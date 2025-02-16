@@ -1,0 +1,22 @@
+{
+  "id": 1005,
+  "created_at": "2024-02-07T19:00:48.645497+00:00",
+  "name": "UV",
+  "description": "Basic uv shader",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "dead0rat0xxxx"
+  }
+}

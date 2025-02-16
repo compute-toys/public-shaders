@@ -1,0 +1,41 @@
+{
+  "id": 1535,
+  "created_at": "2024-11-07T07:52:42.564936+00:00",
+  "name": "quered",
+  "description": "use sliders",
+  "body": {
+    "uniforms": [
+      {
+        "name": "a",
+        "value": -0.29,
+        "minRange": -2,
+        "maxRange": 2
+      },
+      {
+        "name": "b",
+        "value": -0.613,
+        "minRange": -1,
+        "maxRange": 1
+      },
+      {
+        "name": "c",
+        "value": 0.608,
+        "minRange": 0,
+        "maxRange": 2
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

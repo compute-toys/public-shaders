@@ -1,0 +1,91 @@
+{
+  "id": 202,
+  "created_at": "2023-05-11T23:19:36.652043+00:00",
+  "name": "Black Hole Particles Bokeh",
+  "description": "Forked from https://compute.toys/view/31\nUsing a screen index grid for the particles instead of direct atomics",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Radius",
+        "value": 1
+      },
+      {
+        "name": "TimeStep",
+        "value": 0.072
+      },
+      {
+        "name": "Samples",
+        "value": 0.218
+      },
+      {
+        "name": "AnimatedNoise",
+        "value": 0
+      },
+      {
+        "name": "Accumulation",
+        "value": 1
+      },
+      {
+        "name": "Exposure",
+        "value": 0.369
+      },
+      {
+        "name": "BlurExponent1",
+        "value": 0.393
+      },
+      {
+        "name": "BlurRadius",
+        "value": 0.743
+      },
+      {
+        "name": "BlurExponent2",
+        "value": 0.81
+      },
+      {
+        "name": "KerrA",
+        "value": 0.876
+      },
+      {
+        "name": "KerrQ",
+        "value": 0
+      },
+      {
+        "name": "InitSpeed",
+        "value": 0.719
+      },
+      {
+        "name": "InitThick",
+        "value": 0.22
+      },
+      {
+        "name": "Steps",
+        "value": 0.387
+      },
+      {
+        "name": "FocalPlane",
+        "value": 0.53
+      },
+      {
+        "name": "MotionBlur",
+        "value": 0
+      },
+      {
+        "name": "Gamma",
+        "value": 0.827
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}

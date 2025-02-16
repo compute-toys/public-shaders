@@ -1,0 +1,22 @@
+{
+  "id": 1099,
+  "created_at": "2024-03-15T23:41:19.123509+00:00",
+  "name": "anti aliasing",
+  "description": "experimenting with anti aliasing, antialiasing is actually just a small blur at the edge of a line which is achieved with smoothstep",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "jonasfrey"
+  }
+}

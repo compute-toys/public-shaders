@@ -1,0 +1,55 @@
+{
+  "id": 718,
+  "created_at": "2023-11-16T21:02:41.347666+00:00",
+  "name": "Buddhabulb faster",
+  "description": "Forked from https://compute.toys/view/24",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Radius",
+        "value": 0.383
+      },
+      {
+        "name": "Samples",
+        "value": 0.066
+      },
+      {
+        "name": "Accumulation",
+        "value": 1
+      },
+      {
+        "name": "NoiseAnimation",
+        "value": 1
+      },
+      {
+        "name": "BulbPower",
+        "value": 0.301
+      },
+      {
+        "name": "Exposure",
+        "value": 0.185
+      },
+      {
+        "name": "PowerDelta",
+        "value": 0.809
+      },
+      {
+        "name": "Gamma",
+        "value": 0.844
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}

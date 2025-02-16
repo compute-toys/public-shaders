@@ -1,0 +1,35 @@
+{
+  "id": 1121,
+  "created_at": "2024-03-26T18:59:34.098723+00:00",
+  "name": "2D pathtracing heatwave",
+  "description": "not physically accurate just cool simulation",
+  "body": {
+    "uniforms": [
+      {
+        "name": "A",
+        "value": 0.462,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "C",
+        "value": 0.336,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

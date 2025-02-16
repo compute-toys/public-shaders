@@ -1,0 +1,22 @@
+{
+  "id": 1353,
+  "created_at": "2024-08-22T11:53:38.854787+00:00",
+  "name": "1d to 2d ",
+  "description": "the first row is a 1dimensional image \nthe following rows always copy the information from the previous row to themselfs",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "jonasfrey"
+  }
+}

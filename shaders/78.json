@@ -1,0 +1,22 @@
+{
+  "id": 78,
+  "created_at": "2023-05-03T22:43:58.283802+00:00",
+  "name": "Branchless Voxel Raycasting",
+  "description": "Port of a shader with the same name from Shadertoy with some minor adjustments: https://www.shadertoy.com/view/4dX3zl\nAll credit for the original code goes to fb39ca4 on Shadertoy.",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "0"
+  }
+}

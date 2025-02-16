@@ -1,0 +1,22 @@
+{
+  "id": 1012,
+  "created_at": "2024-02-14T14:20:05.96331+00:00",
+  "name": "classical plasma, kind of...",
+  "description": "is this classical plasma?",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "jonasfrey"
+  }
+}

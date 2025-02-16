@@ -1,0 +1,23 @@
+{
+  "id": 1631,
+  "created_at": "2025-01-05T21:58:16.03342+00:00",
+  "name": "Basic groupshared FFT",
+  "description": "basic FFT",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/book_pattern/book_pattern_col2_1k.jpg",
+        "url": "https://polyhaven.com/a/book_pattern"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}

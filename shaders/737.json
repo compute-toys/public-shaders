@@ -1,0 +1,75 @@
+{
+  "id": 737,
+  "created_at": "2023-11-18T19:01:15.083865+00:00",
+  "name": "4D Bifurcation map",
+  "description": "Forked from https://compute.toys/view/736",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Radius",
+        "value": 0.328
+      },
+      {
+        "name": "Samples",
+        "value": 0.226
+      },
+      {
+        "name": "Accumulation",
+        "value": 0.89
+      },
+      {
+        "name": "NoiseAnimation",
+        "value": 1
+      },
+      {
+        "name": "Exposure",
+        "value": 0.238
+      },
+      {
+        "name": "Beta",
+        "value": 0.425
+      },
+      {
+        "name": "Alpha",
+        "value": 0.301
+      },
+      {
+        "name": "BetaAnim",
+        "value": 0.019
+      },
+      {
+        "name": "BetaS",
+        "value": 0.43
+      },
+      {
+        "name": "Gamma",
+        "value": 1
+      },
+      {
+        "name": "Epsilon",
+        "value": 0.224
+      },
+      {
+        "name": "Beta2",
+        "value": 0.325
+      },
+      {
+        "name": "Beta3",
+        "value": 0.301
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": 837,
+  "created_at": "2023-11-26T06:13:56.566589+00:00",
+  "name": "Julia Set interactive",
+  "description": "\n- `=` to zoom in,\n- `-` to zoom out,\n- `w` `a` `s` `d` to move(but still buggy when zoom in too much)\n- `i` `j` `k` `l` to change shape of fractal\n- `shift` to be faster",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "jiyinyiyong"
+  }
+}

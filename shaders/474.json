@@ -1,0 +1,22 @@
+{
+  "id": 474,
+  "created_at": "2023-09-11T22:22:07.230026+00:00",
+  "name": "Voxel shadows",
+  "description": "",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "0"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": 1165,
+  "created_at": "2024-05-11T02:19:33.652706+00:00",
+  "name": "refraction mayhem",
+  "description": "mouse for light position",
+  "body": {
+    "uniforms": [
+      {
+        "name": "brigt",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "indx",
+        "value": 0.608,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

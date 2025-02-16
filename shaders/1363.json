@@ -1,0 +1,22 @@
+{
+  "id": 1363,
+  "created_at": "2024-08-26T12:26:53.262489+00:00",
+  "name": "1d smooth life",
+  "description": "",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "https://raw.githubusercontent.com/otaviogood/shader_fontgen/master/codepage12.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "jonasfrey"
+  }
+}

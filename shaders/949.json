@@ -1,0 +1,22 @@
+{
+  "id": 949,
+  "created_at": "2024-01-10T23:46:37.392188+00:00",
+  "name": "Simple Buddhabrot",
+  "description": "There are many Buddhabrot[13,265] and Buddhabulb[24,718,728,734] shaders here already, yet all of these show the fractal with some \"twist\" or deviation from the original. This is an attempt to render the Buddhabrot in it's most basic and pure form.",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "slerpy"
+  }
+}

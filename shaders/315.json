@@ -1,0 +1,27 @@
+{
+  "id": 315,
+  "created_at": "2023-06-05T19:05:08.897649+00:00",
+  "name": "imaginary mass",
+  "description": "mass is a complex number",
+  "body": {
+    "uniforms": [
+      {
+        "name": "A",
+        "value": 0.214
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

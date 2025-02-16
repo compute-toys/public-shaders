@@ -1,0 +1,22 @@
+{
+  "id": 913,
+  "created_at": "2023-12-17T07:56:31.834174+00:00",
+  "name": "Mandelbrot Set",
+  "description": "",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "akshith"
+  }
+}

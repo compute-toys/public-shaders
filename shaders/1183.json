@@ -1,0 +1,77 @@
+{
+  "id": 1183,
+  "created_at": "2024-05-25T13:29:52.115891+00:00",
+  "name": "Physarum",
+  "description": "Particles that follow each other. They have a fixed speed and will try to move to the area where other particles went. They also prefer to follow trails of the same hue.",
+  "body": {
+    "uniforms": [
+      {
+        "name": "entropy",
+        "value": 0.306,
+        "minRange": 0,
+        "maxRange": 11
+      },
+      {
+        "name": "rotation_speed",
+        "value": 0.175,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "speed",
+        "value": 0.892,
+        "minRange": 0,
+        "maxRange": 3
+      },
+      {
+        "name": "sensor_size",
+        "value": 2.2,
+        "minRange": 1,
+        "maxRange": 3
+      },
+      {
+        "name": "sensor_angle",
+        "value": 0.083,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "sensor_distance",
+        "value": 25,
+        "minRange": 0,
+        "maxRange": 25
+      },
+      {
+        "name": "diffusion_ratio",
+        "value": 0.045,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "decay_ratio",
+        "value": 0.973,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "hue_tolerance",
+        "value": 0.483,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lortex"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": 1352,
+  "created_at": "2024-08-22T11:18:47.077123+00:00",
+  "name": "growing stuff",
+  "description": "a pixel gets a new color depending on the color of the surrounding pixel (from the last frame) \nthis makes an organic animation, it looks as if something grows",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "jonasfrey"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": 137,
+  "created_at": "2023-05-06T22:41:11.410699+00:00",
+  "name": "bubbles",
+  "description": "3D version of https://www.shadertoy.com/view/sdsXzN",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

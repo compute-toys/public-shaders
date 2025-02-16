@@ -1,0 +1,53 @@
+{
+  "id": 1487,
+  "created_at": "2024-10-09T20:43:27.076812+00:00",
+  "name": "Repelling Points on Sphere",
+  "description": "Testing behavior of https://www.shadertoy.com/view/sssfWM",
+  "body": {
+    "uniforms": [
+      {
+        "name": "zNear",
+        "value": 0.01,
+        "minRange": 0,
+        "maxRange": 10
+      },
+      {
+        "name": "zFar",
+        "value": 1130.978,
+        "minRange": 0,
+        "maxRange": 10000
+      },
+      {
+        "name": "focalLength",
+        "value": 1.295,
+        "minRange": 0,
+        "maxRange": 10
+      },
+      {
+        "name": "cameraDistance",
+        "value": 167.511,
+        "minRange": 0,
+        "maxRange": 500
+      },
+      {
+        "name": "particleRadius",
+        "value": 571.719,
+        "minRange": 0,
+        "maxRange": 1000
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "oneshade"
+  }
+}

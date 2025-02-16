@@ -1,0 +1,41 @@
+{
+  "id": 1517,
+  "created_at": "2024-11-01T11:39:26.699713+00:00",
+  "name": "spectral clusters",
+  "description": "another IFS fractal, this time with spectral rendering and a lens model with aberrations.",
+  "body": {
+    "uniforms": [
+      {
+        "name": "exposure",
+        "value": -2.291,
+        "minRange": -6,
+        "maxRange": 6
+      },
+      {
+        "name": "focus",
+        "value": -0.168,
+        "minRange": -1,
+        "maxRange": 1
+      },
+      {
+        "name": "P",
+        "value": -0.747,
+        "minRange": -1,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "sintel"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": 1034,
+  "created_at": "2024-02-17T22:43:07.57133+00:00",
+  "name": "rgb combination",
+  "description": "rgb combination",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "jonasfrey"
+  }
+}

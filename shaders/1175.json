@@ -1,0 +1,22 @@
+{
+  "id": 1175,
+  "created_at": "2024-05-22T17:10:11.507476+00:00",
+  "name": "Floyd-Steinberg Dithering",
+  "description": "Floyd-Steinberg dithering parallelized across a single workgroup",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/london.jpg"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "fadaaszhi"
+  }
+}

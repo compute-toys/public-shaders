@@ -1,0 +1,22 @@
+{
+  "id": 1405,
+  "created_at": "2024-09-11T14:42:19.003398+00:00",
+  "name": "attractors",
+  "description": "the live version of:\nhttps://github.com/altunenes/rusty_art/blob/master/src/GPUattractor.rs",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "altunenes"
+  }
+}

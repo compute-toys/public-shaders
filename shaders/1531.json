@@ -1,0 +1,41 @@
+{
+  "id": 1531,
+  "created_at": "2024-11-06T03:48:52.249774+00:00",
+  "name": "bang bing",
+  "description": "didnt know a fractal could change through so many unique shapes, comment line 112 to control slider a",
+  "body": {
+    "uniforms": [
+      {
+        "name": "a",
+        "value": 0.997,
+        "minRange": -3,
+        "maxRange": 4
+      },
+      {
+        "name": "b",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "c",
+        "value": 1.381,
+        "minRange": 0,
+        "maxRange": 2
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

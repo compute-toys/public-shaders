@@ -1,0 +1,22 @@
+{
+  "id": 1383,
+  "created_at": "2024-09-02T22:57:45.868886+00:00",
+  "name": "Vectorscope clock",
+  "description": "Draws a clock on a vectorscope",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "schobbejack"
+  }
+}

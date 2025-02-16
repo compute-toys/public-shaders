@@ -1,0 +1,41 @@
+{
+  "id": 1586,
+  "created_at": "2024-12-14T19:17:46.020648+00:00",
+  "name": "Infinite Pong",
+  "description": "Speed slider in custom uniforms",
+  "body": {
+    "uniforms": [
+      {
+        "name": "speed",
+        "value": 40,
+        "minRange": 1,
+        "maxRange": 500
+      },
+      {
+        "name": "hueOffset",
+        "value": 0.083,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "randomSeed",
+        "value": 320,
+        "minRange": 0,
+        "maxRange": 1000
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "Draradech"
+  }
+}

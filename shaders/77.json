@@ -1,0 +1,22 @@
+{
+  "id": 77,
+  "created_at": "2023-05-03T16:45:57.310187+00:00",
+  "name": "Simple Single Pass Shader",
+  "description": "Simple example showing reading and writing to a pass texture",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}

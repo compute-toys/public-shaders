@@ -1,0 +1,35 @@
+{
+  "id": 311,
+  "created_at": "2023-06-03T17:18:13.993534+00:00",
+  "name": "2D SPH + neighborhood grid",
+  "description": "Port of https://www.shadertoy.com/view/tdXBRf by michael0884.\nNeighborhood grid from https://compute.toys/view/49 by davidar. ",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Timescale",
+        "value": 1
+      },
+      {
+        "name": "air_resistance",
+        "value": 0.523
+      },
+      {
+        "name": "blur_strength",
+        "value": 0.239
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "trolljanhorse"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": 1309,
+  "created_at": "2024-08-09T13:22:45.897743+00:00",
+  "name": "3d flow",
+  "description": "compute shaders are awesome :D\nCouldn't use velocity, but I was able to make a fairly dynamic system by changing some parameters with time",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/leadenhall_market_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/leadenhall_market.jpg",
+        "url": "https://polyhaven.com/a/leadenhall_market"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "ahs3n"
+  }
+}

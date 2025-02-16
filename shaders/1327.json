@@ -1,0 +1,22 @@
+{
+  "id": 1327,
+  "created_at": "2024-08-19T08:49:49.818699+00:00",
+  "name": "190820242",
+  "description": "Forked from https://compute.toys/view/1326",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "jonasfrey"
+  }
+}

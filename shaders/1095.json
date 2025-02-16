@@ -1,0 +1,43 @@
+{
+  "id": 1095,
+  "created_at": "2024-03-13T18:51:15.96511+00:00",
+  "name": "Introduction Shader Art Coding",
+  "description": "shader from this video: https://www.youtube.com/watch?v=f4s1h2YETNY by kishimisu but translated to wgsl\ni used https://www.shadertoy.com/view/4X23zt for oklch color space, hope I translated it correctly",
+  "body": {
+    "uniforms": [
+      {
+        "name": "iterations",
+        "value": 0.397
+      },
+      {
+        "name": "chroma",
+        "value": 0.238
+      },
+      {
+        "name": "lightness",
+        "value": 0.551
+      },
+      {
+        "name": "speed",
+        "value": 0.099
+      },
+      {
+        "name": "neon",
+        "value": 0.135
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "quilde"
+  }
+}

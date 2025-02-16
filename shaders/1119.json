@@ -1,0 +1,35 @@
+{
+  "id": 1119,
+  "created_at": "2024-03-24T01:18:08.635009+00:00",
+  "name": "2D pathtracing waves",
+  "description": "dont know if this really is how waves behave\nmouse for light position",
+  "body": {
+    "uniforms": [
+      {
+        "name": "A",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "C",
+        "value": 0.195,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

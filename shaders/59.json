@@ -1,0 +1,22 @@
+{
+  "id": 59,
+  "created_at": "2022-07-04T03:27:47.092975+00:00",
+  "name": "Terminal overlay",
+  "description": "This demonstrates a simple but efficient way of overlaying text on a shader.",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/font0.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "davidar"
+  }
+}

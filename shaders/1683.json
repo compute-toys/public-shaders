@@ -1,0 +1,89 @@
+{
+  "id": 1683,
+  "created_at": "2025-01-19T10:28:23.084933+00:00",
+  "name": "Snowflake",
+  "description": "Simulation based on https://github.com/mo-hanxuan/Snow-PhaseField",
+  "body": {
+    "uniforms": [
+      {
+        "name": "dx",
+        "value": 0.03,
+        "minRange": 0,
+        "maxRange": 0.1
+      },
+      {
+        "name": "grad_energy_coef",
+        "value": 0.006,
+        "minRange": 0,
+        "maxRange": 0.01
+      },
+      {
+        "name": "aniso_magnitude",
+        "value": 0.12,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "n_fold_symmetry",
+        "value": 5.101,
+        "minRange": 0,
+        "maxRange": 10
+      },
+      {
+        "name": "angle0",
+        "value": 0.227,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "alpha",
+        "value": 0.287,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "gamma",
+        "value": 10,
+        "minRange": 0,
+        "maxRange": 10
+      },
+      {
+        "name": "temperature_equi",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "mobility",
+        "value": 0.128,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "latent_heat_coef",
+        "value": 1.504,
+        "minRange": 0,
+        "maxRange": 3
+      },
+      {
+        "name": "dt",
+        "value": 0.201,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Regent_Street_Clay_Gregory.jpg/1920px-Regent_Street_Clay_Gregory.jpg"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "davidar"
+  }
+}

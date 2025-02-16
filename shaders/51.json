@@ -1,0 +1,39 @@
+{
+  "id": 51,
+  "created_at": "2022-06-18T19:26:27.206713+00:00",
+  "name": "Lagrangian wave equation ",
+  "description": "1+1 relativistic Sine Gordon string lagrangian ",
+  "body": {
+    "uniforms": [
+      {
+        "name": "CosK",
+        "value": 0.124
+      },
+      {
+        "name": "CosA",
+        "value": 0.786
+      },
+      {
+        "name": "SpeedLimit",
+        "value": 0.496
+      },
+      {
+        "name": "TimeStep",
+        "value": 0.5
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}

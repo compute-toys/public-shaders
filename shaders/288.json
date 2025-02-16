@@ -1,0 +1,27 @@
+{
+  "id": 288,
+  "created_at": "2023-06-01T05:26:25.764785+00:00",
+  "name": "positive-negative mass collision",
+  "description": "same code as https://compute.toys/view/276\nbut this one has also walls and negative mass\nI thought negative mass would behave the same as positive but it dont\nwhite is positive mass\nblack is negative mass",
+  "body": {
+    "uniforms": [
+      {
+        "name": "A",
+        "value": 0.15
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

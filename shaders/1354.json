@@ -1,0 +1,22 @@
+{
+  "id": 1354,
+  "created_at": "2024-08-22T12:03:09.492637+00:00",
+  "name": "1d cellular automata",
+  "description": "Forked from https://compute.toys/view/1353\nalso known as elementary cellular automata\nuse the mouse to change the rule, (left side click minus , right side click plus)",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "https://raw.githubusercontent.com/otaviogood/shader_fontgen/master/codepage12.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "jonasfrey"
+  }
+}

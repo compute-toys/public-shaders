@@ -1,0 +1,22 @@
+{
+  "id": 1025,
+  "created_at": "2024-02-15T19:06:56.867538+00:00",
+  "name": "playing around #2",
+  "description": "",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "jonasfrey"
+  }
+}

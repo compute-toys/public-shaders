@@ -1,0 +1,22 @@
+{
+  "id": 342,
+  "created_at": "2023-06-24T22:44:58.440396+00:00",
+  "name": "NCA shadertoy port",
+  "description": "port of znah's texture NCA\nhttps://www.shadertoy.com/view/fd2XRV\n\nversion with arrays:\nhttps://compute.toys/view/359",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "algroznykh"
+  }
+}

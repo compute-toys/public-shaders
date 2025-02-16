@@ -1,0 +1,101 @@
+{
+  "id": 1561,
+  "created_at": "2024-11-19T17:54:42.837897+00:00",
+  "name": "Lightning storm",
+  "description": "Forked from https://compute.toys/view/1556",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Radius",
+        "value": 0.382,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Samples",
+        "value": 18.614,
+        "minRange": 1,
+        "maxRange": 32
+      },
+      {
+        "name": "Accumulation",
+        "value": 0.771,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "NoiseAnimation",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Exposure",
+        "value": 0.773,
+        "minRange": 0,
+        "maxRange": 2
+      },
+      {
+        "name": "P0",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "P1",
+        "value": 0.066,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "P2",
+        "value": 0.175,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "P3",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 6
+      },
+      {
+        "name": "P4",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 5
+      },
+      {
+        "name": "P5",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "DT",
+        "value": 0.368,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Time",
+        "value": 10,
+        "minRange": 0,
+        "maxRange": 10
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}

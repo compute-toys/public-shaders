@@ -1,0 +1,77 @@
+{
+  "id": 1567,
+  "created_at": "2024-11-29T04:37:43.097449+00:00",
+  "name": "Colourful Arc",
+  "description": "My first attempt at a WGSL Compute shader.\nTrying to make lightning but got this instead.\nDon't forget to open the uniform sliders and have a play ^",
+  "body": {
+    "uniforms": [
+      {
+        "name": "splurg",
+        "value": 149.8,
+        "minRange": 36,
+        "maxRange": 360
+      },
+      {
+        "name": "wang",
+        "value": 11.642,
+        "minRange": 5,
+        "maxRange": 20
+      },
+      {
+        "name": "wazz",
+        "value": 1.544,
+        "minRange": 0.2,
+        "maxRange": 3
+      },
+      {
+        "name": "wibble",
+        "value": 15.972,
+        "minRange": 4,
+        "maxRange": 32
+      },
+      {
+        "name": "wobble",
+        "value": 58.513,
+        "minRange": 16,
+        "maxRange": 128
+      },
+      {
+        "name": "wabble",
+        "value": 192.044,
+        "minRange": 64,
+        "maxRange": 512
+      },
+      {
+        "name": "webble",
+        "value": 221.911,
+        "minRange": 128,
+        "maxRange": 1024
+      },
+      {
+        "name": "floom",
+        "value": 186.871,
+        "minRange": 1,
+        "maxRange": 300
+      },
+      {
+        "name": "wurzle",
+        "value": 386.823,
+        "minRange": 30,
+        "maxRange": 600
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "Cotterzz"
+  }
+}

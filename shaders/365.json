@@ -1,0 +1,23 @@
+{
+  "id": 365,
+  "created_at": "2023-07-14T11:09:25.996399+00:00",
+  "name": "Every Color Once",
+  "description": "This image contains every 6-bit color exactly once.\n\nThe viewport is slightly too small to view a 512x512 image, use the mouse to inspect.",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_pitted_mossy/rock_pitted_mossy_diff_1k.jpg",
+        "url": "https://polyhaven.com/a/rock_pitted_mossy"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "slerpy"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "id": 1661,
+  "created_at": "2025-01-11T15:20:48.785915+00:00",
+  "name": "Galaxy rebirth",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "ox",
+        "value": 0,
+        "minRange": -1,
+        "maxRange": 1
+      },
+      {
+        "name": "oy",
+        "value": 0,
+        "minRange": -1,
+        "maxRange": 1
+      },
+      {
+        "name": "oz",
+        "value": 0,
+        "minRange": -1,
+        "maxRange": 1
+      },
+      {
+        "name": "g",
+        "value": 0.219,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "time",
+        "value": 0.38,
+        "minRange": 0,
+        "maxRange": 2
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "munrocket"
+  }
+}

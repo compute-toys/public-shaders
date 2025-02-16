@@ -1,0 +1,31 @@
+{
+  "id": 893,
+  "created_at": "2023-12-05T12:47:53.642139+00:00",
+  "name": "motion blur",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "speed",
+        "value": 0.309
+      },
+      {
+        "name": "radius",
+        "value": 0.065
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/bayer0.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}

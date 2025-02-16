@@ -1,0 +1,22 @@
+{
+  "id": 1526,
+  "created_at": "2024-11-04T20:46:11.818242+00:00",
+  "name": "texture-less text",
+  "description": "Simple debugging text https://poniesandlight.co.uk/reflect/debug_print_text/",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "quilde"
+  }
+}

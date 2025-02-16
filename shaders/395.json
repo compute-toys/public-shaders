@@ -1,0 +1,31 @@
+{
+  "id": 395,
+  "created_at": "2023-07-22T02:57:43.864322+00:00",
+  "name": "pointy leaves",
+  "description": "simulation that mixes convolution that generates spinners https://www.shadertoy.com/view/7lVGzD\nwith convolution that generates bed sheet https://compute.toys/view/394\nsimulation only has one 2D vector per pixel",
+  "body": {
+    "uniforms": [
+      {
+        "name": "A",
+        "value": 0.58
+      },
+      {
+        "name": "B",
+        "value": 0.58
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

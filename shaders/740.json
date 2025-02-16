@@ -1,0 +1,22 @@
+{
+  "id": 740,
+  "created_at": "2023-11-19T14:39:59.336808+00:00",
+  "name": "gabor patch",
+  "description": "a simple rainbow Gabor patch :)\nhttps://en.wikipedia.org/wiki/Gabor_filter\nnote: use mouse for rotation...",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "altunenes"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": 1512,
+  "created_at": "2024-10-30T17:54:45.620157+00:00",
+  "name": "Fork of Fork of IFS Pentagon",
+  "description": "Forked from https://compute.toys/view/252",
+  "body": {
+    "uniforms": [
+      {
+        "name": "DOF_Amount",
+        "value": 0.564,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Absorb",
+        "value": 0.181,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "sintel"
+  }
+}

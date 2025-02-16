@@ -1,0 +1,55 @@
+{
+  "id": 728,
+  "created_at": "2023-11-17T02:14:12.992135+00:00",
+  "name": "BuddhaGalaxy explorer",
+  "description": "WASD QE mouse to fly around",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Samples",
+        "value": 0
+      },
+      {
+        "name": "Accumulation",
+        "value": 0.695
+      },
+      {
+        "name": "NoiseAnimation",
+        "value": 0
+      },
+      {
+        "name": "BulbPower",
+        "value": 0.122
+      },
+      {
+        "name": "Exposure",
+        "value": 0.538
+      },
+      {
+        "name": "PowerDelta",
+        "value": 0.654
+      },
+      {
+        "name": "Gamma",
+        "value": 0.695
+      },
+      {
+        "name": "AnimationSpeed",
+        "value": 0.172
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}

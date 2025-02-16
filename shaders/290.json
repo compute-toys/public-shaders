@@ -1,0 +1,27 @@
+{
+  "id": 290,
+  "created_at": "2023-06-02T07:55:09.98875+00:00",
+  "name": "supernova formation",
+  "description": "the title is because it looks not because its physically simulating one",
+  "body": {
+    "uniforms": [
+      {
+        "name": "A",
+        "value": 0.29
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

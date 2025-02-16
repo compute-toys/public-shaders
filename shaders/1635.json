@@ -1,0 +1,55 @@
+{
+  "id": 1635,
+  "created_at": "2025-01-06T17:43:27.199952+00:00",
+  "name": "Quantum hydrodynamics 3D",
+  "description": "Forked from https://compute.toys/view/1634",
+  "body": {
+    "uniforms": [
+      {
+        "name": "TimeStep",
+        "value": 0.377,
+        "minRange": 0,
+        "maxRange": 0.5
+      },
+      {
+        "name": "Pressure",
+        "value": 1.606,
+        "minRange": 0,
+        "maxRange": 10
+      },
+      {
+        "name": "LowPass",
+        "value": 248.906,
+        "minRange": 100,
+        "maxRange": 400
+      },
+      {
+        "name": "NoiseAbsorb",
+        "value": 0.071,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Radius",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/spruit_sunrise_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/spruit_sunrise.jpg",
+        "url": "https://polyhaven.com/a/spruit_sunrise"
+      },
+      {
+        "img": "/textures/noise4.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}

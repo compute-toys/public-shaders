@@ -1,0 +1,35 @@
+{
+  "id": 1264,
+  "created_at": "2024-07-04T20:26:29.302157+00:00",
+  "name": "path fill #1",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "scale",
+        "value": 0.957,
+        "minRange": 0,
+        "maxRange": 5
+      },
+      {
+        "name": "debug",
+        "value": 0.347,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "quilde"
+  }
+}

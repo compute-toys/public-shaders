@@ -1,0 +1,55 @@
+{
+  "id": 926,
+  "created_at": "2023-12-25T06:19:54.61867+00:00",
+  "name": "ACEScg-tonemapping",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "bulb_rad",
+        "value": 0.085
+      },
+      {
+        "name": "max_brightness_inv",
+        "value": 0.007
+      },
+      {
+        "name": "brightness_adj",
+        "value": 0.048
+      },
+      {
+        "name": "r",
+        "value": 0.727
+      },
+      {
+        "name": "g",
+        "value": 0.412
+      },
+      {
+        "name": "b",
+        "value": 0.255
+      },
+      {
+        "name": "shades",
+        "value": 1
+      },
+      {
+        "name": "scatter",
+        "value": 0.555
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/noise4.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}

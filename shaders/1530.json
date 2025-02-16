@@ -1,0 +1,41 @@
+{
+  "id": 1530,
+  "created_at": "2024-11-06T02:43:08.651019+00:00",
+  "name": "golovlash",
+  "description": "mouse for camera, comment line 112 to use slider a, using rotation math from https://www.shadertoy.com/view/lXXXDs",
+  "body": {
+    "uniforms": [
+      {
+        "name": "a",
+        "value": 0.487,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "b",
+        "value": 1.342,
+        "minRange": 0,
+        "maxRange": 2
+      },
+      {
+        "name": "c",
+        "value": 0.527,
+        "minRange": 0,
+        "maxRange": 2
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

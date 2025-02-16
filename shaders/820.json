@@ -1,0 +1,67 @@
+{
+  "id": 820,
+  "created_at": "2023-11-24T20:52:32.289522+00:00",
+  "name": "LiDAR",
+  "description": "Pretend lidar and point cloud",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Samples",
+        "value": 0
+      },
+      {
+        "name": "Accumulation",
+        "value": 0
+      },
+      {
+        "name": "NoiseAnimation",
+        "value": 1
+      },
+      {
+        "name": "BulbPower",
+        "value": 0.151
+      },
+      {
+        "name": "Exposure",
+        "value": 1
+      },
+      {
+        "name": "PowerDelta",
+        "value": 0.654
+      },
+      {
+        "name": "Gamma",
+        "value": 0.451
+      },
+      {
+        "name": "AnimationSpeed",
+        "value": 0.225
+      },
+      {
+        "name": "pixelSize",
+        "value": 0.5
+      },
+      {
+        "name": "Uncertainty",
+        "value": 0.151
+      },
+      {
+        "name": "quantization",
+        "value": 0.646
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "Zi7ar21"
+  }
+}

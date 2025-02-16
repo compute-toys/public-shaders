@@ -1,0 +1,24 @@
+{
+  "id": 1011,
+  "created_at": "2024-02-13T13:07:24.949793+00:00",
+  "name": "Hybrid Path Tracer",
+  "description": "A simple path tracer that supports spheres and SDF-defined geometry (ray marching). Feel free to share any cool scenes you make with this!",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/stone_brick_wall_001/stone_brick_wall_001_diff_1k.jpg",
+        "url": "https://polyhaven.com/a/stone_brick_wall_001"
+      },
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_table_001/wood_table_001_diff_1k.jpg",
+        "url": "https://polyhaven.com/a/wood_table_001"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "FrederickAmpsUp"
+  }
+}

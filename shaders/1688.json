@@ -1,0 +1,41 @@
+{
+  "id": 1688,
+  "created_at": "2025-01-24T08:25:47.946067+00:00",
+  "name": "Ink painting",
+  "description": "Ported from https://github.com/youy028/Ink_Painting_Taichi\n\nUse your mouse to draw on the page",
+  "body": {
+    "uniforms": [
+      {
+        "name": "paint_density",
+        "value": 0.901,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "paint_pigment",
+        "value": 0.777,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "brush_size",
+        "value": 45.176,
+        "minRange": 0,
+        "maxRange": 100
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://raw.githubusercontent.com/davidar/Ink_Painting_Taichi/refs/heads/main/xuan_paper.png"
+      },
+      {
+        "img": "https://raw.githubusercontent.com/davidar/Ink_Painting_Taichi/refs/heads/main/lines.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "davidar"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": 1053,
+  "created_at": "2024-02-21T09:52:26.982715+00:00",
+  "name": "a whacky heart sdf",
+  "description": "",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "jonasfrey"
+  }
+}

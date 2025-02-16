@@ -1,0 +1,22 @@
+{
+  "id": 950,
+  "created_at": "2024-01-11T09:24:51.610149+00:00",
+  "name": "3Dpoints equally distant",
+  "description": "mouse moves camera, read code",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

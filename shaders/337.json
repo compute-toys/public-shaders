@@ -1,0 +1,73 @@
+{
+  "id": 337,
+  "created_at": "2023-06-15T19:34:46.084041+00:00",
+  "name": "Kerr–Newman Metric Black Hole",
+  "description": "Followed Mykhailo Moroz's method but slightly different.\nMost notably, by implementing the camera in a more physically correct way, we get the relativistic aberration effect for free :).\nRed color means the simulation is unsure.",
+  "body": {
+    "uniforms": [
+      {
+        "name": "time_step",
+        "value": 0.229
+      },
+      {
+        "name": "march_steps",
+        "value": 0.486
+      },
+      {
+        "name": "step",
+        "value": 0.207
+      },
+      {
+        "name": "roll_sensitivity",
+        "value": 0.221
+      },
+      {
+        "name": "movement_speed",
+        "value": 0.172
+      },
+      {
+        "name": "pan_sensitivity",
+        "value": 0.452
+      },
+      {
+        "name": "terminal_border_thickness",
+        "value": 0.091
+      },
+      {
+        "name": "far",
+        "value": 0.184
+      },
+      {
+        "name": "mass",
+        "value": 0.981
+      },
+      {
+        "name": "angular_momentum",
+        "value": 0
+      },
+      {
+        "name": "charge",
+        "value": 0
+      },
+      {
+        "name": "derivative_delta",
+        "value": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/spruit_sunrise_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/spruit_sunrise.jpg",
+        "url": "https://polyhaven.com/a/spruit_sunrise"
+      },
+      {
+        "img": "/textures/font0.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "gijsbellaard"
+  }
+}

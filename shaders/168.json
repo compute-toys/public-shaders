@@ -1,0 +1,37 @@
+{
+  "id": 168,
+  "created_at": "2023-05-09T06:26:25.989249+00:00",
+  "name": "A simple sdf tracer",
+  "description": "A simple sdf tracer - v1\nJust barely able to run, needs optimization.\nfrom https://www.shadertoy.com/view/Dtj3DG",
+  "body": {
+    "uniforms": [
+      {
+        "name": "vfov",
+        "value": 0.327
+      },
+      {
+        "name": "aperture",
+        "value": 0.649
+      },
+      {
+        "name": "focus",
+        "value": 0.5
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/dikhololo_night_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/dikhololo_night.jpg",
+        "url": "https://polyhaven.com/a/dikhololo_night"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "shaofun"
+  }
+}

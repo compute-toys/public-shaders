@@ -1,0 +1,22 @@
+{
+  "id": 1013,
+  "created_at": "2024-02-14T14:36:57.172169+00:00",
+  "name": "voronoi",
+  "description": "playing around with voronoi\ni want ",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "jonasfrey"
+  }
+}

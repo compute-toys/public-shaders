@@ -1,0 +1,22 @@
+{
+  "id": 1061,
+  "created_at": "2024-02-23T23:06:12.515408+00:00",
+  "name": "sdf rectangle",
+  "description": "",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "jonasfrey"
+  }
+}

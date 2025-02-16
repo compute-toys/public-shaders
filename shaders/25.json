@@ -1,0 +1,23 @@
+{
+  "id": 25,
+  "created_at": "2022-05-23T06:21:35.506389+00:00",
+  "name": "Workgroup shared memory",
+  "description": "An example of using shared memory to compute gradients across threads, allowing automatic LOD selection without having to duplicate computations",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_rocks_02/aerial_rocks_02_diff_1k.jpg",
+        "url": "https://polyhaven.com/a/aerial_rocks_02"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "davidar"
+  }
+}

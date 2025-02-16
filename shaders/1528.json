@@ -1,0 +1,41 @@
+{
+  "id": 1528,
+  "created_at": "2024-11-05T06:46:19.839714+00:00",
+  "name": "Sierpiński rotated^x 4D trap",
+  "description": "mouse for camera, comment line 110 to use slider a",
+  "body": {
+    "uniforms": [
+      {
+        "name": "a",
+        "value": 0.28,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "b",
+        "value": 0.502,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "c",
+        "value": 0.646,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

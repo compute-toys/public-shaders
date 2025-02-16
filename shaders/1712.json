@@ -1,0 +1,22 @@
+{
+  "id": 1712,
+  "created_at": "2025-02-02T01:25:44.524712+00:00",
+  "name": "Slang: Autodiff Splatter",
+  "description": "A test of using Slang shaders in compute.toys",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "https://raw.githubusercontent.com/compute-toys/slang-playground/b799891db16de4accfd82d149a5d4400742776b0/static/jeep.jpg"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "davidar"
+  }
+}

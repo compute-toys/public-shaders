@@ -1,0 +1,41 @@
+{
+  "id": 1544,
+  "created_at": "2024-11-08T07:11:43.669079+00:00",
+  "name": "the protectors",
+  "description": "comment line 114 to control slider, this one has lots of amazing shapes",
+  "body": {
+    "uniforms": [
+      {
+        "name": "a",
+        "value": 0.344,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "b",
+        "value": -0.5,
+        "minRange": -2,
+        "maxRange": 2
+      },
+      {
+        "name": "c",
+        "value": 1.364,
+        "minRange": 0,
+        "maxRange": 2
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

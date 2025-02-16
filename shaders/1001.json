@@ -1,0 +1,27 @@
+{
+  "id": 1001,
+  "created_at": "2024-02-02T00:47:11.005577+00:00",
+  "name": "2D GI Simple",
+  "description": "A simple 2d global illumination!\n\n[NOTE] \n1. Click to move the bulb light;\n2. Twist `colr_seed` variable to switch light color randomly;",
+  "body": {
+    "uniforms": [
+      {
+        "name": "colr_seed",
+        "value": 0.221
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/noise4.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}

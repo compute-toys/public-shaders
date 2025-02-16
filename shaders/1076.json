@@ -1,0 +1,29 @@
+{
+  "id": 1076,
+  "created_at": "2024-03-01T22:38:02.031992+00:00",
+  "name": "path tracing try4",
+  "description": "click [reset] after channel0 loads or changes and wait 3sec for table to build",
+  "body": {
+    "uniforms": [
+      {
+        "name": "C",
+        "value": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/spruit_sunrise_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/spruit_sunrise.jpg",
+        "url": "https://polyhaven.com/a/spruit_sunrise"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

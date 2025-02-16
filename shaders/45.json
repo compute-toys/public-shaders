@@ -1,0 +1,22 @@
+{
+  "id": 45,
+  "created_at": "2022-06-15T20:11:02.152661+00:00",
+  "name": "Variational integrator",
+  "description": "Using the lagrangian to solve for the discrete equations of motion.",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}

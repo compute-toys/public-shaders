@@ -1,0 +1,51 @@
+{
+  "id": 282,
+  "created_at": "2023-05-30T11:12:46.544187+00:00",
+  "name": "Fork of Fork of IFS Pentagon",
+  "description": "Forked from https://compute.toys/view/252",
+  "body": {
+    "uniforms": [
+      {
+        "name": "A",
+        "value": 0.875
+      },
+      {
+        "name": "B",
+        "value": 0
+      },
+      {
+        "name": "C",
+        "value": 0.266
+      },
+      {
+        "name": "DOF_Amount",
+        "value": 1
+      },
+      {
+        "name": "DOF_Focal_Dist",
+        "value": 0.463
+      },
+      {
+        "name": "Paused",
+        "value": 0.58
+      },
+      {
+        "name": "D",
+        "value": 0.127
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "cmpscabral"
+  }
+}

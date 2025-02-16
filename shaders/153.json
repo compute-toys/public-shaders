@@ -1,0 +1,22 @@
+{
+  "id": 153,
+  "created_at": "2023-05-08T07:03:56.110014+00:00",
+  "name": "Snake (interactive game)",
+  "description": "Use arrow keys or ASDW to control\n\nIf input does not work, you may need to click the picture once, to make sure the canvas is focused for input",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "roland"
+  }
+}

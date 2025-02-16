@@ -1,0 +1,22 @@
+{
+  "id": 966,
+  "created_at": "2024-01-15T12:56:14.659524+00:00",
+  "name": "ancient egg",
+  "description": "mouse moves camera",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

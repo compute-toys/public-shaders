@@ -1,0 +1,22 @@
+{
+  "id": 156,
+  "created_at": "2023-05-08T07:56:35.709745+00:00",
+  "name": "Atomic scatter-gather particles",
+  "description": "A scatter-gather particle technique with atomics.",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "cornusammonis"
+  }
+}

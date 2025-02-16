@@ -1,0 +1,23 @@
+{
+  "id": 1378,
+  "created_at": "2024-09-01T21:53:54.283263+00:00",
+  "name": "Y'CbCr chromakey",
+  "description": "Partial chromakey implementation, clicking anywhere on the output canvas will select the keycolor from the foreground image.",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "https://upload.wikimedia.org/wikipedia/commons/c/c2/Girl_in_front_of_a_green_background.jpg"
+      },
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_table_001/wood_table_001_diff_1k.jpg",
+        "url": "https://polyhaven.com/a/wood_table_001"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "schobbejack"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": 933,
+  "created_at": "2023-12-30T17:22:49.286106+00:00",
+  "name": "Bouncing balls",
+  "description": "W/A/S/D and I/J/K/L to move camera slowly.\n\ncollision detection not handled well... ",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "jiyinyiyong"
+  }
+}

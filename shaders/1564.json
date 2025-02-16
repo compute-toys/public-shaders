@@ -1,0 +1,22 @@
+{
+  "id": 1564,
+  "created_at": "2024-11-25T13:12:36.119667+00:00",
+  "name": "its a tunnel",
+  "description": "Forked from https://compute.toys/view/1552",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "jonasfrey"
+  }
+}

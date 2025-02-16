@@ -1,0 +1,41 @@
+{
+  "id": 1628,
+  "created_at": "2025-01-05T04:58:03.853084+00:00",
+  "name": "4D tored",
+  "description": "using tranformation explanated here https://www.shadertoy.com/view/43yczm, \nuse sliders",
+  "body": {
+    "uniforms": [
+      {
+        "name": "a",
+        "value": -3.287,
+        "minRange": -4,
+        "maxRange": 4
+      },
+      {
+        "name": "b",
+        "value": -3.916,
+        "minRange": -4,
+        "maxRange": 4
+      },
+      {
+        "name": "c",
+        "value": 0.1,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

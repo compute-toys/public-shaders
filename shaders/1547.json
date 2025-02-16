@@ -1,0 +1,22 @@
+{
+  "id": 1547,
+  "created_at": "2024-11-11T14:19:56.392582+00:00",
+  "name": "1./frequency",
+  "description": "Forked from https://compute.toys/view/935",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "jonasfrey"
+  }
+}

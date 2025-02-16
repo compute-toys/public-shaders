@@ -1,0 +1,47 @@
+{
+  "id": 1271,
+  "created_at": "2024-07-08T09:47:18.578107+00:00",
+  "name": "shaderBook_06-hsl2rgb",
+  "description": "hsb=hsv, hsv2rgb, hsl2rgb, rgb2hsl\nhttps://thebookofshaders.com/06/?lan=ch",
+  "body": {
+    "uniforms": [
+      {
+        "name": "r",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "g",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "b",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "hsl",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "nolca404"
+  }
+}

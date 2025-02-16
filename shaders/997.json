@@ -1,0 +1,22 @@
+{
+  "id": 997,
+  "created_at": "2024-01-31T14:17:19.870322+00:00",
+  "name": "raycast occlusion",
+  "description": "two layer raycasting for voxel occlusion culling",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "pwouik"
+  }
+}

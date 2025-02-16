@@ -1,0 +1,22 @@
+{
+  "id": 747,
+  "created_at": "2023-11-22T17:42:18.854707+00:00",
+  "name": "Origami",
+  "description": "I wanted to try porting my \"Origami\" \nShaderToy (https://www.shadertoy.com/view/ctGyWK) to WGSL",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "XorDev"
+  }
+}

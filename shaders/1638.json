@@ -1,0 +1,55 @@
+{
+  "id": 1638,
+  "created_at": "2025-01-07T00:22:55.646329+00:00",
+  "name": "Droplets Huge",
+  "description": "Forked from https://compute.toys/view/1636",
+  "body": {
+    "uniforms": [
+      {
+        "name": "TimeStep",
+        "value": 0.095,
+        "minRange": 0,
+        "maxRange": 0.5
+      },
+      {
+        "name": "Pressure",
+        "value": 6.116,
+        "minRange": 0,
+        "maxRange": 10
+      },
+      {
+        "name": "LowPass",
+        "value": 500,
+        "minRange": 100,
+        "maxRange": 500
+      },
+      {
+        "name": "NoiseAbsorb",
+        "value": 0.176,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Radius",
+        "value": 0.556,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/vatican_road_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/vatican_road.jpg",
+        "url": "https://polyhaven.com/a/vatican_road"
+      },
+      {
+        "img": "/textures/noise4.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}

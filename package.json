@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "dump": "tsx dump-shaders.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.48.1",
+    "dotenv": "^16.4.7",
+    "tsx": "^4.19.2"
+  }
+}

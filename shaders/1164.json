@@ -1,0 +1,31 @@
+{
+  "id": 1164,
+  "created_at": "2024-05-09T09:17:28.024671+00:00",
+  "name": "Hemispherical Encoding",
+  "description": "Test mapping 3d vector into 2d",
+  "body": {
+    "uniforms": [
+      {
+        "name": "C",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/vatican_road_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/vatican_road.jpg",
+        "url": "https://polyhaven.com/a/vatican_road"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "vodski"
+  }
+}

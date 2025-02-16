@@ -1,0 +1,22 @@
+{
+  "id": 528,
+  "created_at": "2023-09-28T19:09:37.412526+00:00",
+  "name": "Preprocessor #dispatch_once",
+  "description": "",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "munrocket"
+  }
+}

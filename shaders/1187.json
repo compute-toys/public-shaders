@@ -1,0 +1,24 @@
+{
+  "id": 1187,
+  "created_at": "2024-05-27T09:07:05.657368+00:00",
+  "name": "Fast Fourier Transform",
+  "description": "2D FFT using workgroup memory. Implements the Cooley-Tukey FFT algorithm with radix-2 and radix-4.",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/leadenhall_market_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/leadenhall_market.jpg",
+        "url": "https://polyhaven.com/a/leadenhall_market"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "fadaaszhi"
+  }
+}

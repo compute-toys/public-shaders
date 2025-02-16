@@ -1,0 +1,22 @@
+{
+  "id": 1715,
+  "created_at": "2025-02-02T20:50:57.896463+00:00",
+  "name": "MLS-MPM",
+  "description": "straight out copy-paste from https://nialltl.neocities.org/articles/mpm_guide, \nfrom the part 2 code section, \nthat's why it has the MIT license, \ni still dont understant the code",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

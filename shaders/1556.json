@@ -1,0 +1,95 @@
+{
+  "id": 1556,
+  "created_at": "2024-11-18T19:55:25.412727+00:00",
+  "name": "Plasma coil",
+  "description": "Forked from https://compute.toys/view/737",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Radius",
+        "value": 0.207,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Samples",
+        "value": 2.268,
+        "minRange": 1,
+        "maxRange": 32
+      },
+      {
+        "name": "Accumulation",
+        "value": 0.623,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "NoiseAnimation",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Exposure",
+        "value": 0.836,
+        "minRange": 0,
+        "maxRange": 2
+      },
+      {
+        "name": "P0",
+        "value": 0.848,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "P1",
+        "value": 0.352,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "P2",
+        "value": 0.375,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "P3",
+        "value": 5.714,
+        "minRange": 0,
+        "maxRange": 6
+      },
+      {
+        "name": "P4",
+        "value": 0.67,
+        "minRange": 0,
+        "maxRange": 5
+      },
+      {
+        "name": "P5",
+        "value": 0.166,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "DT",
+        "value": 0.377,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": 910,
+  "created_at": "2023-12-16T18:52:46.527316+00:00",
+  "name": "Moving camera among trees",
+  "description": "- W/S to move forward/back\n- A/D to look left/right\n- I/K to move up/down\n- J/L to move left/right\n\nit's really slow since I have to traverse many lines of trees, I don't know now to optimize. maybe I should try tiled rendering.",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "jiyinyiyong"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": 1717,
+  "created_at": "2025-02-04T15:13:49.089276+00:00",
+  "name": "Chromaticity plot",
+  "description": "Example to show how to plot image colors in a specified colorspace, in this case sRGB, on a chromaticity diagram.",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/leadenhall_market_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/leadenhall_market.jpg",
+        "url": "https://polyhaven.com/a/leadenhall_market"
+      },
+      {
+        "img": "https://upload.wikimedia.org/wikipedia/commons/6/60/Cie_Chart_with_sRGB_gamut_by_spigget.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "schobbejack"
+  }
+}

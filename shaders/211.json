@@ -1,0 +1,27 @@
+{
+  "id": 211,
+  "created_at": "2023-05-12T18:35:45.658466+00:00",
+  "name": "2D Global Illumination",
+  "description": "Ported from https://www.shadertoy.com/view/cs3XzS",
+  "body": {
+    "uniforms": [
+      {
+        "name": "LIGHT_FALLOFF",
+        "value": 0.5
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "blokys"
+  }
+}

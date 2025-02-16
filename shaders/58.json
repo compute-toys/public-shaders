@@ -1,0 +1,67 @@
+{
+  "id": 58,
+  "created_at": "2022-06-30T08:24:46.042269+00:00",
+  "name": "Slime Simulation",
+  "description": "This is a port of https://playground.babylonjs.com/?webgpu#GXJ3FZ#48 which itself is a port of https://github.com/SebLague/Slime-Simulation (GPLv3)",
+  "body": {
+    "uniforms": [
+      {
+        "name": "DecayRate",
+        "value": 0.101
+      },
+      {
+        "name": "TrailWeight",
+        "value": 0.25
+      },
+      {
+        "name": "DiffuseRate",
+        "value": 0.607
+      },
+      {
+        "name": "MoveSpeed",
+        "value": 0.258
+      },
+      {
+        "name": "TurnSpeed1",
+        "value": 0.307
+      },
+      {
+        "name": "SensorAngle1",
+        "value": 0.25
+      },
+      {
+        "name": "SensorOffset1",
+        "value": 0.411
+      },
+      {
+        "name": "TurnSpeed2",
+        "value": 0.905
+      },
+      {
+        "name": "SensorAngle2",
+        "value": 0.622
+      },
+      {
+        "name": "SensorOffset2",
+        "value": 0.599
+      },
+      {
+        "name": "SpeciesAvoidance",
+        "value": 0
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "davidar"
+  }
+}

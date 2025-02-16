@@ -1,0 +1,22 @@
+{
+  "id": 460,
+  "created_at": "2023-09-05T06:38:22.627409+00:00",
+  "name": "NN of NNs",
+  "description": "description in code",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

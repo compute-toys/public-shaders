@@ -1,0 +1,73 @@
+{
+  "id": 1173,
+  "created_at": "2024-05-21T14:16:33.913976+00:00",
+  "name": "kmeans",
+  "description": "asdgasdgasdgasdgasdg",
+  "body": {
+    "uniforms": [
+      {
+        "name": "K_ITERS",
+        "value": 10,
+        "minRange": 0,
+        "maxRange": 10
+      },
+      {
+        "name": "SEED",
+        "value": 0.373,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "PARTICLES_COUNT",
+        "value": 1492.034,
+        "minRange": 0,
+        "maxRange": 4000
+      },
+      {
+        "name": "K_COUNT",
+        "value": 97.752,
+        "minRange": 1,
+        "maxRange": 300
+      },
+      {
+        "name": "DITH_AMT",
+        "value": 0.274,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "PALETTE",
+        "value": 0.513,
+        "minRange": 0,
+        "maxRange": 4
+      },
+      {
+        "name": "DIST_HEUR",
+        "value": 1.624,
+        "minRange": 0,
+        "maxRange": 4
+      },
+      {
+        "name": "CRAWL",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/music_hall_01_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/music_hall_01.jpg",
+        "url": "https://polyhaven.com/a/music_hall_01"
+      },
+      {
+        "img": "/textures/bayer0.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "wrighter"
+  }
+}

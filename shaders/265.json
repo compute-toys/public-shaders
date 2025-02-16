@@ -1,0 +1,89 @@
+{
+  "id": 265,
+  "created_at": "2023-05-22T21:56:50.816247+00:00",
+  "name": "POOP Buddhabrot",
+  "description": "bad shaders deserve attention too",
+  "body": {
+    "uniforms": [
+      {
+        "name": "TimeStep",
+        "value": 0.563,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Exposure",
+        "value": 0.231,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "BlurRadius",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "KerrA",
+        "value": 0.876,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "KerrQ",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "InitSpeed",
+        "value": 0.719,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "InitThick",
+        "value": 0.22,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Steps",
+        "value": 0.387,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "FocalPlane",
+        "value": 0.527,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "MotionBlur",
+        "value": 0.041,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Gamma",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "incription"
+  }
+}

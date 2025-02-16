@@ -1,0 +1,35 @@
+{
+  "id": 1397,
+  "created_at": "2024-09-08T14:39:55.37999+00:00",
+  "name": "radiance cascades",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "brush_size",
+        "value": 24.435,
+        "minRange": 0,
+        "maxRange": 100
+      },
+      {
+        "name": "value",
+        "value": 0.234,
+        "minRange": 0,
+        "maxRange": 2
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://upload.wikimedia.org/wikipedia/commons/6/6d/Blue_Whiskey_Independent_Film_Festival_Logo.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "dsuren"
+  }
+}

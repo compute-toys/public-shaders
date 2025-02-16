@@ -1,0 +1,35 @@
+{
+  "id": 167,
+  "created_at": "2023-05-09T05:28:21.38441+00:00",
+  "name": "Atomic scatter-gather fluid",
+  "description": "Particle scatter/gather with atomics, used for a fluid simulation.",
+  "body": {
+    "uniforms": [
+      {
+        "name": "blur",
+        "value": 0.888
+      },
+      {
+        "name": "divmin",
+        "value": 0.88
+      },
+      {
+        "name": "noise",
+        "value": 0
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/anim0.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "cornusammonis"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": 355,
+  "created_at": "2023-07-02T07:56:00.308045+00:00",
+  "name": "54input deep 3D world",
+  "description": "each voxel in the simulation is a bit\n54 because for each voxel in the simulation a\n27=3*3*3 grid of voxels is read from 1stPrevious frame and 2ndPrevios frame\nto calculate the next frame 54=27*2\n",
+  "body": {
+    "uniforms": [
+      {
+        "name": "A",
+        "value": 0.121
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

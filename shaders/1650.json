@@ -1,0 +1,73 @@
+{
+  "id": 1650,
+  "created_at": "2025-01-08T18:20:11.874216+00:00",
+  "name": "Smol superfluid box",
+  "description": "Forked from https://compute.toys/view/1640",
+  "body": {
+    "uniforms": [
+      {
+        "name": "TimeStep",
+        "value": 0.497,
+        "minRange": 0,
+        "maxRange": 0.5
+      },
+      {
+        "name": "Pressure",
+        "value": 1.315,
+        "minRange": 0,
+        "maxRange": 10
+      },
+      {
+        "name": "LowPass",
+        "value": 400,
+        "minRange": 100,
+        "maxRange": 400
+      },
+      {
+        "name": "NoiseAbsorb",
+        "value": 0.131,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Radius",
+        "value": 0.794,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Isovalue",
+        "value": 0.257,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Absorption",
+        "value": 0.232,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "IOR",
+        "value": 1.05,
+        "minRange": 1,
+        "maxRange": 2
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/vatican_road_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/vatican_road.jpg",
+        "url": "https://polyhaven.com/a/vatican_road"
+      },
+      {
+        "img": "https://raw.githubusercontent.com/otaviogood/shader_fontgen/master/codepage12.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}

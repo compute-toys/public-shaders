@@ -1,0 +1,41 @@
+{
+  "id": 1680,
+  "created_at": "2025-01-16T21:42:03.608888+00:00",
+  "name": "inverted torusbrot",
+  "description": "fullscreen watch those details",
+  "body": {
+    "uniforms": [
+      {
+        "name": "a",
+        "value": 0.521,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "b",
+        "value": 1,
+        "minRange": -2,
+        "maxRange": 2
+      },
+      {
+        "name": "c",
+        "value": 0.431,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

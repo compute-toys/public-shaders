@@ -1,0 +1,47 @@
+{
+  "id": 133,
+  "created_at": "2023-05-06T18:29:28.904929+00:00",
+  "name": "Fork of Fork of Flame fractal ",
+  "description": "Forked from https://compute.toys/view/90",
+  "body": {
+    "uniforms": [
+      {
+        "name": "A",
+        "value": 0
+      },
+      {
+        "name": "B",
+        "value": 0.439
+      },
+      {
+        "name": "C",
+        "value": 0.178
+      },
+      {
+        "name": "DOF_Amount",
+        "value": 0.133
+      },
+      {
+        "name": "DOF_Focal_Dist",
+        "value": 0.499
+      },
+      {
+        "name": "Paused",
+        "value": 0.166
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "wrighter"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": 1178,
+  "created_at": "2024-05-23T11:57:18.74294+00:00",
+  "name": "ShowTexture",
+  "description": "Simply shows the channel0 texture in the center of the screen.\n",
+  "body": {
+    "uniforms": [
+      {
+        "name": "gridScale",
+        "value": 1.2,
+        "minRange": 0.1,
+        "maxRange": 16
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_pitted_mossy/rock_pitted_mossy_diff_1k.jpg",
+        "url": "https://polyhaven.com/a/rock_pitted_mossy"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "afegmdg"
+  }
+}

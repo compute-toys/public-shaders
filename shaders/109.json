@@ -1,0 +1,59 @@
+{
+  "id": 109,
+  "created_at": "2023-05-06T06:44:01.483215+00:00",
+  "name": "Flame 4",
+  "description": "Forked from https://compute.toys/view/108",
+  "body": {
+    "uniforms": [
+      {
+        "name": "A",
+        "value": 0.038,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "B",
+        "value": 0.937,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "C",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "DOF_Amount",
+        "value": 0.76,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "DOF_Focal_Dist",
+        "value": 0.159,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Paused",
+        "value": 0.641,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "wrighter"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": 1581,
+  "created_at": "2024-12-11T02:13:43.998144+00:00",
+  "name": "Peter de Jong attractor",
+  "description": "Animation speed and time offset in the custom uniforms.",
+  "body": {
+    "uniforms": [
+      {
+        "name": "timeOffset",
+        "value": 473.267,
+        "minRange": 400,
+        "maxRange": 600
+      },
+      {
+        "name": "animationSpeed",
+        "value": 4.5,
+        "minRange": 0,
+        "maxRange": 10
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "Draradech"
+  }
+}

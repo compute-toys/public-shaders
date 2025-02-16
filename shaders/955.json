@@ -1,0 +1,22 @@
+{
+  "id": 955,
+  "created_at": "2024-01-13T03:18:43.713479+00:00",
+  "name": "4Dpoints equally distant",
+  "description": "mouse moves camera \n4D version of https://compute.toys/view/950",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}

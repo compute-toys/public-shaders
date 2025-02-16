@@ -1,0 +1,22 @@
+{
+  "id": 1553,
+  "created_at": "2024-11-13T20:03:27.383305+00:00",
+  "name": "Concentric triangles",
+  "description": "concentric sdf curved triangles, coloured and shaded using techniques from Xor's shader: https://www.shadertoy.com/view/ctGyWK and ported to WGSL\n",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "chriscamplin"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": 1465,
+  "created_at": "2024-09-25T08:59:25.429511+00:00",
+  "name": "fake motion",
+  "description": "a classic one... Just wanted to experiment with different colors/shapes to understand the source of the illusion... :-)\n\ninspired by the shadertoyjiang: https://www.shadertoy.com/view/mdKyDW",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "altunenes"
+  }
+}

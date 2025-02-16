@@ -1,0 +1,29 @@
+{
+  "id": 1570,
+  "created_at": "2024-12-01T15:53:37.490861+00:00",
+  "name": "Hourglass",
+  "description": "This is broken on Radeon, works on Intel. Not sure about Nvidia",
+  "body": {
+    "uniforms": [
+      {
+        "name": "maxspeed",
+        "value": 1,
+        "minRange": 1,
+        "maxRange": 30
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "Cotterzz"
+  }
+}

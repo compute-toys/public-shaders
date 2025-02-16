@@ -1,0 +1,119 @@
+{
+  "id": 503,
+  "created_at": "2023-09-22T00:04:16.963301+00:00",
+  "name": "Dandelion",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "r1",
+        "value": 0.591,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "g1",
+        "value": 0.009,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "b1",
+        "value": 0.217,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "r2",
+        "value": 0.015,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "g2",
+        "value": 0.711,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "b2",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "r3",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "g3",
+        "value": 0.016,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "b3",
+        "value": 0.052,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "nn",
+        "value": 0.462,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "R0",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "noise1",
+        "value": 0.228,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "noise2",
+        "value": 0.897,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "shape1",
+        "value": 0.516,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "shape2",
+        "value": 0.507,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "R1",
+        "value": 0.185,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "munrocket"
+  }
+}
