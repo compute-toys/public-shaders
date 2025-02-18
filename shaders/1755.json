@@ -1,0 +1,41 @@
+{
+  "id": 1755,
+  "created_at": "2025-02-17T08:36:57.250516+00:00",
+  "name": "tramflo",
+  "description": "click screen or move sliders",
+  "body": {
+    "uniforms": [
+      {
+        "name": "a",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "b",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "c",
+        "value": 0.661,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}
