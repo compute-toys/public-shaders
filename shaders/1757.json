@@ -1,19 +1,13 @@
 {
-  "id": 1755,
-  "created_at": "2025-02-17T08:36:57.250516+00:00",
-  "name": "tramflo",
-  "description": "click screen or move sliders or keyA to clear",
+  "id": 1757,
+  "created_at": "2025-02-18T05:36:06.944061+00:00",
+  "name": "3D tramflow",
+  "description": "click to paint \nthen move the slider to other side \nthen paint again \nthen move the slider to other side, \nslider switches between 3Ddivergence and 3Dcurl",
   "body": {
     "uniforms": [
       {
         "name": "a",
         "value": 0,
-        "minRange": 0,
-        "maxRange": 1
-      },
-      {
-        "name": "b",
-        "value": 0.527,
         "minRange": 0,
         "maxRange": 1
       }

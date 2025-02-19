@@ -50,11 +50,11 @@ fn combC(@builtin(global_invocation_id) id3: vec3u)
         if(l2<.1f||l2>ZC*ZC+.1f){continue;}
         var r2 = mod2(id2+xy,f32(ZS));
         var r1 = dot(vec2i(r2),vec2i(1,ZS));
-        var d2 = D[r1+fr2];
+        var d2 = D[r1+fr2]-do2;
         var l  = sqrt(l2);
         var e  = 1f/exp(l2*ZG);    et+=e;
-        v += dot(d2-do2,xy/l               )*e*custom.a;
-        v += dot(d2-do2,xy.yx/l*vec2f(-1,1))*e*custom.b;
+        v += dot(d2,xy/l               )*e*(1f-custom.a);
+        v += dot(d2,xy.yx/l*vec2f(-1,1))*e*(   custom.a);
     }}
     C[id1+ZS*ZS*0] = v/et;
 }
@@ -133,9 +133,10 @@ fn comb2(@builtin(global_invocation_id) id3: vec3u)
         var m   = vec2f(mouse.pos);
             m   = (2f*m-res.xy)/res.y;
             m   = fract(m*.5f+.5f)-vec2f(id3.xy)/f32(ZS);
-            m  *= 55f;
-        d += m*.1f/exp(dot(m,m))*f32(mouse.click!=0);
+            m  *= 33f;
+        d += m*.03f/exp(dot(m,m))*f32(mouse.click!=0);
     }
+    if(keyDown(65)){d=vec2f(0);}
     D[id1+fr1] = d;
     if(time.frame==0u){D[id1+fr2] = d;}
     if(time.frame==0u){D[id1+fr3] = d;}
@@ -158,7 +159,7 @@ fn main_image(@builtin(global_invocation_id) id3: vec3u)
     var do1 = D[id1+fr1];
     var do2 = D[id1+fr2];
     //var c  = vec4f(0,rD(fr+u1).v*.5f+.5f,0);
-    var c  = vec4f(0,do1*111f*custom.c+.5,0);
+    var c  = vec4f(0,do1*111f*custom.b+.5,0);
     //var c  = vec4f(1f-length(rD(fr+u1).v));
     //var c  = sin(d.v.x*2f+vec4f(3,1,4,4)+1f)*.25f +
     //         sin(d.v.y*2f+vec4f(2,1,3,4)+1f)*.25f +.5f;

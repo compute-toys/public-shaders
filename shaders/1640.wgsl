@@ -31,325 +31,9 @@
 
 #define TERMINAL_ROWS 30
 #define TERMINAL_COLS 96
-
 #define INITIALIZED_OK 100
 
 #storage sim array<vec2f, ELEMENT_COUNT>
-#storage gstate GlobalState
-
-struct Camera 
-{
-  pos: float3,
-  cam: float3x3,
-  fov: float,
-  size: float2
-}
-
-struct Ray
-{
-    ro: float3,
-    rd: float3,
-}
-
-struct GlobalState
-{
-    initialized: uint,
-
-    pos: float3,
-    dposdt: float3,
-
-    rot: float4,
-    drotdt: float3,
-
-    mouse: float2,
-    dmousedt: float2,
-
-    prevpos: float3,
-    prevrot: float4,
-    prevmouse: float2,
-
-    camera: float3x3,
-    fov: float,
-
-    terminal_grid: array<array<uint,TERMINAL_COLS>,TERMINAL_ROWS>,
-
-    simulation_on: int
-}
-
-var<private> camera : Camera;
-
-fn matrixCompMult(a: float3x3, b: float3x3) -> float3x3 
-{
-    return float3x3(a[0] * b[0], a[1] * b[1], a[2] * b[2]);
-}
-
-fn outerProduct(a: float3, b: float3) -> float3x3 
-{
-    return float3x3(a[0] * b, a[1] * b, a[2] * b);
-}
-
-// Return quaternion from axis and angle
-fn aa2q(axis: float3, ang: float) -> float4 
-{
-    let g: float2 = float2(sin(ang), cos(ang)) * 0.5;
-    return normalize(float4(axis * g.x, g.y));
-}
-
-// Return AxisAngle of NORMALIZED quaternion input
-fn q2aa(q: float4) -> float4 
-{
-    return float4(q.xyz / sqrt(1.0 - q.w * q.w), acos(q.w) * 2.0);
-}
-
-// Return q2, rotated by q1, order matters (is non commutative) : (aka quaternion multiplication == AxisAngleRotation)
-fn qq2q(q1: float4, q2: float4) -> float4
-{
-    return float4(q1.xyz * q2.w + q2.xyz * q1.w + cross(q1.xyz, q2.xyz), (q1.w * q2.w) - dot(q1.xyz, q2.xyz));
-}
-
-fn float3x3f(value: f32) -> float3x3
-{
-    return float3x3(
-        float3(value, 0.0, 0.0),
-        float3(0.0, value, 0.0),
-        float3(0.0, 0.0, value)
-    );
-}
-
-fn float3x3d(value: f32) -> float3x3
-{
-    return float3x3(
-        float3(value, value, value),
-        float3(value, value, value),
-        float3(value, value, value),
-    );
-}
-
-fn quaternion_to_matrix(quat: float4) -> float3x3 {
-    var m: float3x3 = float3x3(
-        float3(0.0, 0.0, 0.0),
-        float3(0.0, 0.0, 0.0),
-        float3(0.0, 0.0, 0.0)
-    );
-
-    let x = quat.x; let y = quat.y; let z = quat.z; let w = quat.w;
-    let x2 = x + x;  let y2 = y + y;  let z2 = z + z;
-    let xx = x * x2; let xy = x * y2; let xz = x * z2;
-    let yy = y * y2; let yz = y * z2; let zz = z * z2;
-    let wx = w * x2; let wy = w * y2; let wz = w * z2;
-
-    m[0] = float3(1.0 - (yy + zz), xy - wz, xz + wy);
-    m[1] = float3(xy + wz, 1.0 - (xx + zz), yz - wx);
-    m[2] = float3(xz - wy, yz + wx, 1.0 - (xx + yy));
-
-    return m;
-}
-
-#include <string>
-
-var<private> terminal_cursor: uint2;
-
-
-fn terminal_write_char(ascii: uint)
-{
-    if (ascii == 0) { // NULL
-    } else if (ascii == 0x0a) { // '\n'
-        terminal_cursor.x = 0u;
-        terminal_cursor.y += 1u;
-    } else {
-        gstate.terminal_grid[terminal_cursor.y][terminal_cursor.x] = ascii;
-        terminal_cursor.x += 1u;
-    }
-}
-
-fn terminal_write(s: String) {
-    for (var i = 0u; i < s.len; i++) {
-        let ascii = s.chars[i];
-        terminal_write_char(ascii);
-    }
-}
-
-fn terminal_writei_auto(x: float)
-{   
-    if(x<0.0)
-    {
-        terminal_write_char(0x2d); //minus sign
-    }
-
-    let d = max(int(ceil(log(abs(x))/log(10.0))), 1);
-    var d0 = pow(10, float(d-1));
-    for(var i = 0; i < d; i++)
-    {
-        let digit = uint(abs(x)/d0); 
-        terminal_write_char(0x30 + (digit % 10));
-        d0 /= 10.0;
-    }
-}
-
-fn terminal_writei(x: float, d: int)
-{   
-    var d0 = pow(10, float(d-1));
-    for(var i = 0; i < d; i++)
-    {
-        let digit = uint(abs(x)/d0); 
-        terminal_write_char(0x30 + (digit % 10));
-        d0 /= 10.0;
-    }
-}
-
-fn terminal_writef(x: float, fraction_digits: int)
-{
-    let m = pow(10.0, float(fraction_digits));
-    terminal_writei_auto(x);
-    terminal_write(".");
-    terminal_writei(fract(abs(x)) * m, fraction_digits);
-}
-
-fn terminal_write2f(x: float2, fd: int)
-{
-    terminal_write("(");
-    terminal_writef(x.x,fd);
-    terminal_write(", ");
-    terminal_writef(x.y,fd);
-    terminal_write(")");
-}
-
-fn terminal_write3f(x: float3, fd: int)
-{
-    terminal_write("(");
-    terminal_writef(x.x,fd);
-    terminal_write(", ");
-    terminal_writef(x.y,fd);
-    terminal_write(", ");
-    terminal_writef(x.z,fd);
-    terminal_write(")");
-}
-
-fn terminal_write4f(x: float4, fd: int)
-{
-    terminal_write("(");
-    terminal_writef(x.x,fd);
-    terminal_write(", ");
-    terminal_writef(x.y,fd);
-    terminal_write(", ");
-    terminal_writef(x.z,fd);
-    terminal_write(", ");
-    terminal_writef(x.w,fd);
-    terminal_write(")");
-}
-
-fn terminal_writevec2(name: String, x: float2)
-{
-    terminal_write(name);
-    terminal_write(": ");
-    terminal_write2f(x,3);
-    terminal_write("\n");
-}
-
-fn terminal_writevec3(name: String, x: float3)
-{
-    terminal_write(name);
-    terminal_write(": ");
-    terminal_write3f(x,3);
-    terminal_write("\n");
-}
-
-fn terminal_writevec4(name: String, x: float4)
-{
-    terminal_write(name);
-    terminal_write(": ");
-    terminal_write4f(x,3);
-    terminal_write("\n");
-}
-
-fn terminal_clear() {
-    for (var i = 0; i < TERMINAL_ROWS; i += 1) {
-        for (var j = 0; j < TERMINAL_COLS; j += 1) {
-            gstate.terminal_grid[i][j] = 0;
-        }
-    }
-}
-
-
-#workgroup_count UpdateGlobalState 1 1 1
-@compute @workgroup_size(1)
-fn UpdateGlobalState() 
-{
-    let dt: f32 = 0.001;
-    let speed: f32 = 1000.0;
-    let mouse_sens: f32 = 3.0;
-    let roll_speed: f32 = 3.0;
-
-    if(gstate.initialized != INITIALIZED_OK)
-    {
-        gstate.pos = float3(0.0, 0.0, 0.0);
-        gstate.dposdt = float3(0.0);
-        gstate.rot = float4(0.0, 0.0, 0.0, 1.0);
-        gstate.drotdt = float3(0.0);
-        gstate.mouse = float2(0.0);
-        gstate.dmousedt = float2(0.0);
-        gstate.prevpos = float3(0.0);
-        gstate.prevrot = float4(0.0, 0.0, 0.0, 1.0);
-        gstate.prevmouse = float2(0.0);
-        gstate.camera = float3x3f(0.0);
-        gstate.fov = FOV;
-        gstate.simulation_on = 1;
-
-        gstate.initialized = INITIALIZED_OK;
-    }
-
-    // Get velocities
-    var cv: float3 = gstate.dposdt;
-    let cav: float3 = gstate.drotdt;
-
-    // Update position
-    if(keyDown(87u)) { cv += speed * dt * gstate.camera * float3(0.0,0.0,1.0); } // W
-    if(keyDown(83u)) { cv += speed * dt * gstate.camera * float3(0.0,0.0,-1.0); } // S
-    if(keyDown(65u)) { cv += speed * dt * gstate.camera * float3(-1.0,0.0,0.0); } // A
-    if(keyDown(68u)) { cv += speed * dt * gstate.camera * float3(1.0,0.0,0.0); } // D
-
-    gstate.pos += dt * cv;
-    cv += -cv * tanh(100.0 * dt);
-
-    // Update camera orientation
-    let dmouse: float2 = dt * mouse_sens * (float2(mouse.pos) - gstate.prevmouse);
-
-    if(length(dmouse) < 0.1)
-    {
-        // Rotate around y axis
-        gstate.rot = qq2q(gstate.rot, aa2q(gstate.camera * float3(0,1,0), -dmouse.x));
-        // Rotate around x axis
-        gstate.rot = qq2q(gstate.rot, aa2q(gstate.camera * float3(1,0,0), dmouse.y));
-    }
-
-   // Roll camera
-    if(keyDown(81u)) { gstate.rot = qq2q(gstate.rot, aa2q(gstate.camera * float3(0,0,1), roll_speed * dt)); } // Q
-    if(keyDown(69u)) { gstate.rot = qq2q(gstate.rot, aa2q(gstate.camera * float3(0,0,1), -roll_speed * dt)); } // E
-
-    // Turn on and off simulation (M key)
-    if(keyDown(77u)) { gstate.simulation_on = 1 - gstate.simulation_on; }
-
-    gstate.rot = normalize(gstate.rot);
-    gstate.dposdt = cv;
-
-    // Update previous states
-    gstate.prevpos = gstate.pos;
-    gstate.prevrot = gstate.rot;
-    gstate.prevmouse = float2(mouse.pos);
-
-    // Update camera orientation
-    gstate.camera = quaternion_to_matrix(gstate.rot);
-
-    terminal_clear();
-    terminal_writevec3("Camera position", gstate.pos);
-    terminal_writevec3("Camera velocity", gstate.dposdt);
-    terminal_writevec3("Camera x", gstate.camera * float3(1,0,0));
-    terminal_writevec3("Camera y", gstate.camera * float3(0,1,0));
-    terminal_writevec3("Camera z", gstate.camera * float3(0,0,1));
-}
-
-
-
 
 fn cubicWellPotential(pos: vec3f, T: f32, K: f32) -> f32 {
     let d_x = min(pos.x, SIZE - pos.x);
@@ -825,3 +509,318 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
     // Write the color to the screen
     textureStore(screen, id.xy, col);
 }
+
+#storage gstate GlobalState
+
+struct Camera 
+{
+  pos: float3,
+  cam: float3x3,
+  fov: float,
+  size: float2
+}
+
+struct Ray
+{
+    ro: float3,
+    rd: float3,
+}
+
+
+struct GlobalState
+{
+    initialized: uint,
+
+    pos: float3,
+    dposdt: float3,
+
+    rot: float4,
+    drotdt: float3,
+
+    mouse: float2,
+    dmousedt: float2,
+
+    prevpos: float3,
+    prevrot: float4,
+    prevmouse: float2,
+
+    camera: float3x3,
+    fov: float,
+
+    terminal_grid: array<array<uint,TERMINAL_COLS>,TERMINAL_ROWS>,
+
+    simulation_on: int
+}
+
+var<private> camera : Camera;
+
+fn matrixCompMult(a: float3x3, b: float3x3) -> float3x3 
+{
+    return float3x3(a[0] * b[0], a[1] * b[1], a[2] * b[2]);
+}
+
+fn outerProduct(a: float3, b: float3) -> float3x3 
+{
+    return float3x3(a[0] * b, a[1] * b, a[2] * b);
+}
+
+// Return quaternion from axis and angle
+fn aa2q(axis: float3, ang: float) -> float4 
+{
+    let g: float2 = float2(sin(ang), cos(ang)) * 0.5;
+    return normalize(float4(axis * g.x, g.y));
+}
+
+// Return AxisAngle of NORMALIZED quaternion input
+fn q2aa(q: float4) -> float4 
+{
+    return float4(q.xyz / sqrt(1.0 - q.w * q.w), acos(q.w) * 2.0);
+}
+
+// Return q2, rotated by q1, order matters (is non commutative) : (aka quaternion multiplication == AxisAngleRotation)
+fn qq2q(q1: float4, q2: float4) -> float4
+{
+    return float4(q1.xyz * q2.w + q2.xyz * q1.w + cross(q1.xyz, q2.xyz), (q1.w * q2.w) - dot(q1.xyz, q2.xyz));
+}
+
+fn float3x3f(value: f32) -> float3x3
+{
+    return float3x3(
+        float3(value, 0.0, 0.0),
+        float3(0.0, value, 0.0),
+        float3(0.0, 0.0, value)
+    );
+}
+
+fn float3x3d(value: f32) -> float3x3
+{
+    return float3x3(
+        float3(value, value, value),
+        float3(value, value, value),
+        float3(value, value, value),
+    );
+}
+
+fn quaternion_to_matrix(quat: float4) -> float3x3 {
+    var m: float3x3 = float3x3(
+        float3(0.0, 0.0, 0.0),
+        float3(0.0, 0.0, 0.0),
+        float3(0.0, 0.0, 0.0)
+    );
+
+    let x = quat.x; let y = quat.y; let z = quat.z; let w = quat.w;
+    let x2 = x + x;  let y2 = y + y;  let z2 = z + z;
+    let xx = x * x2; let xy = x * y2; let xz = x * z2;
+    let yy = y * y2; let yz = y * z2; let zz = z * z2;
+    let wx = w * x2; let wy = w * y2; let wz = w * z2;
+
+    m[0] = float3(1.0 - (yy + zz), xy - wz, xz + wy);
+    m[1] = float3(xy + wz, 1.0 - (xx + zz), yz - wx);
+    m[2] = float3(xz - wy, yz + wx, 1.0 - (xx + yy));
+
+    return m;
+}
+
+#include <string>
+
+var<private> terminal_cursor: uint2;
+
+
+fn terminal_write_char(ascii: uint)
+{
+    if (ascii == 0) { // NULL
+    } else if (ascii == 0x0a) { // '\n'
+        terminal_cursor.x = 0u;
+        terminal_cursor.y += 1u;
+    } else {
+        gstate.terminal_grid[terminal_cursor.y][terminal_cursor.x] = ascii;
+        terminal_cursor.x += 1u;
+    }
+}
+
+fn terminal_write(s: String) {
+    for (var i = 0u; i < s.len; i++) {
+        let ascii = s.chars[i];
+        terminal_write_char(ascii);
+    }
+}
+
+fn terminal_writei_auto(x: float)
+{   
+    if(x<0.0)
+    {
+        terminal_write_char(0x2d); //minus sign
+    }
+
+    let d = max(int(ceil(log(abs(x))/log(10.0))), 1);
+    var d0 = pow(10, float(d-1));
+    for(var i = 0; i < d; i++)
+    {
+        let digit = uint(abs(x)/d0); 
+        terminal_write_char(0x30 + (digit % 10));
+        d0 /= 10.0;
+    }
+}
+
+fn terminal_writei(x: float, d: int)
+{   
+    var d0 = pow(10, float(d-1));
+    for(var i = 0; i < d; i++)
+    {
+        let digit = uint(abs(x)/d0); 
+        terminal_write_char(0x30 + (digit % 10));
+        d0 /= 10.0;
+    }
+}
+
+fn terminal_writef(x: float, fraction_digits: int)
+{
+    let m = pow(10.0, float(fraction_digits));
+    terminal_writei_auto(x);
+    terminal_write(".");
+    terminal_writei(fract(abs(x)) * m, fraction_digits);
+}
+
+fn terminal_write2f(x: float2, fd: int)
+{
+    terminal_write("(");
+    terminal_writef(x.x,fd);
+    terminal_write(", ");
+    terminal_writef(x.y,fd);
+    terminal_write(")");
+}
+
+fn terminal_write3f(x: float3, fd: int)
+{
+    terminal_write("(");
+    terminal_writef(x.x,fd);
+    terminal_write(", ");
+    terminal_writef(x.y,fd);
+    terminal_write(", ");
+    terminal_writef(x.z,fd);
+    terminal_write(")");
+}
+
+fn terminal_write4f(x: float4, fd: int)
+{
+    terminal_write("(");
+    terminal_writef(x.x,fd);
+    terminal_write(", ");
+    terminal_writef(x.y,fd);
+    terminal_write(", ");
+    terminal_writef(x.z,fd);
+    terminal_write(", ");
+    terminal_writef(x.w,fd);
+    terminal_write(")");
+}
+
+fn terminal_writevec2(name: String, x: float2)
+{
+    terminal_write(name);
+    terminal_write(": ");
+    terminal_write2f(x,3);
+    terminal_write("\n");
+}
+
+fn terminal_writevec3(name: String, x: float3)
+{
+    terminal_write(name);
+    terminal_write(": ");
+    terminal_write3f(x,3);
+    terminal_write("\n");
+}
+
+fn terminal_writevec4(name: String, x: float4)
+{
+    terminal_write(name);
+    terminal_write(": ");
+    terminal_write4f(x,3);
+    terminal_write("\n");
+}
+
+fn terminal_clear() {
+    for (var i = 0; i < TERMINAL_ROWS; i += 1) {
+        for (var j = 0; j < TERMINAL_COLS; j += 1) {
+            gstate.terminal_grid[i][j] = 0;
+        }
+    }
+}
+
+
+#workgroup_count UpdateGlobalState 1 1 1
+@compute @workgroup_size(1)
+fn UpdateGlobalState() 
+{
+    let dt: f32 = 0.001;
+    let speed: f32 = 1000.0;
+    let mouse_sens: f32 = 3.0;
+    let roll_speed: f32 = 3.0;
+
+    if(gstate.initialized != INITIALIZED_OK)
+    {
+        gstate.pos = float3(0.0, 0.0, 0.0);
+        gstate.dposdt = float3(0.0);
+        gstate.rot = float4(0.0, 0.0, 0.0, 1.0);
+        gstate.drotdt = float3(0.0);
+        gstate.mouse = float2(0.0);
+        gstate.dmousedt = float2(0.0);
+        gstate.prevpos = float3(0.0);
+        gstate.prevrot = float4(0.0, 0.0, 0.0, 1.0);
+        gstate.prevmouse = float2(0.0);
+        gstate.camera = float3x3f(0.0);
+        gstate.fov = FOV;
+        gstate.simulation_on = 1;
+
+        gstate.initialized = INITIALIZED_OK;
+    }
+
+    // Get velocities
+    var cv: float3 = gstate.dposdt;
+    let cav: float3 = gstate.drotdt;
+
+    // Update position
+    if(keyDown(87u)) { cv += speed * dt * gstate.camera * float3(0.0,0.0,1.0); } // W
+    if(keyDown(83u)) { cv += speed * dt * gstate.camera * float3(0.0,0.0,-1.0); } // S
+    if(keyDown(65u)) { cv += speed * dt * gstate.camera * float3(-1.0,0.0,0.0); } // A
+    if(keyDown(68u)) { cv += speed * dt * gstate.camera * float3(1.0,0.0,0.0); } // D
+
+    gstate.pos += dt * cv;
+    cv += -cv * tanh(100.0 * dt);
+
+    // Update camera orientation
+    let dmouse: float2 = dt * mouse_sens * (float2(mouse.pos) - gstate.prevmouse);
+
+    if(length(dmouse) < 0.1)
+    {
+        // Rotate around y axis
+        gstate.rot = qq2q(gstate.rot, aa2q(gstate.camera * float3(0,1,0), -dmouse.x));
+        // Rotate around x axis
+        gstate.rot = qq2q(gstate.rot, aa2q(gstate.camera * float3(1,0,0), dmouse.y));
+    }
+
+   // Roll camera
+    if(keyDown(81u)) { gstate.rot = qq2q(gstate.rot, aa2q(gstate.camera * float3(0,0,1), roll_speed * dt)); } // Q
+    if(keyDown(69u)) { gstate.rot = qq2q(gstate.rot, aa2q(gstate.camera * float3(0,0,1), -roll_speed * dt)); } // E
+
+    // Turn on and off simulation (M key)
+    if(keyDown(77u)) { gstate.simulation_on = 1 - gstate.simulation_on; }
+
+    gstate.rot = normalize(gstate.rot);
+    gstate.dposdt = cv;
+
+    // Update previous states
+    gstate.prevpos = gstate.pos;
+    gstate.prevrot = gstate.rot;
+    gstate.prevmouse = float2(mouse.pos);
+
+    // Update camera orientation
+    gstate.camera = quaternion_to_matrix(gstate.rot);
+
+    terminal_clear();
+    terminal_writevec3("Camera position", gstate.pos);
+    terminal_writevec3("Camera velocity", gstate.dposdt);
+    terminal_writevec3("Camera x", gstate.camera * float3(1,0,0));
+    terminal_writevec3("Camera y", gstate.camera * float3(0,1,0));
+    terminal_writevec3("Camera z", gstate.camera * float3(0,0,1));
+}
+
