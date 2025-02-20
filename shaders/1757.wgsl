@@ -41,9 +41,7 @@ fn cnv1(@builtin(global_invocation_id) id3: vec3u)
     var p  = vec3f(id3)+.5f;
     var v1 = 0f;
     var v3 = vec3f(0);
-    var cx = 0f;
-    var cy = 0f;
-    var cz = 0f;
+    var t3 = vec3f(0);
     for(var z=-ZC; z<=ZC; z+=1f){
     for(var y=-ZC; y<=ZC; y+=1f){
     for(var x=-ZC; x<=ZC; x+=1f){
@@ -64,11 +62,9 @@ fn cnv1(@builtin(global_invocation_id) id3: vec3u)
         //v1 += crl1*e;//*custom.b;
         //v3 += div3*e;//*custom.a;
         //v3 += crl3*e;//*custom.b;
-        if(!(x==0f&&y==0f)){cx += dot(normalize(vec3f(-y, x,0f)),d2)*e;}
-        if(!(x==0f&&z==0f)){cy += dot(normalize(vec3f(-z,0f, x)),d2)*e;}
-        if(!(y==0f&&z==0f)){cz += dot(normalize(vec3f(0f,-z, y)),d2)*e;}
+        t3 += cross(xyzl,crl3);
     }}}
-    C[id1+ZS*ZS*ZS*0] = abs(mix(v1,length(vec3f(cx,cy,cz)),custom.a));
+    C[id1+ZS*ZS*ZS*0] = abs(mix(v1,length(t3),custom.a));
     //C[id1+ZS*ZS*ZS*0] = length(v3);
 }
 #workgroup_count cnv2 1 ZS ZS
