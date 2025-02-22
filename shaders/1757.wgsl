@@ -62,7 +62,7 @@ fn cnv1(@builtin(global_invocation_id) id3: vec3u)
         //v1 += crl1*e;//*custom.b;
         //v3 += div3*e;//*custom.a;
         //v3 += crl3*e;//*custom.b;
-        t3 += cross(xyzl,crl3);
+        t3 += cross(xyzl,crl3)*e;
     }}}
     C[id1+ZS*ZS*ZS*0] = abs(mix(v1,length(t3),custom.a));
     //C[id1+ZS*ZS*ZS*0] = length(v3);
@@ -195,10 +195,10 @@ fn main_image(@builtin(global_invocation_id) id: vec3u)
         var g = (1f-fract(p*ray3))*ray2;
         var l = min(min(g.x,g.y),g.z);                      //length to transverse one voxel
         var r = dot(vec3i(p),vec3i(1,ZS,ZS*ZS));
-        var t = D[r];       //voxel value at "r"
-        var t2 = length(t)*4f;
+        var t = D[r]*4f;       //voxel value at "r"
+        var t2 = length(t);
         var n = lig*max(1f-t2*l,0f);                       //light after some energy absorved by voxel                          
-        rif += (lig-n)*(t*2f+.5f)*t2;    //light emited by voxel
+        rif += (lig-n)*(t+.5f)*t2;    //light emited by voxel
         lig  = n;
         p += ray*l*1.001f;                                  //make ray transverse one voxel
     }
