@@ -1,0 +1,53 @@
+{
+  "id": 1758,
+  "created_at": "2025-02-18T16:08:11.219651+00:00",
+  "name": "Ellipsoid projection",
+  "description": "Forked from https://compute.toys/view/21",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Mode",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "A",
+        "value": 0.025,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "B",
+        "value": 0.044,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "C",
+        "value": 0.144,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "R",
+        "value": 0.144,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}
