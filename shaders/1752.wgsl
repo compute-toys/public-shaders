@@ -104,7 +104,7 @@ fn render_point_cloud(@builtin(global_invocation_id) id: vec3u) {
     let col = mix(
         rgb,
         to_ycbcr * rgb + vec3(0,0.5,0.5),
-        pow( sin(sin((time.elapsed+rgb.x+r)*0.2*PI/2.)*PI/2.), 4.)
+        pow( abs(sin(sin((time.elapsed+rgb.x+r)*0.2*PI/2.)*PI/2.)), 4.)
     );
 
     var pos = roty((col - 0.5), time.elapsed*0.2);
