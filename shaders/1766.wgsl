@@ -4,7 +4,7 @@
 //Mode 1 - closest sample (atomicMax)
 
 #define group_size 32
-#define group_count 4096
+#define group_count 1024
 #define N (group_size * group_count)
 
 const PI = 3.14159265;
@@ -60,8 +60,7 @@ fn Project(cam: Camera, p: float3) -> float3
 
 fn RayFromPixel(cam: Camera, uv: float2) -> Ray 
 {
-    let p = (uv - 0.5 * cam.size) * (1.0 / cam.size.y);
-    let aspect = cam.size.y / cam.size.x;
+    let p = (uv + vec2f(0.5, 0.0) - 0.5 * cam.size) * (1.0 / cam.size.y);
     let rayDirWorld = normalize(cam.cam * float3(p.x, p.y, cam.fov));
     return Ray(cam.pos, rayDirWorld);
 }
@@ -385,7 +384,7 @@ fn RasterizeEllipsoid(color: float3, ellipsoid: Ellipsoid)
     let bbox_max = projection.center + size;
 
     // Skip if bbox is too large
-    let area = size.x * size.y * 4.0;
+    let area = projection.size.x * projection.size.y * PI;
     if(area > 2048.0) { return; }
 
     // Rasterize the ellipse
@@ -404,10 +403,10 @@ fn RasterizeEllipsoid(color: float3, ellipsoid: Ellipsoid)
                 let pix_color = color * (dot(intersection.normal, vec3f(1.0, 0.0, 0.0)) * 0.5 + 0.5);
                 RasterizePixel(pix_color, intersection.t, int2(p.xy));
             } 
-            // else // misses
-            // {
-            //      RasterizePixel(vec3f(1.0, 0.0, 0.0), projection.depth, int2(p.xy));
-            // }
+            else // misses
+            {
+                 //RasterizePixel(vec3f(1.0, 0.0, 0.0), projection.depth, int2(p.xy));
+            }
         }
     }
 }

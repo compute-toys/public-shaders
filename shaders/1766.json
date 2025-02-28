@@ -19,7 +19,7 @@
       },
       {
         "name": "B",
-        "value": 0.083,
+        "value": 0.052,
         "minRange": 0,
         "maxRange": 1
       },
@@ -31,7 +31,7 @@
       },
       {
         "name": "R",
-        "value": 0.07,
+        "value": 0.031,
         "minRange": 0,
         "maxRange": 1
       }
