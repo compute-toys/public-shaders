@@ -69,14 +69,16 @@ async function dumpShaders() {
             }
         }
 
-        // Create WGSL output
-        const wgslCode = JSON.parse(parsedBody.code);
+        const parsedCode = JSON.parse(code);
+        
+        // Determine file extension based on language, default to wgsl
+        const fileExtension = parsedBody.language || 'wgsl';
 
         // Write files
         await writeFile(join(outputDir, `${id}.json`), JSON.stringify(jsonOutput, null, 2));
-        await writeFile(join(outputDir, `${id}.wgsl`), wgslCode);
+        await writeFile(join(outputDir, `${id}.${fileExtension}`), parsedCode);
 
-        console.log(`Processed shader ${id}`);
+        console.log(`Processed shader ${id} with language: ${fileExtension}`);
     }
 
     console.log(`Finished processing ${shaders.length} shaders`);
