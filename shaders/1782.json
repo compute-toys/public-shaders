@@ -1,0 +1,41 @@
+{
+  "id": 1782,
+  "created_at": "2025-03-01T22:08:35.563781+00:00",
+  "name": "Approximate grid SPH",
+  "description": "Forked from https://compute.toys/view/1766\nRasterizing particles to a grid to get their average for SPH computations",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Mode",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "R",
+        "value": 0.011,
+        "minRange": 0,
+        "maxRange": 0.1
+      },
+      {
+        "name": "R0",
+        "value": 0.025,
+        "minRange": 0,
+        "maxRange": 0.1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}

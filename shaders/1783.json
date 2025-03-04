@@ -1,0 +1,47 @@
+{
+  "id": 1783,
+  "created_at": "2025-03-03T12:51:38.461976+00:00",
+  "name": "Acerola Ascii shader",
+  "description": "Trying to replicate the acerola shader. \nsource inspiration : https://www.youtube.com/watch?v=gg40RWiaHRY\nsorry for the bad code this is one of my first shaders.\n\nTo navigate the image pls use the uniforms value",
+  "body": {
+    "uniforms": [
+      {
+        "name": "block_size",
+        "value": 488.01,
+        "minRange": 0,
+        "maxRange": 2000
+      },
+      {
+        "name": "x",
+        "value": 0.935,
+        "minRange": 0,
+        "maxRange": 10
+      },
+      {
+        "name": "y",
+        "value": 0.661,
+        "minRange": 0,
+        "maxRange": 10
+      },
+      {
+        "name": "zoom",
+        "value": 0.516,
+        "minRange": 0,
+        "maxRange": 3
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://raw.githubusercontent.com/klownie/KlowniePortofolio/refs/heads/main/assets/font.png"
+      },
+      {
+        "img": "https://raw.githubusercontent.com/klownie/KlowniePortofolio/refs/heads/main/assets/projects/VulturesBrigadeCaptain/HighRes/sketch_872_character.jpg"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "Audrick Yeu"
+  }
+}
