@@ -6,27 +6,83 @@
   "body": {
     "uniforms": [
       {
-        "name": "Mode",
-        "value": 1,
+        "name": "RenderMode",
+        "value": 0.154,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "R",
-        "value": 0.011,
+        "value": 0.026,
         "minRange": 0,
         "maxRange": 0.1
       },
       {
         "name": "R0",
-        "value": 0.025,
+        "value": 0.027,
         "minRange": 0,
         "maxRange": 0.1
+      },
+      {
+        "name": "RadiusScale",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 2
+      },
+      {
+        "name": "Pressure",
+        "value": 1.059,
+        "minRange": 0,
+        "maxRange": 5
+      },
+      {
+        "name": "Viscosity",
+        "value": 0.65,
+        "minRange": 0,
+        "maxRange": 3
+      },
+      {
+        "name": "Spike",
+        "value": 0.245,
+        "minRange": 0,
+        "maxRange": 3
+      },
+      {
+        "name": "TimeStep",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 2
+      },
+      {
+        "name": "RestDensity",
+        "value": 0.502,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Gravity",
+        "value": 0.005,
+        "minRange": 0,
+        "maxRange": 0.05
+      },
+      {
+        "name": "GravityDown",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "GravityOscill",
+        "value": 0.45,
+        "minRange": 0,
+        "maxRange": 1
       }
     ],
     "textures": [
       {
-        "img": "/textures/blank.png"
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/leadenhall_market_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/leadenhall_market.jpg",
+        "url": "https://polyhaven.com/a/leadenhall_market"
       },
       {
         "img": "/textures/blank.png"

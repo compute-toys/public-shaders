@@ -5,37 +5,47 @@
 
 #define MAX_RASTER_AREA 8192.0
 
+//Particle count
 #define group_size 32
 #define group_count 2048
 #define N (group_size * group_count)
-#define SIMULATION_GROUPS 256
+#define SIMULATION_GROUP_SIZE 256
+#define SIMULATION_GROUPS 256 // N / SIMULATION_GROUP_SIZE
 
+//Rasterization grid parameters 
 #define GRID_SIZE_X 128
 #define GRID_SIZE_Y 32
 #define GRID_SIZE_Z 128
-#define GRID_COUNT 524288
+#define GRID_COUNT 524288 // GRID_SIZE_X*GRID_SIZE_Y*GRID_SIZE_Z
 #define GRID_GROUP_SIZE 256
-#define GRID_GROUPS 2048
+#define GRID_GROUPS 2048 // GRID_COUNT/GRID_GROUP_SIZE
 
+//Simulation parameters
 #define KERNEL_RADIUS 2
-#define GAUSSIAN_RADIUS 1.0
-#define PRESSURE 2.5
-#define PRESSURE_RAD 0.85
-#define VISCOSITY 0.65
-#define SPIKE_KERNEL 0.5
-#define SPIKE_RAD 0.75
+#define RADIUS_SCALE custom.RadiusScale
+#define GAUSSIAN_RADIUS (1.0 * RADIUS_SCALE)
+#define PRESSURE custom.Pressure
+#define PRESSURE_RAD (0.85 * RADIUS_SCALE)
+#define VISCOSITY custom.Viscosity
+#define SPIKE_KERNEL custom.Spike
+#define SPIKE_RAD (0.75 * RADIUS_SCALE)
 #define MAX_VELOCITY 1.0
-
-#define GRAVITY 0.005
+#define DELTA_TIME custom.TimeStep
+#define BOUNDARY_FORCE 5.0
+#define REST_DENSITY custom.RestDensity
+#define GRAVITY custom.Gravity
+#define GRAVITY_DOWN custom.GravityDown
+#define GRAVITY_OSCILLATION custom.GravityOscill
+#define SIM_TIME (f32(time.frame)/150.0)
 
 #storage sim Simulation
 
 const PI = 3.14159265;
 const TWO_PI = 6.28318530718;
+const INVPI = 0.31830988618;
 const size3d = vec3i(GRID_SIZE_X, GRID_SIZE_Y, GRID_SIZE_Z);
 const dt = 1.0;
-const boundary_force = 0.5;
-const rest_density: f32 = 0.32;
+
 
 struct Particle 
 {
@@ -245,7 +255,7 @@ fn cub(x: f32) -> f32 {
 }
 
 fn Pressure(rho: f32) -> f32 {
-    return (rho / rest_density - 1.0) / max(rho * rho, 0.001);
+    return (rho / REST_DENSITY - 1.0) / max(rho * rho, 0.001);
 }
 
 fn GaussianNorm(d: f32) -> f32 {
@@ -311,7 +321,7 @@ fn ComputeDensityTerm(p0: Particle, p1: Particle) -> f32
 }
 
 #workgroup_count ComputeDensity SIMULATION_GROUPS 1 1
-@compute @workgroup_size(256)
+@compute @workgroup_size(SIMULATION_GROUP_SIZE)
 fn ComputeDensity(@builtin(global_invocation_id) id: uint3) {
     let idx = id.x;
     var p = GetParticle(idx);
@@ -398,7 +408,7 @@ fn ClampVector(v: vec3f, lim: f32) -> vec3f {
 }
 
 #workgroup_count Simulate SIMULATION_GROUPS 1 1
-@compute @workgroup_size(256)
+@compute @workgroup_size(SIMULATION_GROUP_SIZE)
 fn Simulate(@builtin(global_invocation_id) id: uint3) {
     let idx = id.x;
     var p = GetParticle(idx);
@@ -407,7 +417,7 @@ fn Simulate(@builtin(global_invocation_id) id: uint3) {
     state = uint4(idx, 0, 0, 0);
 
     // If first frame, initialize particle positions
-    if (time.frame == 0) {
+    if (time.frame == 0 || all(p.pos <= vec3f(0.01))) {
         // Random position
         p.pos = (0.1 + 0.5 * rand4().xyz) * vec3f(size3d);
         // Random velocity
@@ -437,19 +447,19 @@ fn Simulate(@builtin(global_invocation_id) id: uint3) {
 
     // Boundary forces
     let border = border_grad(p.pos);
-    let bound = boundary_force * normalize(border.xyz) * exp(-0.3 * border.w * border.w);
+    let bound = BOUNDARY_FORCE * normalize(border.xyz) * exp(-0.3 * border.w * border.w);
     p.force += bound;
 
     // Gravity
-    p.force += GRAVITY*vec3f(0.4*sin(1.5*time.elapsed), 1.0, 0.2*cos(0.75*time.elapsed)); //gravity
+    p.force += GRAVITY * vec3f(GRAVITY_OSCILLATION*sin(1.5*SIM_TIME), GRAVITY_DOWN, GRAVITY_OSCILLATION*cos(0.75*SIM_TIME)); //gravity
 
     // Integrate
-    p.vel += dt * p.force / p.mass;
+    p.vel += DELTA_TIME * p.force / p.mass;
 
     // Clamp velocity
     p.vel = ClampVector(p.vel, MAX_VELOCITY);
 
-    p.pos += dt * p.vel;
+    p.pos += DELTA_TIME * p.vel;
 
     // Clamp position
     p.pos = clamp(p.pos, vec3f(0.0), vec3f(size3d) - 1.0);
@@ -482,27 +492,29 @@ fn Rasterize(@builtin(global_invocation_id) id: uint3) {
     let idx = id.x;
     let particle = GetParticle(idx);
     let pos = particle.pos;
-    let col = vec3f(0.2, 0.2, 0.2);
+    let col = abs(particle.vel) + 0.05;
     let rot = vec3f(0.0, 0.0, 0.0);
     let q = axis_angle_to_quaternion(rot);
     RasterizeEllipsoid(col, Ellipsoid(pos/f32(size3d.y) - 0.5, particle.density * custom.R0 *vec3f(1.0), q));
 }
 
-#workgroup_count RasterizeGrid GRID_GROUPS 1 1
-@compute @workgroup_size(GRID_GROUP_SIZE)
-fn RasterizeGrid(@builtin(global_invocation_id) id: uint3) {
+// TO DEBUG RASTERIZED AVERAGES OF PARTICLES ON GRID
 
-    SetCamera();
+// #workgroup_count RasterizeGrid GRID_GROUPS 1 1
+// @compute @workgroup_size(GRID_GROUP_SIZE)
+// fn RasterizeGrid(@builtin(global_invocation_id) id: uint3) {
 
-    let idx = int(id.x);
-    let particle = GetAvgParticleFromGridID(idx);
-    let pos = particle.pos;
-    if(particle.mass < 1.0) {return;}
-    let col = vec3f(1.0, 0.2, 0.2);
-    let rot = vec3f(0.0, 0.0, 0.0);
-    let q = axis_angle_to_quaternion(rot);
-    RasterizeEllipsoid(col, Ellipsoid(pos/f32(size3d.y) - 0.5,particle.density * custom.R*vec3f(1.0), q));
-}
+//     SetCamera();
+
+//     let idx = int(id.x);
+//     let particle = GetAvgParticleFromGridID(idx);
+//     let pos = particle.pos;
+//     if(particle.mass < 1.0) {return;}
+//     let col = vec3f(1.0, 0.2, 0.2);
+//     let rot = vec3f(0.0, 0.0, 0.0);
+//     let q = axis_angle_to_quaternion(rot);
+//     RasterizeEllipsoid(col, Ellipsoid(pos/f32(size3d.y) - 0.5,particle.density * custom.R*vec3f(1.0), q));
+// }
 
 fn Sample(pos: int2) -> float3
 {
@@ -510,13 +522,13 @@ fn Sample(pos: int2) -> float3
     let idx = pos.x + screen_size.x * pos.y;
 
     var color: float3;
-    if(custom.Mode < 0.5)
+    if(custom.RenderMode < 0.5)
     {
         let x = float(atomicLoad(&gstate.screen[idx*4+0]))/(256.0);
         let y = float(atomicLoad(&gstate.screen[idx*4+1]))/(256.0);
         let z = float(atomicLoad(&gstate.screen[idx*4+2]))/(256.0);
         
-        color = tanh(0.025*float3(x,y,z));
+        color = float3(x,y,z);
     }
     else
     {
@@ -530,9 +542,16 @@ fn Sample(pos: int2) -> float3
     return abs(color);
 }
 
+fn skyTexture(rd: vec3f) -> vec3f
+{
+    return textureSampleLevel(channel0, bilinear, INVPI * vec2f(.5 * atan2(rd.z, rd.x), asin(rd.y)) + .5, 0.).rgb;
+}
+
 @compute @workgroup_size(16, 16)
 fn main_image(@builtin(global_invocation_id) id: uint3) 
 {
+    SetCamera();
+
     let screen_size = uint2(textureDimensions(screen));
 
     // Prevent overdraw for workgroups on the edge of the viewport
@@ -541,11 +560,24 @@ fn main_image(@builtin(global_invocation_id) id: uint3)
     // Pixel coordinates (centre of pixel, origin at bottom left)
     let fragCoord = float2(float(id.x) + .5, float(id.y) + .5);
 
-  
-    let color = Sample(int2(id.xy));
+    var color = Sample(int2(id.xy));
 
+    let ray = RayFromPixel(camera, vec2f(id.xy));
+
+    // Sample background from cube map
+    let sky = skyTexture(ray.rd);
+    color = 1.5*color;
+    if(custom.RenderMode < 0.5)  {
+        let absorb = exp(-20.0*length(color));
+        color += absorb*sky;
+    } else {
+        if(all(color < vec3f(0.001))) {
+            color = sky;
+        }
+    }
+    
     // Output to screen (linear colour space)
-    textureStore(screen, int2(id.xy), float4(color, 1.));
+    textureStore(screen, int2(id.xy), float4(tanh(color), 1.));
 }
 
 fn SetCamera()
@@ -558,6 +590,32 @@ fn SetCamera()
     camera.size = float2(textureDimensions(screen));
 }
 
+
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+/////// RENDERING UTILITIES BELOW //////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
+////////////////////////////////////////////
 
 //project to clip space
 fn Project(cam: Camera, p: float3) -> float3
@@ -822,6 +880,11 @@ fn Unpack(a: int) -> float
     return float(a & mask)/256.0;
 }
 
+fn UnpackDepth(a: int) -> int
+{
+    return a >> (31u - DEPTH_BITS);
+}
+
 fn ClosestPoint(color: float3, depth: float, index: int)
 {
     let inverseDepth = 1.0/depth;
@@ -834,6 +897,12 @@ fn ClosestPoint(color: float3, depth: float, index: int)
 
     let uintDepth = uint(scaledDepth*float((1u << DEPTH_BITS) - 1u));
     let uintColor = uint3(color * 256.0);
+
+    // Load prev depth
+    let packed = atomicLoad(&gstate.screen[index*4+0]);
+    let prevDepth = UnpackDepth(packed);
+
+    if(uintDepth < u32(prevDepth)) { return; }
     
     atomicMax(&gstate.screen[index*4+0], Pack(uintColor.x, uintDepth));
     atomicMax(&gstate.screen[index*4+1], Pack(uintColor.y, uintDepth));
@@ -860,7 +929,7 @@ fn RasterizePixel(color: float3, depth: float, pos: int2)
 
     let idx = pos.x + screen_size.x * pos.y;
     
-    if(custom.Mode < 0.5)
+    if(custom.RenderMode < 0.5)
     {
         AdditiveBlend(color, depth, idx);
     }
