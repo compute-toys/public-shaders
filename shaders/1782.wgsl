@@ -7,23 +7,24 @@
 
 //Particle count
 #define group_size 32
-#define group_count 2048
+#define group_count 4096
 #define N (group_size * group_count)
 #define SIMULATION_GROUP_SIZE 256
-#define SIMULATION_GROUPS 256 // N / SIMULATION_GROUP_SIZE
+#define SIMULATION_GROUPS 512 // N / SIMULATION_GROUP_SIZE
 
 //Rasterization grid parameters 
 #define GRID_SIZE_X 128
-#define GRID_SIZE_Y 32
+#define GRID_SIZE_Y 64
 #define GRID_SIZE_Z 128
-#define GRID_COUNT 524288 // GRID_SIZE_X*GRID_SIZE_Y*GRID_SIZE_Z
+#define GRID_COUNT 1048576 // GRID_SIZE_X*GRID_SIZE_Y*GRID_SIZE_Z
 #define GRID_GROUP_SIZE 256
-#define GRID_GROUPS 2048 // GRID_COUNT/GRID_GROUP_SIZE
+#define GRID_GROUPS 4096 // GRID_COUNT/GRID_GROUP_SIZE
 
 //Simulation parameters
-#define KERNEL_RADIUS 2
+#define KERNEL_VOXEL_RADIUS 2
+#define MAX_COMPUTED_DISTANCE 4
 #define RADIUS_SCALE custom.RadiusScale
-#define GAUSSIAN_RADIUS (1.0 * RADIUS_SCALE)
+#define DENSITY_RADIUS (1.0 * RADIUS_SCALE)
 #define PRESSURE custom.Pressure
 #define PRESSURE_RAD (0.85 * RADIUS_SCALE)
 #define VISCOSITY custom.Viscosity
@@ -36,7 +37,7 @@
 #define GRAVITY custom.Gravity
 #define GRAVITY_DOWN custom.GravityDown
 #define GRAVITY_OSCILLATION custom.GravityOscill
-#define SIM_TIME (f32(time.frame)/150.0)
+#define SIM_TIME (f32(time.frame)/120.0)
 
 #storage sim Simulation
 
@@ -66,16 +67,18 @@ struct avec3i
 struct AtomicCell 
 {
     pos: avec3i,
-    vel: avec3i,
     mass: atomic<i32>,
+
+    vel: avec3i,
     density: atomic<i32>,
 }
 
 struct Cell 
 {
     pos: vec3f,
-    vel: vec3f,
     mass: f32,
+
+    vel: vec3f,
     density: f32,
 }
 
@@ -114,23 +117,23 @@ fn PosFromIdx(idx: int) -> vec3i
     return vec3i(x, y, z);
 }
 
-fn AddParticleToGrid(p: Particle) 
+fn AddParticleToGrid0(p: Particle) 
 {
     let idx = GetIdxFromPos(vec3i(p.pos));
     let cell = &sim.atomic_grid[idx];
     atomicAdd(&cell.pos.x, FloatToInt(p.pos.x * p.mass));
     atomicAdd(&cell.pos.y, FloatToInt(p.pos.y * p.mass));
     atomicAdd(&cell.pos.z, FloatToInt(p.pos.z * p.mass));
-    atomicAdd(&cell.vel.x, FloatToInt(p.vel.x * p.mass));
-    atomicAdd(&cell.vel.y, FloatToInt(p.vel.y * p.mass));
-    atomicAdd(&cell.vel.z, FloatToInt(p.vel.z * p.mass));
     atomicAdd(&cell.mass, FloatToInt(p.mass));
 }
 
-fn AddParticleDensityToGrid(p: Particle) 
+fn AddParticleToGrid1(p: Particle) 
 {
     let idx = GetIdxFromPos(vec3i(p.pos));
     let cell = &sim.atomic_grid[idx];
+    atomicAdd(&cell.vel.x, FloatToInt(p.vel.x * p.mass));
+    atomicAdd(&cell.vel.y, FloatToInt(p.vel.y * p.mass));
+    atomicAdd(&cell.vel.z, FloatToInt(p.vel.z * p.mass));
     atomicAdd(&cell.density, FloatToInt(p.density * p.mass));
 }
 
@@ -301,7 +304,7 @@ fn Particle2Grid(@builtin(global_invocation_id) id: uint3) {
     var p = GetParticle(idx);
 
     //Scatter particle to atomic_grid
-    AddParticleToGrid(p);
+    AddParticleToGrid0(p);
 }
 
 #workgroup_count CopyAtomicToRegular1 GRID_GROUPS 1 1
@@ -309,7 +312,7 @@ fn Particle2Grid(@builtin(global_invocation_id) id: uint3) {
 fn CopyAtomicToRegular1(@builtin(global_invocation_id) id: uint3) {
     let idx = int(id.x);
     let p = GetAvgParticleFromAtomicGrid(PosFromIdx(idx));
-    sim.grid[idx] = Cell(p.pos, p.vel, p.mass, p.density);
+    sim.grid[idx] = Cell(p.pos, p.mass, p.vel, p.density);
 }
 
 fn ComputeDensityTerm(p0: Particle, p1: Particle) -> f32 
@@ -317,7 +320,7 @@ fn ComputeDensityTerm(p0: Particle, p1: Particle) -> f32
     if (p1.mass <= 0.0) {return 0.0;}
     let dx = p0.pos - p1.pos;
     let r = length(dx);
-    return p1.mass * Gaussian(r, GAUSSIAN_RADIUS);
+    return p1.mass * Gaussian(r, DENSITY_RADIUS);
 }
 
 #workgroup_count ComputeDensity SIMULATION_GROUPS 1 1
@@ -327,13 +330,14 @@ fn ComputeDensity(@builtin(global_invocation_id) id: uint3) {
     var p = GetParticle(idx);
 
     // Compute density
-    p.density = p.mass * GaussianNorm(GAUSSIAN_RADIUS); // Self density
+    p.density = p.mass * GaussianNorm(DENSITY_RADIUS); // Self density
     let cell_idx = vec3i(p.pos);
-    for (var i = -KERNEL_RADIUS; i <= KERNEL_RADIUS; i++) {
-    for (var j = -KERNEL_RADIUS; j <= KERNEL_RADIUS; j++) {
-    for (var k = -KERNEL_RADIUS; k <= KERNEL_RADIUS; k++) {
+    for (var i = -KERNEL_VOXEL_RADIUS; i <= KERNEL_VOXEL_RADIUS; i++) {
+    for (var j = -KERNEL_VOXEL_RADIUS; j <= KERNEL_VOXEL_RADIUS; j++) {
+    for (var k = -KERNEL_VOXEL_RADIUS; k <= KERNEL_VOXEL_RADIUS; k++) {
         // Skip if center 
-        if(i == 0 && j == 0 && k == 0) {continue;}
+        let di = abs(i) + abs(j) + abs(j);
+        if(di == 0 || di > MAX_COMPUTED_DISTANCE) {continue;}
         let cell = GetAvgParticleFromGrid(cell_idx + vec3i(i, j, k));
         // Compute neighbor particle density contribution
         p.density += ComputeDensityTerm(p, cell);
@@ -356,7 +360,7 @@ fn ParticleDensity2Grid(@builtin(global_invocation_id) id: uint3) {
     var p = GetParticle(idx);
 
     //Scatter particle to atomic_grid
-    AddParticleDensityToGrid(p);
+    AddParticleToGrid1(p);
 }
 
 #workgroup_count CopyAtomicToRegular2 GRID_GROUPS 1 1
@@ -364,7 +368,7 @@ fn ParticleDensity2Grid(@builtin(global_invocation_id) id: uint3) {
 fn CopyAtomicToRegular2(@builtin(global_invocation_id) id: uint3) {
     let idx = int(id.x);
     let p = GetAvgParticleFromAtomicGrid(PosFromIdx(idx));
-    sim.grid[idx] = Cell(p.pos, p.vel, p.mass, p.density);
+    sim.grid[idx] = Cell(p.pos, p.mass, p.vel, p.density);
 }
 
 fn ComputeForce(p: Particle, incoming: Particle) -> vec3f {
@@ -388,7 +392,6 @@ fn ComputeForce(p: Particle, incoming: Particle) -> vec3f {
     let d  = length(dx);
     let dir = dx / max(d, 1e-3);
 
-    let mass0 = f32(outP.mass);
     let mass1 = f32(incoming.mass);
 
     let pressure = 0.5 * outP.density * (Pressure(outP.density) + Pressure(incoming.density));
@@ -429,21 +432,24 @@ fn Simulate(@builtin(global_invocation_id) id: uint3) {
 
     // Compute SPH forces
     let cell_idx = vec3i(p.pos);
-    for (var i = -KERNEL_RADIUS; i <= KERNEL_RADIUS; i++) {
-    for (var j = -KERNEL_RADIUS; j <= KERNEL_RADIUS; j++) {
-    for (var k = -KERNEL_RADIUS; k <= KERNEL_RADIUS; k++) {
+    // Get central particle
+    let ccell = GetAvgParticleFromGrid(cell_idx);
+    // Unfuse self from average particle
+    let ccell_without_p = SubtractParticle(ccell, p);
+    // Compute central neighbor particle force contribution
+    p.force += ComputeForce(p, ccell_without_p);
+
+    for (var i = -KERNEL_VOXEL_RADIUS; i <= KERNEL_VOXEL_RADIUS; i++) {
+    for (var j = -KERNEL_VOXEL_RADIUS; j <= KERNEL_VOXEL_RADIUS; j++) {
+    for (var k = -KERNEL_VOXEL_RADIUS; k <= KERNEL_VOXEL_RADIUS; k++) {
         // Skip if center 
-        if(i == 0 && j == 0 && k == 0) {continue;}
+        let di = abs(i) + abs(j) + abs(j);
+        if(di == 0 || di > MAX_COMPUTED_DISTANCE) {continue;}
         let cell = GetAvgParticleFromGrid(cell_idx + vec3i(i, j, k));
         // Compute neighbor particle force contribution
         p.force += ComputeForce(p, cell);
     } } }
-    // Get central particle
-    let cell = GetAvgParticleFromGrid(cell_idx);
-    // Unfuse self from average particle
-    let cell_without_p = SubtractParticle(cell, p);
-    // Compute central neighbor particle force contribution
-    p.force += ComputeForce(p, cell_without_p);
+  
 
     // Boundary forces
     let border = border_grad(p.pos);
@@ -483,6 +489,14 @@ const DEPTH_MIN = 0.1;
 const DEPTH_MAX = 20.0;
 const DEPTH_BITS = 16u;
 
+fn SimToWorld(pos: vec3f) -> vec3f {
+    return pos/f32(size3d.y) - 0.5;
+}
+
+fn WorldToSim(pos: vec3f) -> vec3f {
+    return (pos + 0.5) * f32(size3d.y);
+}
+
 #workgroup_count Rasterize group_count 1 1
 @compute @workgroup_size(group_size)
 fn Rasterize(@builtin(global_invocation_id) id: uint3) {
@@ -492,10 +506,22 @@ fn Rasterize(@builtin(global_invocation_id) id: uint3) {
     let idx = id.x;
     let particle = GetParticle(idx);
     let pos = particle.pos;
-    let col = abs(particle.vel) + 0.05;
+    var col = abs(particle.vel) + 0.25*vec3f(0.9,0.9,1.0);
+
+    let lightDir = -normalize(vec3f(1.0, 0.5, 0.5));
+    let shadowDensity = RayMarchDensityConstantStepSize(pos+lightDir, lightDir, 0.5);
+    col =col*exp(-0.25*vec3f(2,1.5,1)*shadowDensity);
+
+    if(custom.RenderMode < 0.5)
+    {
+        let cameraDir = normalize(WorldToSim(camera.pos) - pos);
+        let cameraOcclusion = RayMarchDensityConstantStepSize(pos, cameraDir, 0.5);
+        col =col*exp(-0.1*vec3f(2,1.5,1)*cameraOcclusion);
+    }
+
     let rot = vec3f(0.0, 0.0, 0.0);
     let q = axis_angle_to_quaternion(rot);
-    RasterizeEllipsoid(col, Ellipsoid(pos/f32(size3d.y) - 0.5, particle.density * custom.R0 *vec3f(1.0), q));
+    RasterizeEllipsoid(col, Ellipsoid(SimToWorld(pos), particle.density * custom.R0 *vec3f(1.0), q));
 }
 
 // TO DEBUG RASTERIZED AVERAGES OF PARTICLES ON GRID
@@ -516,27 +542,27 @@ fn Rasterize(@builtin(global_invocation_id) id: uint3) {
 //     RasterizeEllipsoid(col, Ellipsoid(pos/f32(size3d.y) - 0.5,particle.density * custom.R*vec3f(1.0), q));
 // }
 
-fn Sample(pos: int2) -> float3
+fn Sample(pos: int2) -> vec4f
 {
     let screen_size = int2(textureDimensions(screen));
     let idx = pos.x + screen_size.x * pos.y;
 
-    var color: float3;
+    var color: vec4f;
     if(custom.RenderMode < 0.5)
     {
         let x = float(atomicLoad(&gstate.screen[idx*4+0]))/(256.0);
         let y = float(atomicLoad(&gstate.screen[idx*4+1]))/(256.0);
         let z = float(atomicLoad(&gstate.screen[idx*4+2]))/(256.0);
-        
-        color = float3(x,y,z);
+        color = vec4f(x,y,z,0);
     }
     else
     {
-        let x = Unpack(atomicLoad(&gstate.screen[idx*4+0]));
+        let xdata = atomicLoad(&gstate.screen[idx*4+0]);
+        let x = Unpack(xdata);
         let y = Unpack(atomicLoad(&gstate.screen[idx*4+1]));
         let z = Unpack(atomicLoad(&gstate.screen[idx*4+2]));
-        
-        color = float3(x,y,z);
+        let depth = UnpackDepth(xdata);
+        color = vec4f(x,y,z,f32(depth));
     }
 
     return abs(color);
@@ -561,7 +587,7 @@ fn main_image(@builtin(global_invocation_id) id: uint3)
     let fragCoord = float2(float(id.x) + .5, float(id.y) + .5);
 
     var color = Sample(int2(id.xy));
-
+    let depth = color.w;
     let ray = RayFromPixel(camera, vec2f(id.xy));
 
     // Sample background from cube map
@@ -569,15 +595,15 @@ fn main_image(@builtin(global_invocation_id) id: uint3)
     color = 1.5*color;
     if(custom.RenderMode < 0.5)  {
         let absorb = exp(-20.0*length(color));
-        color += absorb*sky;
+        color = vec4f(color.xyz + absorb*sky, 0);
     } else {
-        if(all(color < vec3f(0.001))) {
-            color = sky;
+        if(depth < 1.0) {
+            color = vec4f(sky, 0);
         }
     }
     
     // Output to screen (linear colour space)
-    textureStore(screen, int2(id.xy), float4(tanh(color), 1.));
+    textureStore(screen, int2(id.xy), float4(tanh(color.xyz), 1.));
 }
 
 fn SetCamera()
@@ -616,6 +642,95 @@ fn SetCamera()
 ////////////////////////////////////////////
 ////////////////////////////////////////////
 ////////////////////////////////////////////
+
+fn RayBoxIntersection(
+    rayOrigin: vec3f,
+    rayDir: vec3f,
+    boxMin: vec3f,
+    boxMax: vec3f
+) -> vec2f {
+    // Compute 1 / rayDir, handle zero to avoid division by zero.
+    let invDir = 1.0 / rayDir;
+
+    // Parametric values for intersection with "min" and "max" planes on each axis
+    let t1 = (boxMin.x - rayOrigin.x) * invDir.x;
+    let t2 = (boxMax.x - rayOrigin.x) * invDir.x;
+    let t3 = (boxMin.y - rayOrigin.y) * invDir.y;
+    let t4 = (boxMax.y - rayOrigin.y) * invDir.y;
+    let t5 = (boxMin.z - rayOrigin.z) * invDir.z;
+    let t6 = (boxMax.z - rayOrigin.z) * invDir.z;
+
+    // tMin = largest of the "lower" intersection values
+    let tMin = max(
+        max(min(t1, t2), min(t3, t4)),
+        min(t5, t6)
+    );
+    // tMax = smallest of the "upper" intersection values
+    let tMax = min(
+        min(max(t1, t2), max(t3, t4)),
+        max(t5, t6)
+    );
+
+    return vec2f(tMin, tMax);
+}
+
+fn RayMarchDensityConstantStepSize(
+    rayOrigin: vec3f,
+    rayDir: vec3f,
+    stepSize: f32
+) -> f32 {
+    // Treat simulation grid as an axis-aligned box from [0,0,0] to [size3d.x, size3d.y, size3d.z].
+    let boxMin = vec3f(0.0, 0.0, 0.0);
+    let boxMax = vec3f(
+        f32(size3d.x),
+        f32(size3d.y),
+        f32(size3d.z)
+    );
+
+    // 1. Find the parametric intersection (tMin, tMax) of the ray with the bounding box.
+    let intersection = RayBoxIntersection(rayOrigin, rayDir, boxMin, boxMax);
+    var tMin = intersection.x;
+    var tMax = intersection.y;
+
+    // If there's no intersection, or tMin > tMax, bail out.
+    if (tMin > tMax) {
+        return 0.0;
+    }
+
+    // If the near intersection is behind the origin, clamp it to 0.0 so we start from the ray origin.
+    if (tMin < 0.0) {
+        tMin = 0.0;
+    }
+
+    // If tMax is behind the origin, the entire box is behind the viewer => no density.
+    if (tMax < 0.0) {
+        return 0.0;
+    }
+
+    // 2. Compute the distance we need to march inside the box.
+    let totalDist = tMax - tMin;
+    if (totalDist <= 0.0) {
+        return 0.0;
+    }
+
+    // Determine how many steps we can take with this step size.
+    let numStepsF = floor(totalDist / stepSize);
+    let numSteps = max(i32(numStepsF), 0);
+
+    var accumulatedDensity = 0.0;
+
+    // 3. March in constant increments from tMin to tMax.
+    for (var i = 0; i < numSteps; i = i + 1) {
+        let t = tMin + f32(i) * stepSize;
+        let samplePos = rayOrigin + rayDir * t;
+        // Convert position to integral cell coordinates by flooring (nearest-lower cell).
+        let cellCoord = vec3i(floor(samplePos));
+        let idx = GetIdxFromPos(cellCoord);
+        accumulatedDensity += sim.grid[idx].density * stepSize;
+    }
+
+    return accumulatedDensity;
+}
 
 //project to clip space
 fn Project(cam: Camera, p: float3) -> float3
@@ -968,8 +1083,11 @@ fn RasterizeEllipsoid(color: float3, ellipsoid: Ellipsoid)
             let ray = RayFromPixel(camera, p);
             let intersection = intersectEllipsoid(ray, ellipsoid);
             if (intersection.t > 0.0) 
-            {
-                var pix_color = color * (dot(intersection.normal, vec3f(1.0, 0.0, 0.0)) * 0.5 + 0.5);
+            {   
+                var pix_color = color;
+                if(custom.RenderMode > 0.5)  {
+                   pix_color *= (dot(intersection.normal, vec3f(1.0, 0.0, 0.0)) * 0.15 + 0.85);
+                }
                 //pix_color = intersection.normal * 0.5 + 0.5;
                 RasterizePixel(pix_color, intersection.t, int2(p.xy));
             } 
@@ -1097,16 +1215,16 @@ fn quaternion_to_matrix(quat: float4) -> float3x3 {
 @compute @workgroup_size(1)
 fn UpdateGlobalState() 
 {
-    let dt: f32 = 0.001;
-    let speed: f32 = 1000.0;
-    let mouse_sens: f32 = 3.0;
-    let roll_speed: f32 = 3.0;
+    let dt: f32 = 1.0;
+    let speed: f32 = 0.025;
+    let mouse_sens: f32 = 0.005;
+    let roll_speed: f32 = 0.005;
     
     gstate.fov = 1.0;
 
     if(gstate.initialized != INITIALIZED_OK)
     {
-        gstate.pos = float3(1.5, -0.5, -2.5);
+        gstate.pos = float3(0.5, -0.0, -1.5);
         gstate.dposdt = float3(0.0);
         gstate.rot = float4(0.0, 0.0, 0.0, 1.0);
         gstate.drotdt = float3(0.0);

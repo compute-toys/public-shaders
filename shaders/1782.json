@@ -2,54 +2,54 @@
   "id": 1782,
   "created_at": "2025-03-01T22:08:35.563781+00:00",
   "name": "Approximate grid SPH",
-  "description": "Forked from https://compute.toys/view/1766\nRasterizing particles to a grid to get their average for SPH computations",
+  "description": "Approximating particle neighborhood by averaging them over cells for faster/simpler force/density evaluation.\nHowever result of this is losing the guarantee that the energy is conserved, but its minor and viscosity hides the artifacts.",
   "body": {
     "uniforms": [
       {
         "name": "RenderMode",
-        "value": 0.154,
+        "value": 0.981,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "R",
-        "value": 0.026,
+        "value": 0.031,
         "minRange": 0,
         "maxRange": 0.1
       },
       {
         "name": "R0",
-        "value": 0.027,
+        "value": 0.009,
         "minRange": 0,
         "maxRange": 0.1
       },
       {
         "name": "RadiusScale",
-        "value": 1,
+        "value": 0.999,
         "minRange": 0,
         "maxRange": 2
       },
       {
         "name": "Pressure",
-        "value": 1.059,
+        "value": 0.524,
         "minRange": 0,
         "maxRange": 5
       },
       {
         "name": "Viscosity",
-        "value": 0.65,
+        "value": 0.857,
         "minRange": 0,
         "maxRange": 3
       },
       {
         "name": "Spike",
-        "value": 0.245,
+        "value": 0.386,
         "minRange": 0,
         "maxRange": 3
       },
       {
         "name": "TimeStep",
-        "value": 1,
+        "value": 1.278,
         "minRange": 0,
         "maxRange": 2
       },

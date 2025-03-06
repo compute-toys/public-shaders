@@ -3,12 +3,11 @@ struct Camera {
     zoom : f32,
 }
 
-const MOV_SPEED = 0.0004;
-const ZOOM_SPEED = 0.00009;
+const ZOOM_SPEED = 0.0004;
 const BLOCK_SPEED = 0.005;
 
 #storage state Camera
-#storage block_size f32
+#storage block_size vec2f
 
 fn char_(pos: vec2f, colour:vec3f, c: int) -> float4 {
     var p = pos % vec2f(1);
@@ -22,93 +21,50 @@ fn rgb2Luminance(rgb : vec3f) -> f32 {
     return 0.299*rgb.x + 0.587*rgb.y + 0.114*rgb.z ;
 }
 
-fn map_char(value : i32) -> i32 {
-    //choose character per value
-    switch value {
-        case 0 {      
-            return 0;   //
-        }
-        case 1 { 
-            return 151; // ·
-        }
-        case 2 {  
-            return 46;  // ∙
-        }
-        case 3 {  
-            return 44;  // ,
-        }
-        case 4 {
-            return 7;   // •
-        }
-        case 5 {
-            return 43;  // +
-        }
-        case 6 {
-            return 752; // ■
-        }
-        case 7 {
-            return 591; // ơ
-        }
-        case 8 {
-            return 687; // ∞
-        }
-        case 9 {
-            return 42;  // *
-        }
-        case 10 {
-            return 35;  // #
-        }
-        case 11 {
-            return 763; // ●
-        }
-        case 12 {
-            return 4;   // ♦
-        }
-        case 13 {
-            return 3;   // ♥
-        }
-        case 14 {
-            return 5;   // ♣
-        }
-        case 15 {
-            return 64;  // @
-        }
-        case 16 {
-            return 2;   // ☻
-        }
-        case 17 {
-            return 8;   // ◘
-        }
-        case 18 {
-            return 10;  // ◙
-        }
-        case 19 {
-            return 750; // ▓
-        }
-        case 20 {
-            return 745; // █
-        }
-        case 21 {
-            return 745; // █
-        }
-        case 22 {
-            return 745; // █
-        }
-        case 23 {
-            return 745; // █
-        }
-        default {    
-            return 745; // █
-        }
+fn map_char(value: i32) -> i32 {
+
+    let char_map: array<i32, 24> = array<i32, 24>(
+        0,    // ' '
+        151,  // '·'
+        46,   // '∙'
+        44,   // ','
+        7,    // '•'
+        43,   // '+'
+        752,  // '■'
+        591,  // 'ơ'
+        687,  // '∞'
+        42,   // '*'
+        35,   // '#'
+        763,  // '●'
+        4,    // '♦'
+        3,    // '♥'
+        5,    // '♣'
+        64,   // '@'
+        2,    // '☻'
+        8,    // '◘'
+        10,   // '◙'
+        750,  // '▓'
+        745,  // '█'
+        745,  // '█'
+        745,  // '█'
+        745   // '█'
+    );
+
+    if (value >= 0 && value < 24) {
+        return char_map[value];
+    } else {
+        return 745; // Default value '█'
     }
 }
+
 @compute @workgroup_size(1, 1)
 #dispatch_once initialization
 fn initialization() {
     let screen_size = textureDimensions(screen);
+    let texture_size = textureDimensions(channel1);
     state.pos = vec2f(screen_size / 2);
     state.zoom = 1;
-    block_size = 100;
+    block_size = vec2f(100,100);
 }
 
 @compute @workgroup_size(16, 16)
