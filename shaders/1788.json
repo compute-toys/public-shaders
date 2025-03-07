@@ -1,0 +1,59 @@
+{
+  "id": 1788,
+  "created_at": "2025-03-04T13:15:23.356489+00:00",
+  "name": "Sobel Edge detection",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "steps",
+        "value": 1.516,
+        "minRange": 0,
+        "maxRange": 10
+      },
+      {
+        "name": "threshold",
+        "value": 0.711,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "steps2",
+        "value": 0.571,
+        "minRange": 0,
+        "maxRange": 10
+      },
+      {
+        "name": "threshold2",
+        "value": 0.704,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "soft",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 0.01
+      },
+      {
+        "name": "soft2",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 0.01
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://raw.githubusercontent.com/klownie/KlowniePortofolio/refs/heads/main/assets/Plus_IBM_BIOS.png"
+      },
+      {
+        "img": "https://raw.githubusercontent.com/klownie/KlowniePortofolio/refs/heads/main/assets/projects/Saint-John/HighRes/sketch_831_05.jpg"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "Audrick Yeu"
+  }
+}

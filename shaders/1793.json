@@ -1,8 +1,8 @@
 {
-  "id": 1782,
-  "created_at": "2025-03-01T22:08:35.563781+00:00",
-  "name": "Approximate grid SPH",
-  "description": "Approximating particle neighborhood by averaging them over cells for faster/simpler force/density evaluation.\nHowever result of this is losing the guarantee that the energy is conserved, but its minor and viscosity hides the artifacts.",
+  "id": 1793,
+  "created_at": "2025-03-06T03:19:55.850896+00:00",
+  "name": "Smol fluid",
+  "description": "Forked from https://compute.toys/view/1782",
   "body": {
     "uniforms": [
       {
@@ -19,7 +19,7 @@
       },
       {
         "name": "R0",
-        "value": 0.009,
+        "value": 0.023,
         "minRange": 0,
         "maxRange": 0.1
       },
@@ -37,7 +37,7 @@
       },
       {
         "name": "Viscosity",
-        "value": 0.707,
+        "value": 1.073,
         "minRange": 0,
         "maxRange": 3
       },
@@ -55,7 +55,7 @@
       },
       {
         "name": "RestDensity",
-        "value": 0.497,
+        "value": 0.238,
         "minRange": 0,
         "maxRange": 1
       },

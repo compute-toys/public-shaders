@@ -78,30 +78,30 @@ fn Image(fragCoord: vec2f) -> vec4f {
 
 @compute @workgroup_size(16, 16)
 fn BufferA_Pass(@builtin(global_invocation_id) id: uint3) {
-    let col = BufferA(vec2f(id.xy));
+    let col = BufferA(vec2f(id.xy) + 0.5);
     textureStore(pass_out, int2(id.xy), 0, col);
 }
 
 @compute @workgroup_size(16, 16)
 fn BufferB_Pass(@builtin(global_invocation_id) id: uint3) {
-    let col = BufferB(vec2f(id.xy));
+    let col = BufferB(vec2f(id.xy) + 0.5);
     textureStore(pass_out, int2(id.xy), 1, col);
 }
 
 @compute @workgroup_size(16, 16)
 fn BufferC_Pass(@builtin(global_invocation_id) id: uint3) {
-    let col = BufferC(vec2f(id.xy));
+    let col = BufferC(vec2f(id.xy) + 0.5);
     textureStore(pass_out, int2(id.xy), 2, col);
 }
 
 @compute @workgroup_size(16, 16)
 fn BufferD_Pass(@builtin(global_invocation_id) id: uint3) {
-    let col = BufferD(vec2f(id.xy));
+    let col = BufferD(vec2f(id.xy) + 0.5);
     textureStore(pass_out, int2(id.xy), 3, col);
 }
 
 @compute @workgroup_size(16, 16)
 fn Main_Pass(@builtin(global_invocation_id) id: uint3) {
-    let col = Image(vec2f(id.xy));
+    let col = Image(vec2f(id.xy) + 0.5);
     textureStore(screen, int2(id.xy), col);
 }

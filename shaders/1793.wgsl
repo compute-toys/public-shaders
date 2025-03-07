@@ -7,10 +7,10 @@
 
 //Particle count
 #define group_size 32
-#define group_count 4096
+#define group_count 512
 #define N (group_size * group_count)
 #define SIMULATION_GROUP_SIZE 256
-#define SIMULATION_GROUPS 512 // N / SIMULATION_GROUP_SIZE
+#define SIMULATION_GROUPS 64 // N / SIMULATION_GROUP_SIZE
 
 //Rasterization grid parameters 
 #define GRID_SIZE_X 128
@@ -22,7 +22,7 @@
 
 //Simulation parameters
 #define KERNEL_VOXEL_RADIUS 2
-#define MAX_COMPUTED_DISTANCE 3
+#define MAX_COMPUTED_DISTANCE 5
 #define RADIUS_SCALE custom.RadiusScale
 #define DENSITY_RADIUS (1.0 * RADIUS_SCALE)
 #define PRESSURE custom.Pressure
