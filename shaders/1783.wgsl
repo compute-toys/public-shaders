@@ -3,7 +3,7 @@ struct Camera {
     zoom : f32,
 }
 
-const ZOOM_SPEED = 0.0004;
+const ZOOM_SPEED = 0.00004;
 const BLOCK_SPEED = 0.005;
 
 #storage state Camera
@@ -64,7 +64,7 @@ fn initialization() {
     let texture_size = textureDimensions(channel1);
     state.pos = vec2f(screen_size / 2);
     state.zoom = 1;
-    block_size = vec2f(100,100);
+    block_size = vec2f(texture_size.xy) / vec2f(screen_size.xy) * 100  ;
 }
 
 @compute @workgroup_size(16, 16)
@@ -82,10 +82,10 @@ fn fragment(@builtin(global_invocation_id) id: vec3u) {
 
     //update view
     if mouse.click ==1 {
-        state.pos += (vec2f(mouse.pos) / vec2f(screen_size) - vec2f(0.5) );
+        state.pos += (vec2f(mouse.pos) / vec2f(screen_size) - vec2f(0.5)) * 0.25 ;
     }
     if keyDown(38) | keyDown(87) { // up arrow
-        state.zoom += ZOOM_SPEED;
+        state.zoom += ZOOM_SPEED ;
     }
     if keyDown(40) | keyDown(83) { // down arrow
         state.zoom -= ZOOM_SPEED;
@@ -93,7 +93,7 @@ fn fragment(@builtin(global_invocation_id) id: vec3u) {
 
     //update block size
     if keyDown(39) | keyDown(68) { // right arrow
-        block_size += BLOCK_SPEED;
+        block_size += BLOCK_SPEED ;
     }
     if keyDown(37) | keyDown(65) { // left arrow
         block_size -= BLOCK_SPEED;

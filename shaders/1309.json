@@ -7,9 +7,9 @@
     "uniforms": [],
     "textures": [
       {
-        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/leadenhall_market_2k.hdr",
-        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/leadenhall_market.jpg",
-        "url": "https://polyhaven.com/a/leadenhall_market"
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/dikhololo_night_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/dikhololo_night.jpg",
+        "url": "https://polyhaven.com/a/dikhololo_night"
       },
       {
         "img": "/textures/blank.png"

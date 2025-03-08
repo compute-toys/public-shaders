@@ -5,20 +5,42 @@
 
 #define MAX_RASTER_AREA 8192.0
 
-//Particle count
-#define group_size 32
-#define group_count 4096
-#define N (group_size * group_count)
+#define RASTERIZER_GROUP_SIZE 32
+#define GRID_GROUP_SIZE 256
 #define SIMULATION_GROUP_SIZE 256
-#define SIMULATION_GROUPS 512 // N / SIMULATION_GROUP_SIZE
+#define SIMULATION_GROUP_SIZE_HALF 128
 
-//Rasterization grid parameters 
+//Particle count (Small simulation size) 64k
+// #define RASTERIZER_GROUP_COUNT 2048
+// #define SIMULATION_GROUPS 256 // N / SIMULATION_GROUP_SIZE
+// //Simulation grid parameters 
+// #define GRID_SIZE_X 96
+// #define GRID_SIZE_Y 48
+// #define GRID_SIZE_Z 96
+// #define GRID_COUNT 442368 // GRID_SIZE_X*GRID_SIZE_Y*GRID_SIZE_Z
+// #define GRID_GROUPS 1728 // GRID_COUNT/GRID_GROUP_SIZE
+
+//Particle count (Medium simulation size) 128k
+#define RASTERIZER_GROUP_COUNT 4096
+#define SIMULATION_GROUPS 512 // RASTERIZER_GROUP_COUNT / 8
+//Simulation grid parameters 
 #define GRID_SIZE_X 128
 #define GRID_SIZE_Y 64
 #define GRID_SIZE_Z 128
 #define GRID_COUNT 1048576 // GRID_SIZE_X*GRID_SIZE_Y*GRID_SIZE_Z
-#define GRID_GROUP_SIZE 256
 #define GRID_GROUPS 4096 // GRID_COUNT/GRID_GROUP_SIZE
+
+//Particle count (Large simulation size) 512k
+// #define RASTERIZER_GROUP_COUNT 16384
+// #define SIMULATION_GROUPS 2048 // N / SIMULATION_GROUP_SIZE
+// //Simulation grid parameters 
+// #define GRID_SIZE_X 160
+// #define GRID_SIZE_Y 80
+// #define GRID_SIZE_Z 160
+// #define GRID_COUNT 2048000 // GRID_SIZE_X*GRID_SIZE_Y*GRID_SIZE_Z
+// #define GRID_GROUPS 8000 // GRID_COUNT/GRID_GROUP_SIZE
+
+#define N (RASTERIZER_GROUP_SIZE * RASTERIZER_GROUP_COUNT)
 
 //Simulation parameters
 #define KERNEL_VOXEL_RADIUS 2
@@ -376,8 +398,8 @@ fn ClearGrid(@builtin(global_invocation_id) id: uint3) {
     atomicStore(&cell.density, 0);
 }
 
-#workgroup_count Particle2Grid group_count 1 1
-@compute @workgroup_size(group_size)
+#workgroup_count Particle2Grid RASTERIZER_GROUP_COUNT 1 1
+@compute @workgroup_size(RASTERIZER_GROUP_SIZE)
 fn Particle2Grid(@builtin(global_invocation_id) id: uint3) {
     let idx = id.x;
     var p = GetParticle(idx);
@@ -431,8 +453,8 @@ fn ComputeDensity(@builtin(global_invocation_id) id: uint3) {
     SaveParticle(idx, p); 
 }
 
-#workgroup_count ParticleDensity2Grid group_count 1 1
-@compute @workgroup_size(group_size)
+#workgroup_count ParticleDensity2Grid RASTERIZER_GROUP_COUNT 1 1
+@compute @workgroup_size(RASTERIZER_GROUP_SIZE)
 fn ParticleDensity2Grid(@builtin(global_invocation_id) id: uint3) {
     let idx = id.x;
     var p = GetParticle(idx);
@@ -470,7 +492,10 @@ fn ComputeForce(p: Particle, incoming: Particle) -> vec3f {
 
     // Forces
     let F_SPH  = -PRESSURE * pressure * ggrad;
-    let F_VISC = VISCOSITY * dot(dir, dv) * ggrad;
+
+    let visc_mag = dot(dir, dv);
+    let visc_scale = 1.0 / (5.0*abs(visc_mag) + 1.0);
+    let F_VISC = VISCOSITY * visc_mag * visc_scale * ggrad;
     let F_SPIKE = SPIKE_KERNEL * Gaussian(d, SPIKE_RAD) * dir;
 
     // Final force
@@ -549,6 +574,152 @@ fn Simulate(@builtin(global_invocation_id) id: uint3) {
     SaveParticle(idx, p); 
 }
 
+fn u32_mod(x: u32, y: u32) -> u32 {
+    return x - (x / y) * y;
+}
+
+fn randInt(seed: u32, maxValue: u32) -> u32 {
+    let r = pcg4d(vec4u(seed, 0u, 0u, 0u)).x;
+    return select(u32_mod(r, maxValue), 0u, maxValue == 0u);
+}
+
+fn expand3Bits(n: u32) -> u32 {
+    var x = n & 0x3ffu;  // Keep only the lowest 10 bits.
+    x = (x | (x << 16)) & 0x030000FFu;
+    x = (x | (x <<  8)) & 0x0300F00Fu;
+    x = (x | (x <<  4)) & 0x030C30C3u;
+    x = (x | (x <<  2)) & 0x09249249u;
+    return x;
+}
+
+// Returns the 3D Morton index by interleaving bits of coord.x, coord.y, coord.z.
+fn morton3D(coord: vec3u) -> u32 {
+    let xx = expand3Bits(coord.x);
+    let yy = expand3Bits(coord.y) << 1;
+    let zz = expand3Bits(coord.z) << 2;
+    return (xx | yy | zz);
+}
+
+fn MortonToHilbert3DLUT(morton: u32) -> u32 {
+    var transform: u32 = 0u;
+    var code: u32 = 0u;
+
+    let mortonToHilbertTable: array<u32, 24> = array<u32, 24>(
+        572203312u,  1293700655u, 875765058u,  1061690945u,
+        407592780u,  1364342325u, 1343292178u, 255722557u,
+        1011301120u, 1431712305u, 1510298452u, 1493579855u,
+        1577129760u, 1560415243u, 235743530u,  522475555u,
+        643245404u,  1225280091u, 168373550u,  322966535u,
+        270997830u,  724310597u,  1142241046u, 1127884857u
+    );
+
+    for (var i = 0u; i < 10u; i = i + 1u) {
+        let id = 27u - i * 3u;
+        let lutIndex = transform | ((morton >> id) & 7u);
+        transform = (mortonToHilbertTable[lutIndex / 4u] >> (8u * (lutIndex % 4u))) & 255u;
+        code = (code << 3u) | (transform & 7u);
+        transform = transform & ~7u;
+    }
+
+    return code;
+}
+
+fn getBitonicElementPair(threadID: u32, stepF: f32) -> vec2u {
+    // j, n, B, mask all come from the original formula
+    let j = floor(sqrt(2.0 * stepF) + 1.0) - 0.5;
+    let n = round(stepF - 0.5 * j * (j + 1.0));
+
+    let B_f32 = round(exp2(j - n));      // as float
+    let B_u32 = u32(max(B_f32, 0.0));    // clamp at least to 0
+
+    let mask = select(B_u32, (2u * B_u32) - 1u, n < 0.5);
+
+    // e1 / e2 match the integer expression from Python
+    let e1 = (threadID % B_u32) + 2u * B_u32 * (threadID / B_u32);
+    let e2 = e1 ^ mask;
+
+    return vec2u(e1, e2);
+}
+
+//Improve cache coherency
+
+#dispatch_count SortParticles 2
+
+#workgroup_count SortParticles SIMULATION_GROUPS 1 1
+@compute @workgroup_size(SIMULATION_GROUP_SIZE_HALF)
+fn SortParticles(@builtin(global_invocation_id) id: uint3) {
+    let idx = id.x;
+
+    let log2N = ceil(log2(f32(N)));
+    let Nround = int(exp2(log2N));
+    let steps = uint(log2N * (log2N + 1.0) / 2.0);
+
+    let frame = time.frame * 2 + dispatch.id;
+    let currentStep = randInt(frame, steps);
+
+    let pair = getBitonicElementPair(idx, f32(currentStep));
+    let idx1 = pair.x;
+    let idx2 = pair.y;
+
+    let e1 = min(idx1,idx2);
+    let e2 = max(idx1,idx2);
+    if (e1 < N && e2 < N) {
+        let p1 = GetParticle(e1);
+        let p2 = GetParticle(e2);
+        let m1 = morton3D(vec3u(p1.pos));
+        let m2 = morton3D(vec3u(p2.pos));
+        if (m1 > m2) { // Sort by y
+            SaveParticle(e1, p2);
+            SaveParticle(e2, p1);
+        }
+    }
+}
+
+fn xorSwap(idx: u32, n: u32, seed: u32) -> u32 {
+    let x = randInt(seed, n) ^ idx;
+    let bigger = max(x, idx);
+    let smaller = min(x, idx);
+    let s = randInt(smaller * 451u + seed, 2u);
+    let doSwap = (s == 0u) && (bigger < n);
+    return select(idx, x, doSwap);
+}
+
+fn reverseIndex(idx: u32, n: u32) -> u32 {
+    return (n - 1u) - idx;
+}
+
+fn shuffle(idx: u32, n: u32, seed: u32) -> u32 {
+    var outIdx = idx;
+    for (var i = 0u; i < 16; i = i + 1u) {
+        outIdx = xorSwap(outIdx, n, seed + i);
+        outIdx = reverseIndex(outIdx, n);
+    }
+    return outIdx;
+}
+
+// #workgroup_count SortParticles SIMULATION_GROUPS 1 1
+// @compute @workgroup_size(SIMULATION_GROUP_SIZE_HALF)
+// fn SortParticles(@builtin(global_invocation_id) id: uint3) {
+//     let idx = id.x;
+
+//     //Random shuffle sort
+
+//     let idx1 = shuffle(idx * 2u, N, dispatch.id + 32*time.frame);
+//     let idx2 = shuffle(idx * 2u + 1u, N, dispatch.id + 32*time.frame);
+//     let e1 = min(idx1,idx2);
+//     let e2 = max(idx1,idx2);
+//     if (e1 < N && e2 < N) {
+//         let p1 = GetParticle(e1);
+//         let p2 = GetParticle(e2);
+//         let m1 = MortonToHilbert3DLUT(morton3D(vec3u(p1.pos)));
+//         let m2 = MortonToHilbert3DLUT(morton3D(vec3u(p2.pos)));
+//         if (m1 > m2) { // Sort by y
+//             SaveParticle(e1, p2);
+//             SaveParticle(e2, p1);
+//         }
+//     }
+// }
+
 @compute @workgroup_size(16, 16)
 fn Clear(@builtin(global_invocation_id) id: uint3) {
     let screen_size = int2(textureDimensions(screen));
@@ -572,8 +743,8 @@ fn WorldToSim(pos: vec3f) -> vec3f {
     return (pos + 0.5) * f32(size3d.y);
 }
 
-#workgroup_count Rasterize group_count 1 1
-@compute @workgroup_size(group_size)
+#workgroup_count Rasterize RASTERIZER_GROUP_COUNT 1 1
+@compute @workgroup_size(RASTERIZER_GROUP_SIZE)
 fn Rasterize(@builtin(global_invocation_id) id: uint3) {
 
     SetCamera();
@@ -582,22 +753,24 @@ fn Rasterize(@builtin(global_invocation_id) id: uint3) {
     let particle = GetParticle(idx);
     let pos = particle.pos;
     var col = abs(particle.vel) + 0.25*vec3f(0.9,0.9,1.0);
+    //col = 0.5*sin(20.0*f32(idx)*vec3(1,2,3) / f32(N)) + 0.5;
 
     let lightDir = -normalize(vec3f(1.0, 0.5, 0.5));
     let shadowDensity = RayMarchDensityConstantStepSize(pos+lightDir, lightDir, 0.5);
-    col =col*exp(-0.25*vec3f(2,1.5,1)*shadowDensity);
+    col =col*exp(-0.25*vec3f(2,2,2)*shadowDensity);
 
-    if(custom.RenderMode < 0.5)
-    {
-        let cameraDir = normalize(WorldToSim(camera.pos) - pos);
-        let cameraOcclusion = RayMarchDensityConstantStepSize(pos, cameraDir, 0.5);
-        col =col*exp(-0.1*vec3f(2,1.5,1)*cameraOcclusion);
-    }
+    // if(custom.RenderMode < 0.5)
+    // {
+    //     let cameraDir = normalize(WorldToSim(camera.pos) - pos);
+    //     let cameraOcclusion = RayMarchDensityConstantStepSize(pos, cameraDir, 0.5);
+    //     col =col*exp(-0.1*vec3f(2,1.5,1)*cameraOcclusion);
+    // }
 
     let rot = vec3f(0.0, 0.0, 0.0);
     let q = axis_angle_to_quaternion(rot);
     RasterizeEllipsoid(col, Ellipsoid(SimToWorld(pos), particle.density * custom.R0 *vec3f(1.0), q));
 }
+
 
 // TO DEBUG RASTERIZED AVERAGES OF PARTICLES ON GRID
 

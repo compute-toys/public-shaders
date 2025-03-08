@@ -4,8 +4,8 @@ const PI = acos(-1.);
 #define BufferB 1
 #define BufferC 2
 #define BufferD 3
-#define BufferE 4
-#define BufferF 5
+
+
 
 
 
@@ -13,23 +13,6 @@ const PI = acos(-1.);
 
 fn intensity(color: vec4f) -> f32 {
 	return sqrt(color.x * color.x + color.y * color.y + color.z * color.z);
-} 
-
-fn sobel(stepx: f32, stepy: f32, center: vec2f) -> vec3f {
-	let tleft: f32 = intensity(textureSampleLevel(channel1, trilinear, center + vec2f(-stepx, stepy),0.));
-	let left: f32 = intensity(textureSampleLevel(channel1, trilinear, center + vec2f(-stepx, 0.),0.));
-	let bleft: f32 = intensity(textureSampleLevel(channel1, trilinear, center + vec2f(-stepx, -stepy),0.));
-	let top: f32 = intensity(textureSampleLevel(channel1, trilinear, center + vec2f(0., stepy),0.));
-	let bottom: f32 = intensity(textureSampleLevel(channel1, trilinear, center + vec2f(0., -stepy),0.));
-	let tright: f32 = intensity(textureSampleLevel(channel1, trilinear, center + vec2f(stepx, stepy),0.));
-	let right: f32 = intensity(textureSampleLevel(channel1, trilinear, center + vec2f(stepx, 0.),0.));
-	let bright: f32 = intensity(textureSampleLevel(channel1, trilinear, center + vec2f(stepx, -stepy),0.));
-
-	let x: f32 = tleft + 2. * left + bleft - tright - 2. * right - bright;
-	let y: f32 = -tleft - 2. * top - tright + bleft + 2. * bottom + bright;
-	
-	let color: f32 = sqrt(x * x + y * y);
-	return vec3f(color);
 } 
 
 fn sobel2(channel: int, stepx: f32, stepy: f32, center: vec2f) -> vec3f {
@@ -46,7 +29,8 @@ fn sobel2(channel: int, stepx: f32, stepy: f32, center: vec2f) -> vec3f {
 	let y: f32 = -tleft - 2. * top - tright + bleft + 2. * bottom + bright;
 	
 	let color: f32 = sqrt(x * x + y * y);
-	return vec3f(x,y, 0);
+	return vec3f(color);
+	// return vec3f(x,y, x*y);
 } 
 
 fn soft_threshold (lum: f32 , threshold: f32, soft: f32) -> f32 {
@@ -109,8 +93,9 @@ fn Pass_Sobel(@builtin(global_invocation_id) id: vec3u) {
     // Normalised pixel coordinates (from 0 to 1)
     let uv = fragCoord / vec2f(screen_size);
 
+	var col = textureSampleLevel(channel1, trilinear,uv,0.).rgb;
 	// pass 1 sobel filter
-    var col = vec3f(sobel(custom.steps/ float(screen_size.x),custom.steps/ float(screen_size.y),uv));
+    // var col = vec3f(sobel(custom.steps/ float(screen_size.x),custom.steps/ float(screen_size.y),uv));
 	// soft threshold
 	col = vec3f(soft_threshold ( col.x , custom.threshold, custom.soft));
 
@@ -283,7 +268,7 @@ fn Pass_D(@builtin(global_invocation_id) id: uint3) {
 		fragColor = vec4f(1. + tanh(PHI * (diff - EPSILON)));
 	}
 
-    textureStore(pass_out, int2(id.xy), BufferE, fragColor);
+    textureStore(pass_out, int2(id.xy), BufferA, fragColor);
 }
 
 #define K_4 6//[3, 10]
@@ -325,7 +310,7 @@ fn Pass_E(@builtin(global_invocation_id) id: uint3) {
 		//sampling
 		let weight: f32 = gaussian(pt - pt0, SIGMA_A);
 		let ptUV: vec2f = pt / resolution.xy;
-		var col: vec4f = texture(BufferE, ptUV);
+		var col: vec4f = texture(BufferA, ptUV);
 		sum = sum + (vec2f(col.r, 1.) * weight);
 		dir = get_dir(ptUV);
 	}
@@ -335,7 +320,7 @@ fn Pass_E(@builtin(global_invocation_id) id: uint3) {
 	col = col / (max(col.r, max(col.g, col.b)));
 	fragColor = col * mean;
 
-    textureStore(pass_out, int2(id.xy), BufferF, fragColor);
+    textureStore(pass_out, int2(id.xy), BufferA, fragColor);
 }
 
 @compute @workgroup_size(16, 16)
@@ -347,7 +332,7 @@ fn Pass_Threshold(@builtin(global_invocation_id) id: uint3) {
 	var col : vec3f;
 
 	// pass 1 sobel filter
-	col = texture(BufferF, uv).rgb;
+	col = texture(BufferA, uv).rgb;
 	// soft threshold
 	col = vec3f(soft_threshold ( col.x , custom.threshold2, custom.soft2));
 	

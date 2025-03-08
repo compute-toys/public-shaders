@@ -7,37 +7,37 @@
     "uniforms": [
       {
         "name": "steps",
-        "value": 1.516,
+        "value": 0.496,
         "minRange": 0,
         "maxRange": 10
       },
       {
         "name": "threshold",
-        "value": 0.711,
+        "value": 0.011,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "steps2",
-        "value": 0.571,
+        "value": 0.944,
         "minRange": 0,
         "maxRange": 10
       },
       {
         "name": "threshold2",
-        "value": 0.704,
+        "value": 0.281,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "soft",
-        "value": 0,
+        "value": 0.001,
         "minRange": 0,
         "maxRange": 0.01
       },
       {
         "name": "soft2",
-        "value": 0,
+        "value": 0.002,
         "minRange": 0,
         "maxRange": 0.01
       }
