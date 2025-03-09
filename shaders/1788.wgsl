@@ -5,17 +5,47 @@ const PI = acos(-1.);
 #define BufferC 2
 #define BufferD 3
 
-
-
-
-
 #define resolution vec2f(textureDimensions(screen).xy)
 
 fn intensity(color: vec4f) -> f32 {
 	return sqrt(color.x * color.x + color.y * color.y + color.z * color.z);
-} 
+}
 
-fn sobel2(channel: int, stepx: f32, stepy: f32, center: vec2f) -> vec3f {
+fn find_closest_vector(vectors: array<vec3f, 256>) -> vec3f {
+    let directions = array<vec3f, 4>(
+        vec3f(1.0, 0.0, 0.0),  // Vertical
+        vec3f(0.0, 1.0, 0.0),  // Horizontal
+        normalize(vec3f(1.0, 1.0, 0.0)),  // Descending
+        normalize(vec3f(1.0, 1.0, 1.0))   // Ascending
+    );
+
+    var best_match: vec3f = vec3f(0.0, 0.0, 0.0); // Default to black
+    var max_similarity: f32 = -1.0;
+    var has_direction: bool = false;
+
+    for (var i: i32 = 0; i < 256; i++) {
+        let v = vectors[i];
+
+        if (all(v == vec3f(0.0, 0.0, 0.0))) {
+            continue; // Skip black pixels
+        }
+
+        has_direction = true;
+
+        let norm_v = normalize(v);
+        for (var j: i32 = 0; j < 4; j++) {
+            let similarity = dot(norm_v, directions[j]); // Cosine similarity
+            if (similarity > max_similarity) {
+                max_similarity = similarity;
+                best_match = directions[j];
+            }
+        }
+    }
+
+    return select(vec3f(0.0, 0.0, 0.0), best_match, has_direction);
+}
+
+fn sobel(channel: int, stepx: f32, stepy: f32, center: vec2f) -> vec3f {
 	let tleft: f32 = intensity(texture( channel, center + vec2f(-stepx, stepy)));
 	let left: f32 = intensity(texture( channel, center + vec2f(-stepx, 0.)));
 	let bleft: f32 = intensity(texture( channel, center + vec2f(-stepx, -stepy)));
@@ -28,10 +58,11 @@ fn sobel2(channel: int, stepx: f32, stepy: f32, center: vec2f) -> vec3f {
 	let x: f32 = tleft + 2. * left + bleft - tright - 2. * right - bright;
 	let y: f32 = -tleft - 2. * top - tright + bleft + 2. * bottom + bright;
 	
-	let color: f32 = sqrt(x * x + y * y);
-	return vec3f(color);
-	// return vec3f(x,y, x*y);
+	// let color: f32 = sqrt(x * x + y * y);
+	// return vec3f(color);
+	return vec3f(x*x,y*y, 0);
 } 
+
 
 fn soft_threshold (lum: f32 , threshold: f32, soft: f32) -> f32 {
 	let f: f32 = soft / 2.;
@@ -80,7 +111,7 @@ fn lum( v : vec3f) -> f32 {
 }
 
 @compute @workgroup_size(16, 16)
-fn Pass_Sobel(@builtin(global_invocation_id) id: vec3u) {
+fn Pass_Threshold(@builtin(global_invocation_id) id: vec3u) {
     // Viewport resolution (in pixels)
     let screen_size = textureDimensions(screen);
 
@@ -94,8 +125,7 @@ fn Pass_Sobel(@builtin(global_invocation_id) id: vec3u) {
     let uv = fragCoord / vec2f(screen_size);
 
 	var col = textureSampleLevel(channel1, trilinear,uv,0.).rgb;
-	// pass 1 sobel filter
-    // var col = vec3f(sobel(custom.steps/ float(screen_size.x),custom.steps/ float(screen_size.y),uv));
+
 	// soft threshold
 	col = vec3f(soft_threshold ( col.x , custom.threshold, custom.soft));
 
@@ -117,9 +147,9 @@ fn Pass_A(@builtin(global_invocation_id) id: uint3) {
     var gradX: vec3f = vec3f(0);
 	var gradY: vec3f = gradX;
 
-	for (var i: i32 = 0; i < 3; i = i + 1) {
+	for (var i: i32 = 0; i < 3; i++) {
 
-		for (var j: i32 = 0; j < 3; j = j + 1) {
+		for (var j: i32 = 0; j < 3; j++) {
 			let offsetUV: vec2f = vec2f(f32(i - 1), f32(j - 1)) / resolution.xy;
 			let col: vec3f = texture(BufferA, uv + offsetUV).rgb;
 			gradX += (sobel_mat[i][j] * col);
@@ -150,8 +180,8 @@ fn Pass_B(@builtin(global_invocation_id) id: uint3) {
 	let uv = fragCoord/resolution.xy;
 	var sum: vec4f;
 
-	for (var i: i32 = -K_1; i <= K_1; i = i + 1) {
-		for (var j: i32 = -K_1; j <= K_1; j = j + 1) {
+	for (var i: i32 = -K_1; i <= K_1; i++) {
+		for (var j: i32 = -K_1; j <= K_1; j++) {
 			let offset: vec2f = vec2f(f32(i), f32(j));
 			let weight: f32 = gaussian(offset, SIGMA_C);
 			let offsetUV: vec2f = offset /resolution.xy;
@@ -199,7 +229,7 @@ fn Pass_C(@builtin(global_invocation_id) id: uint3) {
 	var sumA: vec4f = vec4f(0.);
 	var sumB: vec4f = sumA;
 
-	for (var i: i32 = -K_2; i <= K_2; i = i + 1) {
+	for (var i: i32 = -K_2; i <= K_2; i++) {
 		let offset: vec2f = dir * f32(i);
 		let weightA: f32 = gaussian(offset, SIGMA_E);
 		let weightB: f32 = gaussian(offset, SIGMA_E * SIGMA_K);
@@ -241,7 +271,7 @@ fn Pass_D(@builtin(global_invocation_id) id: uint3) {
 	var dir: vec2f = dir0;
 	var sum: vec4f = vec4f(0.);
 
-	for (var i: i32 = -K_3; i <= K_3; i = i + 1) {
+	for (var i: i32 = -K_3; i <= K_3; i++) {
 		//middle: init for ahead
 		if (i == 0) {		
 			pt = pt0;
@@ -286,7 +316,7 @@ fn Pass_E(@builtin(global_invocation_id) id: uint3) {
 	var dir: vec2f = dir0;
 	var sum: vec2f = vec2f(0.);
 
-	for (var i: i32 = -K_4; i <= K_4; i = i + 1) {
+	for (var i: i32 = -K_4; i <= K_4; i++) {
 		//which way are we going?
 		switch (sign(i)) {
 			case -1 {
@@ -324,7 +354,7 @@ fn Pass_E(@builtin(global_invocation_id) id: uint3) {
 }
 
 @compute @workgroup_size(16, 16)
-fn Pass_Threshold(@builtin(global_invocation_id) id: uint3) {
+fn Pass_Threshold2(@builtin(global_invocation_id) id: uint3) {
 
     let fragCoord = vec2f(id.xy);
     let uv = fragCoord / resolution.xy;
@@ -341,18 +371,58 @@ fn Pass_Threshold(@builtin(global_invocation_id) id: uint3) {
 }
 
 @compute @workgroup_size(16, 16)
-fn Pass_Sobel_2(@builtin(global_invocation_id) id: uint3) {
+fn Pass_Sobel(@builtin(global_invocation_id) id: uint3) {
 
     let fragCoord = vec2f(id.xy);
     let uv = fragCoord / resolution.xy;
 
 	var col : vec3f;
 
-    col = vec3f(sobel2( BufferB ,custom.steps2/ float(resolution.x),custom.steps2/ float(resolution.y),uv));
+    col = vec3f(sobel( BufferB ,custom.steps/ float(resolution.x),custom.steps/ float(resolution.y),uv));
 
 	
 
     // Output to screen (linear colour space)
-    textureStore(screen, int2(id.xy), vec4f(col, 0.));
+    textureStore(pass_out ,int2(id.xy), BufferA, vec4f(col, 0.));
 }
 
+var<workgroup> wgmem: array<vec3f,256>;
+enable subgroups;
+
+@compute @workgroup_size(8, 8)
+fn  Pass_Pix(
+        @builtin(global_invocation_id) gid: vec3u,
+        @builtin(subgroup_size) subgroupSize : u32,
+        @builtin(subgroup_invocation_id) sgid : u32,
+        @builtin(local_invocation_index) lid : u32
+) {
+    // Viewport resolution (in pixels)
+    let screen_size = textureDimensions(screen);
+
+    let fragCoord = vec2f(gid.xy);
+
+    let uv = fragCoord / vec2f(screen_size);
+
+    var col = textureSampleLevel(pass_in, bilinear, uv, BufferA, 0.0).rgb ;
+
+    // One thread per workgroup writes the value to workgroup memory.
+    wgmem[lid] = col;
+
+    workgroupBarrier();
+
+    var v : vec3f;
+	// [0,0,0] no-direction
+	// [1,0,0] vertical
+	// [0,1,0] horizontal
+	// [1,1,0] descending
+	// [1,1,1] ascending
+
+    if (sgid == 0) {
+		v = find_closest_vector(wgmem);
+    }
+    v = subgroupBroadcast(v, 0);
+    var res = v;
+
+    // Output to screen (linear colour space)
+    textureStore(screen, gid.xy, vec4f(res, 1.));
+}

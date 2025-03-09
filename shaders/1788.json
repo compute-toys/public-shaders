@@ -7,25 +7,19 @@
     "uniforms": [
       {
         "name": "steps",
-        "value": 0.496,
+        "value": 0.023,
         "minRange": 0,
         "maxRange": 10
       },
       {
         "name": "threshold",
-        "value": 0.011,
+        "value": 0.043,
         "minRange": 0,
         "maxRange": 1
       },
       {
-        "name": "steps2",
-        "value": 0.944,
-        "minRange": 0,
-        "maxRange": 10
-      },
-      {
         "name": "threshold2",
-        "value": 0.281,
+        "value": 0.084,
         "minRange": 0,
         "maxRange": 1
       },
@@ -37,7 +31,7 @@
       },
       {
         "name": "soft2",
-        "value": 0.002,
+        "value": 0.001,
         "minRange": 0,
         "maxRange": 0.01
       }
@@ -47,7 +41,7 @@
         "img": "https://raw.githubusercontent.com/klownie/KlowniePortofolio/refs/heads/main/assets/Plus_IBM_BIOS.png"
       },
       {
-        "img": "https://raw.githubusercontent.com/klownie/KlowniePortofolio/refs/heads/main/assets/projects/Saint-John/HighRes/sketch_831_05.jpg"
+        "img": "https://raw.githubusercontent.com/klownie/KlowniePortofolio/refs/heads/main/assets/img.png"
       }
     ],
     "float32Enabled": false

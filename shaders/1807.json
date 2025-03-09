@@ -1,8 +1,8 @@
 {
-  "id": 1782,
-  "created_at": "2025-03-01T22:08:35.563781+00:00",
-  "name": "Approximate grid SPH",
-  "description": "Approximating particle neighborhood by averaging them over cells for faster/simpler force/density evaluation.\nHowever result of this is losing the guarantee that the energy is conserved, but its minor and viscosity hides the artifacts.",
+  "id": 1807,
+  "created_at": "2025-03-08T16:18:57.209213+00:00",
+  "name": "Approximate soft body ",
+  "description": "Forked from https://compute.toys/view/1782",
   "body": {
     "uniforms": [
       {
@@ -19,7 +19,7 @@
       },
       {
         "name": "R0",
-        "value": 0.005,
+        "value": 0.006,
         "minRange": 0,
         "maxRange": 0.01
       },
@@ -31,58 +31,76 @@
       },
       {
         "name": "Pressure",
-        "value": 1.026,
+        "value": 0.484,
         "minRange": 0,
-        "maxRange": 5
+        "maxRange": 1
       },
       {
         "name": "Viscosity",
-        "value": 1.017,
+        "value": 6.407,
         "minRange": 0,
-        "maxRange": 3
+        "maxRange": 10
       },
       {
         "name": "Spike",
-        "value": 0.21,
+        "value": 0.164,
         "minRange": 0,
         "maxRange": 3
       },
       {
         "name": "TimeStep",
-        "value": 0.999,
+        "value": 1.008,
         "minRange": 0,
         "maxRange": 2
       },
       {
         "name": "RestDensity",
-        "value": 0.497,
+        "value": 0.5,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "Gravity",
-        "value": 0.005,
+        "value": 0.002,
         "minRange": 0,
         "maxRange": 0.05
       },
       {
         "name": "GravityDown",
-        "value": 1,
+        "value": 0.183,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "GravityOscill",
-        "value": 0.408,
+        "value": 0.202,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "SoftDecay",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "SpringConstant",
+        "value": 4.439,
+        "minRange": 0,
+        "maxRange": 30
+      },
+      {
+        "name": "UseSoftBody",
+        "value": 1,
         "minRange": 0,
         "maxRange": 1
       }
     ],
     "textures": [
       {
-        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/leadenhall_market_2k.hdr",
-        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/leadenhall_market.jpg",
-        "url": "https://polyhaven.com/a/leadenhall_market"
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/spruit_sunrise_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/spruit_sunrise.jpg",
+        "url": "https://polyhaven.com/a/spruit_sunrise"
       },
       {
         "img": "/textures/blank.png"

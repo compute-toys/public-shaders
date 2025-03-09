@@ -59,7 +59,18 @@
 #define GRAVITY custom.Gravity
 #define GRAVITY_DOWN custom.GravityDown
 #define GRAVITY_OSCILLATION custom.GravityOscill
-#define SIM_TIME (f32(time.frame)/120.0)
+#define SIM_TIME (f32(time.frame)/200.0)
+
+//"soft body" parameters
+//radius of the neighborhood in the target position space where particles are connected by springs
+#define NEIGHBORHOOD_RADIUS 1.5
+//spring stiffness
+#define SPRING_K  (custom.SpringConstant)
+//decay of the target position
+#define OPOS_DECAY (custom.SoftDecay)
+#define SOFT_BODY_INIT_TIME 2.0
+
+#define USE_SOFT_BODY (custom.UseSoftBody > 0.5)
 
 #storage sim Simulation
 
@@ -76,6 +87,7 @@ struct Particle
     force: vec3f,
     mass: f32,
     density: f32,
+    opos: vec3f,
 }
 
 struct avec3i
@@ -92,6 +104,8 @@ struct AtomicCell
 
     vel: avec3i,
     density: atomic<i32>,
+
+    opos: avec3i,
 }
 
 struct Cell 
@@ -101,13 +115,15 @@ struct Cell
 
     vel: vec3f,
     density: f32,
+
+    opos: vec3f,
 }
 
 struct PackedCell 
 {
     posMass: u32,
     vel: u32,
-    density: f32,
+    opos: vec2u,
 }
 
 fn floatBitsToUint(f: f32) -> u32 {
@@ -168,17 +184,44 @@ fn unpackMassPos(packed: u32) -> MassPos {
     return MassPos(mass, pos);
 }
 
+fn packvec3u(v: vec3u) -> u32 {
+    return (v.x & 0x3FFu) | ((v.y & 0x3FFu) << 10) | ((v.z & 0x3FFu) << 20);
+}
+
+fn unpackvec3u(packed: u32) -> vec3u {
+    return vec3u(packed & 0x3FFu, (packed >> 10) & 0x3FFu, (packed >> 20) & 0x3FFu);
+}
+
+fn packPos(pos: vec3f) -> vec2u {
+    //Get cell index
+    let cell = vec3u(floor(clamp(pos, vec3(0.0), vec3(1023.0))));
+    //Pack cell index into the first u32
+    let packed = packvec3u(cell);
+    //Get the fractional part
+    let fract = vec3u(round(fract(pos) * 1023.0));
+    //Pack the fractional part into the second u32
+    let packed2 = packvec3u(fract);
+    return vec2u(packed, packed2);
+}
+
+fn unpackPos(packed: vec2u) -> vec3f {
+    let cell = unpackvec3u(packed.x);
+    let fract = unpackvec3u(packed.y);
+    return vec3f(cell) + vec3f(fract) / 1023.0;
+}
+
 fn packCell(cell: Cell) -> PackedCell {
     let posMass = packMassPos(u32(cell.mass), fract(cell.pos));
     let vel = packvec3(cell.vel);
-    return PackedCell(posMass, vel, cell.density);
+    let opos = packPos(cell.opos);
+    return PackedCell(posMass, vel, opos);
 }
 
-
-fn unpackCell(packed: PackedCell) -> Cell {
+fn unpackCell(packed: PackedCell, dens:f32) -> Cell {
     let massPos = unpackMassPos(packed.posMass);
     let vel = unpackvec3(packed.vel);
-    return Cell(massPos.pos, f32(massPos.mass), vel, packed.density);
+    let opos = unpackPos(packed.opos);
+    return Cell(massPos.pos, f32(massPos.mass), vel, dens, opos);
 }
 
 const quant_scale = 65536.0;
@@ -196,11 +239,14 @@ fn IntToFloat(i: i32) -> f32
 struct Simulation 
 {
     // N particles
-    pos: array<vec3f, N>,
-    vel: array<vec3f, N>,
+    pos: array<vec2u, N>,
+    vel: array<u32, N>,
     density: array<f32, N>,
+    opos: array<vec2u, N>,
     atomic_grid: array<AtomicCell, size3d.x * size3d.y * size3d.z>,
     grid: array<PackedCell, size3d.x * size3d.y * size3d.z>,
+    dens_grid: array<f32, size3d.x * size3d.y * size3d.z>,
+    sdens_grid: array<f32, size3d.x * size3d.y * size3d.z>,
 }
 
 fn GetIdxFromPos(p: vec3i) -> int 
@@ -223,6 +269,9 @@ fn AddParticleToGrid0(p: Particle)
     atomicAdd(&cell.pos.x, FloatToInt(p.pos.x * p.mass));
     atomicAdd(&cell.pos.y, FloatToInt(p.pos.y * p.mass));
     atomicAdd(&cell.pos.z, FloatToInt(p.pos.z * p.mass));
+    atomicAdd(&cell.opos.x, FloatToInt(p.opos.x * p.mass));
+    atomicAdd(&cell.opos.y, FloatToInt(p.opos.y * p.mass));
+    atomicAdd(&cell.opos.z, FloatToInt(p.opos.z * p.mass));
     atomicAdd(&cell.mass, FloatToInt(p.mass));
 }
 
@@ -246,17 +295,18 @@ fn SubtractParticle(p0: Particle, p1: Particle) -> Particle
     }
     let inv_mass = 1.0 / p.mass;
     p.pos = (p0.pos * p0.mass - p1.pos * p1.mass) * inv_mass;
+    p.opos = (p0.opos * p0.mass - p1.opos * p1.mass) * inv_mass;
     p.vel = (p0.vel * p0.mass - p1.vel * p1.mass) * inv_mass;
     p.density = (p0.density * p0.mass - p1.density * p1.mass) * inv_mass;
     return p;
 }
 
-fn GetPackedCellFromAtomicGrid(cell_idx: vec3i) -> PackedCell 
+fn GetPackedCellFromAtomicGrid(cell_idx: vec3i) -> Cell 
 {
     let idx = GetIdxFromPos(cell_idx);
     let acell = &sim.atomic_grid[idx];
     let mass = IntToFloat(atomicLoad(&acell.mass));
-    if(mass <= 0.0) { return packCell(Cell()); }
+    if(mass <= 0.0) { return Cell(); }
     let pos = vec3f(
         IntToFloat(atomicLoad(&acell.pos.x)),
         IntToFloat(atomicLoad(&acell.pos.y)),
@@ -268,15 +318,20 @@ fn GetPackedCellFromAtomicGrid(cell_idx: vec3i) -> PackedCell
         IntToFloat(atomicLoad(&acell.vel.z))
     ) / mass;
     let dens = IntToFloat(atomicLoad(&acell.density)) / mass;
-    let cell = Cell(pos, mass, vel, dens);
-    return packCell(cell);
+    let opos = vec3f(
+        IntToFloat(atomicLoad(&acell.opos.x)),
+        IntToFloat(atomicLoad(&acell.opos.y)),
+        IntToFloat(atomicLoad(&acell.opos.z))
+    ) / mass;
+    return Cell(pos, mass, vel, dens, opos);
 }
 
 fn GetAvgParticleFromGridID(idx: i32) -> Particle 
 {
     let packedCell = sim.grid[idx];
-    let cell = unpackCell(packedCell);
-    return Particle(cell.pos + vec3f(PosFromIdx(idx)), cell.vel, vec3f(0.0), cell.mass, cell.density);
+    let densCell = sim.dens_grid[idx];
+    let cell = unpackCell(packedCell,densCell);
+    return Particle(cell.pos + vec3f(PosFromIdx(idx)), cell.vel, vec3f(0.0), cell.mass, cell.density, cell.opos);
 }
 
 fn GetAvgParticleFromGrid(cell_idx: vec3i) -> Particle 
@@ -287,14 +342,15 @@ fn GetAvgParticleFromGrid(cell_idx: vec3i) -> Particle
 
 fn SaveParticle(idx: uint, p: Particle) 
 {
-    sim.pos[idx] = p.pos;
-    sim.vel[idx] = p.vel;
+    sim.pos[idx] = packPos(p.pos);
+    sim.vel[idx] = packvec3(p.vel);
     sim.density[idx] = p.density;
+    sim.opos[idx] = packPos(p.opos);
 }
 
 fn GetParticle(idx: uint) -> Particle 
 {
-    return Particle(sim.pos[idx], sim.vel[idx], vec3f(0.0), 1.0, sim.density[idx]);
+    return Particle(unpackPos(sim.pos[idx]), unpackvec3(sim.vel[idx]), vec3f(0.0), 1.0, sim.density[idx], unpackPos(sim.opos[idx]));
 }
 
 var<private> state : uint4;
@@ -396,6 +452,9 @@ fn ClearGrid(@builtin(global_invocation_id) id: uint3) {
     atomicStore(&cell.vel.z, 0);
     atomicStore(&cell.mass, 0);
     atomicStore(&cell.density, 0);
+    atomicStore(&cell.opos.x, 0);
+    atomicStore(&cell.opos.y, 0);
+    atomicStore(&cell.opos.z, 0);
 }
 
 #workgroup_count Particle2Grid RASTERIZER_GROUP_COUNT 1 1
@@ -412,7 +471,9 @@ fn Particle2Grid(@builtin(global_invocation_id) id: uint3) {
 @compute @workgroup_size(GRID_GROUP_SIZE)
 fn CopyAtomicToRegular1(@builtin(global_invocation_id) id: uint3) {
     let idx = int(id.x);
-    sim.grid[idx] = GetPackedCellFromAtomicGrid(PosFromIdx(idx));
+    let cell = GetPackedCellFromAtomicGrid(PosFromIdx(idx));
+    sim.grid[idx] = packCell(cell);
+    sim.dens_grid[idx] = cell.density;
 }
 
 fn ComputeDensityTerm(p0: Particle, p1: Particle) -> f32 
@@ -467,7 +528,9 @@ fn ParticleDensity2Grid(@builtin(global_invocation_id) id: uint3) {
 @compute @workgroup_size(GRID_GROUP_SIZE)
 fn CopyAtomicToRegular2(@builtin(global_invocation_id) id: uint3) {
     let idx = int(id.x);
-    sim.grid[idx] = GetPackedCellFromAtomicGrid(PosFromIdx(idx));
+    let cell = GetPackedCellFromAtomicGrid(PosFromIdx(idx));
+    sim.grid[idx] = packCell(cell);
+    sim.dens_grid[idx] = cell.density;
 }
 
 fn ComputeForce(p: Particle, incoming: Particle) -> vec3f {
@@ -498,8 +561,19 @@ fn ComputeForce(p: Particle, incoming: Particle) -> vec3f {
     let F_VISC = VISCOSITY * visc_mag * visc_scale * ggrad;
     let F_SPIKE = SPIKE_KERNEL * Gaussian(d, SPIKE_RAD) * dir;
 
+    //original distance between particles
+    let d0 = length(p.opos - incoming.opos);
+    //spring force
+    var spring = SPRING_K * (d0 - d);
+    //limit the force to only originally neighboring particles by using a smoothstep
+    let d02 = d0 / NEIGHBORHOOD_RADIUS;
+    spring *= exp(-d02*d02);
+    let F_SPRING = -spring * ggrad;
+
+    let F_MAIN = select(F_SPH, F_SPRING, (SIM_TIME > SOFT_BODY_INIT_TIME) && USE_SOFT_BODY);
+
     // Final force
-    return -(F_SPH + F_VISC + F_SPIKE) * mass1;
+    return -(F_MAIN + F_VISC + F_SPIKE) * mass1;
 }
 
 fn ClampVector(v: vec3f, lim: f32) -> vec3f {
@@ -519,9 +593,11 @@ fn Simulate(@builtin(global_invocation_id) id: uint3) {
     // If first frame, initialize particle positions
     if (time.frame == 0 || all(p.pos <= vec3f(0.01))) {
         // Random position
-        p.pos = (0.1 + 0.5 * rand4().xyz) * vec3f(size3d);
+        p.pos = (0.2 + 0.5 * rand4().xyz) * vec3f(size3d);
         // Random velocity
         p.vel = nrand4(0.001, float4(0.0, 0.0, 0.0, 0.0)).xyz;
+
+        p.opos = p.pos;
     }
 
     // Compute forces
@@ -550,11 +626,12 @@ fn Simulate(@builtin(global_invocation_id) id: uint3) {
 
     // Boundary forces
     let border = border_grad(p.pos);
-    let bound = BOUNDARY_FORCE * normalize(border.xyz) * exp(-0.3 * border.w * border.w);
-    p.force += bound;
+    let border_mag = exp(-0.3 * border.w * border.w);
+    let bound = BOUNDARY_FORCE * normalize(border.xyz) * border_mag;
+    p.force += bound - p.vel*border_mag;
 
     // Gravity
-    p.force += GRAVITY * vec3f(GRAVITY_OSCILLATION*sin(1.5*SIM_TIME), GRAVITY_DOWN, GRAVITY_OSCILLATION*cos(0.75*SIM_TIME)); //gravity
+    p.force += GRAVITY * vec3f(GRAVITY_OSCILLATION*sin(1.5*SIM_TIME), GRAVITY_DOWN, GRAVITY_OSCILLATION*cos(0.7758*SIM_TIME)); //gravity
 
     // Integrate
     p.vel += DELTA_TIME * p.force / p.mass;
@@ -570,9 +647,36 @@ fn Simulate(@builtin(global_invocation_id) id: uint3) {
     // Add random offset to make sure particles dont clump
     p.pos += 0.001 * nrand4(1.0, float4(0.0, 0.0, 0.0, 0.0)).xyz;
 
+    var decay_factor = exp(-OPOS_DECAY*dt);
+    if((SIM_TIME < SOFT_BODY_INIT_TIME) || !USE_SOFT_BODY) {decay_factor = 0.0;}
+    p.opos = mix(p.pos, p.opos, decay_factor);
+
     // Save particle state
     SaveParticle(idx, p); 
 }
+
+
+#workgroup_count SmoothOutDensity GRID_GROUPS 1 1
+@compute @workgroup_size(GRID_GROUP_SIZE)
+fn SmoothOutDensity(@builtin(global_invocation_id) id: uint3) {
+    let idx = int(id.x);
+    let pos = PosFromIdx(idx);
+    let posf = vec3f(pos) + 0.5;
+   
+    var density = 0.0; // Self density
+    #define SMOOTHRAD 1
+    for (var i = -SMOOTHRAD; i <= SMOOTHRAD; i++) {
+    for (var j = -SMOOTHRAD; j <= SMOOTHRAD; j++) {
+    for (var k = -SMOOTHRAD; k <= SMOOTHRAD; k++) {
+        let cell = GetAvgParticleFromGrid(pos + vec3i(i, j, k));
+        if (cell.mass <= 0.0) {continue;}
+        let r = distance(posf, cell.pos);
+        density += cell.mass * Gaussian(r, DENSITY_RADIUS);
+    } } }
+
+    sim.sdens_grid[idx] = density;
+}
+
 
 fn u32_mod(x: u32, y: u32) -> u32 {
     return x - (x / y) * y;
@@ -752,19 +856,13 @@ fn Rasterize(@builtin(global_invocation_id) id: uint3) {
     let idx = id.x;
     let particle = GetParticle(idx);
     let pos = particle.pos;
-    var col = abs(particle.vel) + 0.25*vec3f(0.9,0.9,1.0);
+    var col = abs(particle.vel) + 0.75*vec3f(0.9,0.9,1.0);
+    col = 0.5 * sin(25.0*particle.opos/vec3f(size3d)) + 0.5;
     //col = 0.5*sin(5.0*f32(idx)*vec3(1,2,3) / f32(N)) + 0.5;
 
-    let lightDir = -normalize(vec3f(1.0, 0.5, 0.5));
-    let shadowDensity = RayMarchDensityConstantStepSize(pos+lightDir, lightDir, 0.5);
-    col =col*exp(-0.25*vec3f(2,2,2)*shadowDensity);
-
-    // if(custom.RenderMode < 0.5)
-    // {
-    //     let cameraDir = normalize(WorldToSim(camera.pos) - pos);
-    //     let cameraOcclusion = RayMarchDensityConstantStepSize(pos, cameraDir, 0.5);
-    //     col =col*exp(-0.1*vec3f(2,1.5,1)*cameraOcclusion);
-    // }
+    let lightDir = -normalize(vec3f(-1.0, 0.9, -1.0));
+    let shadowDensity = RayMarchDensityConstantStepSize(pos+lightDir, lightDir, 0.3);
+    col *= exp(-2.0*shadowDensity) + 0.1*exp(-0.4*shadowDensity) + 0.05/(1.0 + 0.3*shadowDensity);
 
     let rot = vec3f(0.0, 0.0, 0.0);
     let q = axis_angle_to_quaternion(rot);
@@ -774,7 +872,7 @@ fn Rasterize(@builtin(global_invocation_id) id: uint3) {
 
 // TO DEBUG RASTERIZED AVERAGES OF PARTICLES ON GRID
 
-// #workgroup_count RasterizeGrid GRID_GROUPS 1 1
+#workgroup_count RasterizeGrid GRID_GROUPS 1 1
 // @compute @workgroup_size(GRID_GROUP_SIZE)
 // fn RasterizeGrid(@builtin(global_invocation_id) id: uint3) {
 
@@ -783,11 +881,19 @@ fn Rasterize(@builtin(global_invocation_id) id: uint3) {
 //     let idx = int(id.x);
 //     let particle = GetAvgParticleFromGridID(idx);
 //     let pos = particle.pos;
-//     if(particle.mass < 2.0) {return;}
-//     let col = vec3f(1.0, 0.2, 0.2);
+//     if(particle.mass < 1.0) {return;}
+
+//     var col = abs(particle.vel) + 0.25*vec3f(0.9,0.9,1.0);
+//     col = particle.opos/vec3f(size3d);
+//     //col = 0.5*sin(5.0*f32(idx)*vec3(1,2,3) / f32(N)) + 0.5;
+
+//     let lightDir = -normalize(vec3f(1.0, 0.5, 0.5));
+//     let shadowDensity = RayMarchDensityConstantStepSize(pos+lightDir, lightDir, 0.5);
+//     col =col*exp(-0.25*vec3f(2,2,2)*shadowDensity);
+
 //     let rot = vec3f(0.0, 0.0, 0.0);
 //     let q = axis_angle_to_quaternion(rot);
-//     RasterizeEllipsoid(col, Ellipsoid(pos/f32(size3d.y) - 0.5, custom.R*vec3f(1.0), q));
+//     RasterizeEllipsoid(col, Ellipsoid(SimToWorld(pos), custom.R0 *vec3f(1.0), q));
 // }
 
 fn Sample(pos: int2) -> vec4f
@@ -974,7 +1080,7 @@ fn RayMarchDensityConstantStepSize(
         // Convert position to integral cell coordinates by flooring (nearest-lower cell).
         let cellCoord = vec3i(floor(samplePos));
         let idx = GetIdxFromPos(cellCoord);
-        accumulatedDensity += sim.grid[idx].density * stepSize;
+        accumulatedDensity += sim.sdens_grid[idx] * stepSize;
     }
 
     return accumulatedDensity;
