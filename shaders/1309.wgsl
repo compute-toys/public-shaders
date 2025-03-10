@@ -81,7 +81,7 @@ fn splat(@builtin(global_invocation_id) id: vec3u) {
     let camf = vec3f(sin(muv.x)*cos(muv.y), cos(muv.x)*cos(muv.y), sin(muv.y));
     let camr = normalize(cross(camf, vec3(0, 0, 1)));
     let camu = cross(camr, camf);
-    o -= camf*2.;
+    o -= camf*3.;
 
     let t = passLoad(0, int2(id.xy), 0);
 
@@ -125,6 +125,7 @@ fn img(@builtin(global_invocation_id) id: vec3u) {
                 ,
                 saturation
             );
+            //col = vec3(b*b, pow(b*2.-1., 2.), 1.-b);
         }
 
         textureStore(screen, ic, 

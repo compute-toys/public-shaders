@@ -15,8 +15,8 @@ fn find_closest_vector(vectors: array<vec3f, 256>) -> vec3f {
     let directions = array<vec3f, 4>(
         vec3f(1.0, 0.0, 0.0),  // Vertical
         vec3f(0.0, 1.0, 0.0),  // Horizontal
-        normalize(vec3f(1.0, 1.0, 0.0)),  // Descending
-        normalize(vec3f(1.0, 1.0, 1.0))   // Ascending
+        vec3f(1.0, 1.0, 0.0),  // Descending
+        vec3f(1.0, 1.0, 1.0)   // Ascending
     );
 
     var best_match: vec3f = vec3f(0.0, 0.0, 0.0); // Default to black
@@ -45,6 +45,69 @@ fn find_closest_vector(vectors: array<vec3f, 256>) -> vec3f {
     return select(vec3f(0.0, 0.0, 0.0), best_match, has_direction);
 }
 
+fn char_(pos: vec2f, colour:vec3f, c: int) -> float4 {
+    var p = pos % vec2f(1);
+
+	let sdf = textureSampleLevel( channel1, trilinear, vec2f(p.x/16,p.y/49) + fract( vec2f(float(c)/16, float(c/16)/49) ), 0.).a;
+    let col = mix(vec4f(0), vec4f(colour,1), sdf);
+    return col;
+}
+
+fn map_outline (color:vec3f) -> i32 {
+	if (all(color == vec3f(1,0,0))) {
+		return 3;
+	}
+	if (all(color == vec3f(0,1,0))) {
+		return 25;
+	}
+	if (all(color == vec3f(0,0,1))) {
+		return 6;
+	}
+	if (all(color == vec3f(1,1,0))) {
+		return 7;
+	}
+	if (all(color == vec3f(1,1,1))) {
+		return 18 ;
+	}
+	return 0;
+}
+
+fn map_char(value: i32) -> i32 {
+
+    let char_map: array<i32, 24> = array<i32, 24>(
+        0,    // ' '
+        151,  // '·'
+        46,   // '∙'
+        44,   // ','
+        7,    // '•'
+        43,   // '+'
+        752,  // '■'
+        591,  // 'ơ'
+        687,  // '∞'
+        42,   // '*'
+        35,   // '#'
+        763,  // '●'
+        4,    // '♦'
+        3,    // '♥'
+        5,    // '♣'
+        64,   // '@'
+        2,    // '☻'
+        8,    // '◘'
+        10,   // '◙'
+        750,  // '▓'
+        745,  // '█'
+        745,  // '█'
+        745,  // '█'
+        745   // '█'
+    );
+
+    if (value >= 0 && value < 24) {
+        return char_map[value];
+    } else {
+        return 745; // Default value '█'
+    }
+}
+
 fn sobel(channel: int, stepx: f32, stepy: f32, center: vec2f) -> vec3f {
 	let tleft: f32 = intensity(texture( channel, center + vec2f(-stepx, stepy)));
 	let left: f32 = intensity(texture( channel, center + vec2f(-stepx, 0.)));
@@ -58,9 +121,9 @@ fn sobel(channel: int, stepx: f32, stepy: f32, center: vec2f) -> vec3f {
 	let x: f32 = tleft + 2. * left + bleft - tright - 2. * right - bright;
 	let y: f32 = -tleft - 2. * top - tright + bleft + 2. * bottom + bright;
 	
-	// let color: f32 = sqrt(x * x + y * y);
+	let color: f32 = sqrt(x * x + y * y);
 	// return vec3f(color);
-	return vec3f(x*x,y*y, 0);
+	return vec3f(x*x,y*y, x*y) /256;
 } 
 
 
@@ -380,8 +443,6 @@ fn Pass_Sobel(@builtin(global_invocation_id) id: uint3) {
 
     col = vec3f(sobel( BufferB ,custom.steps/ float(resolution.x),custom.steps/ float(resolution.y),uv));
 
-	
-
     // Output to screen (linear colour space)
     textureStore(pass_out ,int2(id.xy), BufferA, vec4f(col, 0.));
 }
@@ -389,7 +450,7 @@ fn Pass_Sobel(@builtin(global_invocation_id) id: uint3) {
 var<workgroup> wgmem: array<vec3f,256>;
 enable subgroups;
 
-@compute @workgroup_size(8, 8)
+@compute @workgroup_size(16, 16)
 fn  Pass_Pix(
         @builtin(global_invocation_id) gid: vec3u,
         @builtin(subgroup_size) subgroupSize : u32,
@@ -403,7 +464,7 @@ fn  Pass_Pix(
 
     let uv = fragCoord / vec2f(screen_size);
 
-    var col = textureSampleLevel(pass_in, bilinear, uv, BufferA, 0.0).rgb ;
+    let col = textureSampleLevel(pass_in, bilinear, uv, BufferA, 0.0).rgb ;
 
     // One thread per workgroup writes the value to workgroup memory.
     wgmem[lid] = col;
@@ -411,17 +472,15 @@ fn  Pass_Pix(
     workgroupBarrier();
 
     var v : vec3f;
-	// [0,0,0] no-direction
-	// [1,0,0] vertical
-	// [0,1,0] horizontal
-	// [1,1,0] descending
-	// [1,1,1] ascending
+	var c :i32;
 
     if (sgid == 0) {
 		v = find_closest_vector(wgmem);
+		c = map_outline(v);
+		// v = vec3f(float(c));
     }
-    v = subgroupBroadcast(v, 0);
-    var res = v;
+    c = subgroupBroadcast(c, 0);
+    var res = char_( uv ,vec3f(1) ,c ).rgb;;
 
     // Output to screen (linear colour space)
     textureStore(screen, gid.xy, vec4f(res, 1.));

@@ -1,0 +1,53 @@
+{
+  "id": 1806,
+  "created_at": "2025-03-07T19:53:00.197103+00:00",
+  "name": "bokeh",
+  "description": "I wish this didn't need atomics",
+  "body": {
+    "uniforms": [
+      {
+        "name": "focus",
+        "value": 2.589,
+        "minRange": 1,
+        "maxRange": 5
+      },
+      {
+        "name": "radius",
+        "value": 50,
+        "minRange": 10,
+        "maxRange": 50
+      },
+      {
+        "name": "brightness",
+        "value": 1,
+        "minRange": 0.01,
+        "maxRange": 1
+      },
+      {
+        "name": "particles",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "grayscale",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Regent_Street_Clay_Gregory.jpg/1920px-Regent_Street_Clay_Gregory.jpg"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "ahs3n"
+  }
+}

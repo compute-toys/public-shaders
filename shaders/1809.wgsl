@@ -61,6 +61,10 @@
 #define GRAVITY_OSCILLATION custom.GravityOscill
 #define SIM_TIME (f32(time.frame)/120.0)
 
+#define ISO_VALUE (custom.Isovalue * REST_DENSITY)
+#define ABSORPTION (custom.Absorption*vec3(0.4, 0.1, 0.05))
+#define IOR custom.IOR
+
 #storage sim Simulation
 
 const PI = 3.14159265;
@@ -590,7 +594,7 @@ fn SmoothOutDensity(@builtin(global_invocation_id) id: uint3) {
         let cell = GetAvgParticleFromGrid(pos + vec3i(i, j, k));
         if (cell.mass <= 0.0) {continue;}
         let r = distance(posf, cell.pos);
-        density += cell.mass * Gaussian(r, DENSITY_RADIUS);
+        density += cell.mass * Gaussian(r, 0.8);
     } } }
 
     sim.sdens_grid[idx] = density;
@@ -742,16 +746,16 @@ fn shuffle(idx: u32, n: u32, seed: u32) -> u32 {
 //     }
 // }
 
-@compute @workgroup_size(16, 16)
-fn Clear(@builtin(global_invocation_id) id: uint3) {
-    let screen_size = int2(textureDimensions(screen));
-    let idx0 = int(id.x) + int(screen_size.x * int(id.y));
+// @compute @workgroup_size(16, 16)
+// fn Clear(@builtin(global_invocation_id) id: uint3) {
+//     let screen_size = int2(textureDimensions(screen));
+//     let idx0 = int(id.x) + int(screen_size.x * int(id.y));
 
-    atomicStore(&gstate.screen[idx0*4+0], 0);
-    atomicStore(&gstate.screen[idx0*4+1], 0);
-    atomicStore(&gstate.screen[idx0*4+2], 0);
-    atomicStore(&gstate.screen[idx0*4+3], 0);
-}
+//     atomicStore(&gstate.screen[idx0*4+0], 0);
+//     atomicStore(&gstate.screen[idx0*4+1], 0);
+//     atomicStore(&gstate.screen[idx0*4+2], 0);
+//     atomicStore(&gstate.screen[idx0*4+3], 0);
+// }
 
 const DEPTH_MIN = 0.1;
 const DEPTH_MAX = 20.0;
@@ -765,33 +769,33 @@ fn WorldToSim(pos: vec3f) -> vec3f {
     return (pos + 0.5) * f32(size3d.y);
 }
 
-#workgroup_count Rasterize RASTERIZER_GROUP_COUNT 1 1
-@compute @workgroup_size(RASTERIZER_GROUP_SIZE)
-fn Rasterize(@builtin(global_invocation_id) id: uint3) {
+// #workgroup_count Rasterize RASTERIZER_GROUP_COUNT 1 1
+// @compute @workgroup_size(RASTERIZER_GROUP_SIZE)
+// fn Rasterize(@builtin(global_invocation_id) id: uint3) {
 
-    SetCamera();
+//     SetCamera();
 
-    let idx = id.x;
-    let particle = GetParticle(idx);
-    let pos = particle.pos;
-    var col = abs(particle.vel) + 0.35*vec3f(0.9,0.9,1.0);
-    //col = 0.5*sin(5.0*f32(idx)*vec3(1,2,3) / f32(N)) + 0.5;
+//     let idx = id.x;
+//     let particle = GetParticle(idx);
+//     let pos = particle.pos;
+//     var col = abs(particle.vel) + 0.35*vec3f(0.9,0.9,1.0);
+//     //col = 0.5*sin(5.0*f32(idx)*vec3(1,2,3) / f32(N)) + 0.5;
 
-    let lightDir = -normalize(vec3f(-1.0, 0.9, -1.0));
-    let shadowDensity = RayMarchDensityConstantStepSize(pos+1.5*lightDir, lightDir, 0.5);
-    col *= exp(-2.0*shadowDensity) + 0.1*exp(-0.4*shadowDensity) + 0.05/(1.0 + 0.3*shadowDensity);
+//     let lightDir = -normalize(vec3f(-1.0, 0.9, -1.0));
+//     let shadowDensity = RayMarchDensityConstantStepSize(pos+1.5*lightDir, lightDir, 0.5);
+//     col *= exp(-2.0*shadowDensity) + 0.1*exp(-0.4*shadowDensity) + 0.05/(1.0 + 0.3*shadowDensity);
 
-    // if(custom.RenderMode < 0.5)
-    // {
-    //     let cameraDir = normalize(WorldToSim(camera.pos) - pos);
-    //     let cameraOcclusion = RayMarchDensityConstantStepSize(pos, cameraDir, 0.5);
-    //     col =col*exp(-0.1*vec3f(2,1.5,1)*cameraOcclusion);
-    // }
+//     // if(custom.RenderMode < 0.5)
+//     // {
+//     //     let cameraDir = normalize(WorldToSim(camera.pos) - pos);
+//     //     let cameraOcclusion = RayMarchDensityConstantStepSize(pos, cameraDir, 0.5);
+//     //     col =col*exp(-0.1*vec3f(2,1.5,1)*cameraOcclusion);
+//     // }
 
-    let rot = vec3f(0.0, 0.0, 0.0);
-    let q = axis_angle_to_quaternion(rot);
-    RasterizeEllipsoid(col, Ellipsoid(SimToWorld(pos), custom.R0 *vec3f(1.0), q));
-}
+//     let rot = vec3f(0.0, 0.0, 0.0);
+//     let q = axis_angle_to_quaternion(rot);
+//     RasterizeEllipsoid(col, Ellipsoid(SimToWorld(pos), custom.R0 *vec3f(1.0), q));
+// }
 
 
 // TO DEBUG RASTERIZED AVERAGES OF PARTICLES ON GRID
@@ -812,35 +816,180 @@ fn Rasterize(@builtin(global_invocation_id) id: uint3) {
 //     RasterizeEllipsoid(col, Ellipsoid(pos/f32(size3d.y) - 0.5, custom.R*vec3f(1.0), q));
 // }
 
-fn Sample(pos: int2) -> vec4f
-{
-    let screen_size = int2(textureDimensions(screen));
-    let idx = pos.x + screen_size.x * pos.y;
+// fn Sample(pos: int2) -> vec4f
+// {
+//     let screen_size = int2(textureDimensions(screen));
+//     let idx = pos.x + screen_size.x * pos.y;
 
-    var color: vec4f;
-    if(custom.RenderMode < 0.5)
-    {
-        let x = float(atomicLoad(&gstate.screen[idx*4+0]))/(256.0);
-        let y = float(atomicLoad(&gstate.screen[idx*4+1]))/(256.0);
-        let z = float(atomicLoad(&gstate.screen[idx*4+2]))/(256.0);
-        color = vec4f(x,y,z,0);
-    }
-    else
-    {
-        let xdata = atomicLoad(&gstate.screen[idx*4+0]);
-        let x = Unpack(xdata);
-        let y = Unpack(atomicLoad(&gstate.screen[idx*4+1]));
-        let z = Unpack(atomicLoad(&gstate.screen[idx*4+2]));
-        let depth = UnpackDepth(xdata);
-        color = vec4f(x,y,z,f32(depth));
-    }
+//     var color: vec4f;
+//     if(custom.RenderMode < 0.5)
+//     {
+//         let x = float(atomicLoad(&gstate.screen[idx*4+0]))/(256.0);
+//         let y = float(atomicLoad(&gstate.screen[idx*4+1]))/(256.0);
+//         let z = float(atomicLoad(&gstate.screen[idx*4+2]))/(256.0);
+//         color = vec4f(x,y,z,0);
+//     }
+//     else
+//     {
+//         let xdata = atomicLoad(&gstate.screen[idx*4+0]);
+//         let x = Unpack(xdata);
+//         let y = Unpack(atomicLoad(&gstate.screen[idx*4+1]));
+//         let z = Unpack(atomicLoad(&gstate.screen[idx*4+2]));
+//         let depth = UnpackDepth(xdata);
+//         color = vec4f(x,y,z,f32(depth));
+//     }
 
-    return abs(color);
-}
+//     return abs(color);
+// }
 
 fn skyTexture(rd: vec3f) -> vec3f
 {
     return textureSampleLevel(channel0, bilinear, INVPI * vec2f(.5 * atan2(rd.z, rd.x), asin(rd.y)) + .5, 0.).rgb;
+}
+
+
+fn linearIndexRepeat(id: vec3i) -> u32
+{
+    let repeat = id;// - SIZE * (id / SIZE);
+    return u32(GetIdxFromPos(repeat));
+}
+
+//trilinear interpolation
+fn sampleDensity(pos: vec3f) -> f32 {
+    let posi = vec3i(pos);
+    let posf = fract(pos);
+
+    let dens = &sim.sdens_grid;
+
+    let c00 = mix(dens[linearIndexRepeat(posi)], dens[linearIndexRepeat(posi + vec3i(1, 0, 0))], posf.x);
+    let c10 = mix(dens[linearIndexRepeat(posi + vec3i(0, 1, 0))], dens[linearIndexRepeat(posi + vec3i(1, 1, 0))], posf.x);
+    let c01 = mix(dens[linearIndexRepeat(posi + vec3i(0, 0, 1))], dens[linearIndexRepeat(posi + vec3i(1, 0, 1))], posf.x);
+    let c11 = mix(dens[linearIndexRepeat(posi + vec3i(0, 1, 1))], dens[linearIndexRepeat(posi + vec3i(1, 1, 1))], posf.x);
+
+    let c0 = mix(c00, c10, posf.y);
+    let c1 = mix(c01, c11, posf.y);
+
+    return mix(c0, c1, posf.z);
+}
+
+fn normal(pos: vec3f) -> vec3f {
+    let eps = vec3f(1.0, 0.0, 0.0);
+    let grad = vec3f(
+        sampleDensity(pos + eps.xyy) - sampleDensity(pos - eps.xyy),
+        sampleDensity(pos + eps.yxy) - sampleDensity(pos - eps.yxy),
+        sampleDensity(pos + eps.yyx) - sampleDensity(pos - eps.yyx)
+    );
+    return -normalize(grad);
+}
+
+//reflection
+fn fresnel(h: vec3f, n: vec3f, n1: float, n2: float) -> float {
+    let f0 = 0.05;
+    return f0 + (1.0 - f0) * pow(dot(h, n), 5.0);
+}
+
+fn rayMarch(ray: Ray, dither: float) -> vec4f {
+    var step = 1.0;
+    var t = 0.001+dither * step;
+    var tt = 0.0;
+    var prev_d = 0.0;
+    let d = sampleDensity(ray.ro);
+    var inside = d > ISO_VALUE;
+    var cray = ray;
+    var incoming = vec3f(0.0);
+    var absorption = vec3f(0.0);
+    var bounces = 0.0;
+    for (var i = 0u; i < 1024u; i++) {
+        let pos = cray.ro + t * cray.rd;
+        t += step;
+        //if out of bounds, stop
+        if (any(pos < vec3f(0.0)) || any(pos >= vec3f(size3d - 2))) {
+            tt+=t;
+            incoming += skyTexture(cray.rd) * exp(-absorption);
+            break;
+        }
+        var d = sampleDensity(pos);
+        d = select(d, 2.0*ISO_VALUE - d, inside);
+        step = abs(1.0 - d) * 0.5;
+        if (d > ISO_VALUE) {
+            //find intersection point assuming linear density interpolation
+            let t0 = t - step;
+            let t1 = t;
+            let tmid = t0 + (ISO_VALUE - prev_d) * step / (d - prev_d);
+            let ipos = cray.ro + tmid * cray.rd;
+            let normal = normal(ipos);
+
+            //refraction ray direction
+            let n = select(normal, -normal, inside);
+            let n1 = select(1.0, IOR, inside);
+            let n2 = select(IOR, 1.0, inside);
+            let refDir = refract(cray.rd, n, n1 / n2);
+
+            let reflPos = cray.ro + (t0 - 1.0) * cray.rd;
+            let reflDir = reflect(cray.rd, n);
+
+            if(inside) {
+                absorption += ABSORPTION * tmid;
+            } 
+
+            //full internal reflection
+            if(length(refDir) < 0.5)
+            {
+                cray.ro = reflPos;
+                cray.rd = reflDir;
+                //still inside
+            }
+            else
+            {
+                let h = normalize(cray.rd + n);
+                let fres = fresnel(h, n, n1, n2);
+                let relf_amount = fres;
+                let refr_amount = 1.0 - fres;
+
+                //just sample the sky
+                incoming += skyTexture(reflDir) * exp(-absorption) * relf_amount;
+                absorption -= log(1e-6+refr_amount);
+
+                cray.ro = pos;
+                cray.rd = refDir;
+                inside = !inside;
+            }
+
+            tt += t;
+            t = 0.0;
+            bounces+=1.0;
+            step *= 1.25;
+
+            if(bounces > 6.0) {break; }
+        }
+        prev_d = d;
+    }
+    //return vec4f(vec3f(bounces/5.0), 1.0);
+    return vec4f(incoming, 1.0);
+}
+
+fn intersectCube(pos: vec3f, dir: vec3f) -> vec2f {
+    let bmin = vec3f(0.0);
+    let bmax = vec3f(size3d) - 2.0;
+    let t1 = (bmin - pos) / dir;
+    let t2 = (bmax - pos) / dir;
+    let tmin = min(t1, t2);
+    let tmax = max(t1, t2);
+    let tminmax = min(tmax.x, min(tmax.y, tmax.z));
+    let tmaxmin = max(tmin.x, max(tmin.y, tmin.z));
+    return vec2f(tmaxmin, tminmax);
+}
+
+fn traceRay(ray: Ray, dither: float) -> vec4f {
+    //box intersection
+    let t = intersectCube(ray.ro, ray.rd);
+    let tmin = max(t.x, 1.0);
+    let tmax = t.y;
+    if (tmin > tmax) {
+        return vec4f(skyTexture(ray.rd), 1.0);
+    }
+    let newRay = Ray(ray.ro + tmin * ray.rd, ray.rd);
+    return rayMarch(newRay, dither);
 }
 
 @compute @workgroup_size(16, 16)
@@ -856,24 +1005,25 @@ fn main_image(@builtin(global_invocation_id) id: uint3)
     // Pixel coordinates (centre of pixel, origin at bottom left)
     let fragCoord = float2(float(id.x) + .5, float(id.y) + .5);
 
-    var color = Sample(int2(id.xy));
-    let depth = color.w;
-    let ray = RayFromPixel(camera, vec2f(id.xy));
+    var ray = RayFromPixel(camera, vec2f(id.xy));
 
-    // Sample background from cube map
-    let sky = skyTexture(ray.rd);
-    color = 1.5*color;
-    if(custom.RenderMode < 0.5)  {
-        let absorb = exp(-20.0*length(color));
-        color = vec4f(color.xyz + absorb*sky, 0);
-    } else {
-        if(depth < 1.0) {
-            color = vec4f(sky, 0);
-        }
-    }
+    ray.ro = WorldToSim(ray.ro);
+    var col = traceRay(ray, 0.0);
+
+    // // Sample background from cube map
+    // let sky = skyTexture(ray.rd);
+    // color = 1.5*color;
+    // if(custom.RenderMode < 0.5)  {
+    //     let absorb = exp(-20.0*length(color));
+    //     color = vec4f(color.xyz + absorb*sky, 0);
+    // } else {
+    //     if(depth < 1.0) {
+    //         color = vec4f(sky, 0);
+    //     }
+    // }
     
     // Output to screen (linear colour space)
-    textureStore(screen, int2(id.xy), float4(tanh(color.xyz), 1.));
+    textureStore(screen, int2(id.xy), float4(tanh(col.xyz), 1.));
 }
 
 fn SetCamera()
@@ -1303,71 +1453,71 @@ fn AdditiveBlend(color: float3, depth: float, index: int)
     atomicAdd(&gstate.screen[index*4+2], int(scaledColor.z));
 }
 
-fn RasterizePixel(color: float3, depth: float, pos: int2)
-{
-    let screen_size = int2(camera.size);
-    if(pos.x < 0 || pos.x >= screen_size.x || 
-        pos.y < 0 || pos.y >= screen_size.y || depth < 0.0)
-    {
-        return;
-    }
+// fn RasterizePixel(color: float3, depth: float, pos: int2)
+// {
+//     let screen_size = int2(camera.size);
+//     if(pos.x < 0 || pos.x >= screen_size.x || 
+//         pos.y < 0 || pos.y >= screen_size.y || depth < 0.0)
+//     {
+//         return;
+//     }
 
-    let idx = pos.x + screen_size.x * pos.y;
+//     let idx = pos.x + screen_size.x * pos.y;
     
-    if(custom.RenderMode < 0.5)
-    {
-        AdditiveBlend(color, depth, idx);
-    }
-    else
-    {
-        ClosestPoint(color, depth, idx);
-    }
-}
+//     if(custom.RenderMode < 0.5)
+//     {
+//         AdditiveBlend(color, depth, idx);
+//     }
+//     else
+//     {
+//         ClosestPoint(color, depth, idx);
+//     }
+// }
 
-fn RasterizeEllipsoid(color: float3, ellipsoid: Ellipsoid)
-{
-    let projection = projEllipsoid(ellipsoid, camera);
+// fn RasterizeEllipsoid(color: float3, ellipsoid: Ellipsoid)
+// {
+//     let projection = projEllipsoid(ellipsoid, camera);
 
-    if(projection.projectionFailed) { return; }
+//     if(projection.projectionFailed) { return; }
 
-    // Get the bounding box of the ellipse
-    let u = projection.axis1 * projection.size.x;
-    let v = projection.axis2 * projection.size.y;
-    let size = sqrt(u * u + v * v);
-    let bbox_min = projection.center - size;
-    let bbox_max = projection.center + size;
+//     // Get the bounding box of the ellipse
+//     let u = projection.axis1 * projection.size.x;
+//     let v = projection.axis2 * projection.size.y;
+//     let size = sqrt(u * u + v * v);
+//     let bbox_min = projection.center - size;
+//     let bbox_max = projection.center + size;
 
-    // Skip if bbox is too large
-    let area = projection.size.x * projection.size.y * PI;
-    if(area > MAX_RASTER_AREA) { return; }
+//     // Skip if bbox is too large
+//     let area = projection.size.x * projection.size.y * PI;
+//     if(area > MAX_RASTER_AREA) { return; }
 
-    // Rasterize the ellipse
-    let imin_y = max(int(floor(bbox_min.y)), 0);
-    let imax_y = min(int(ceil(bbox_max.y)), int(camera.size.y));
-    for (var j = imin_y; j < imax_y; j++) {
-        let bounds = ellipseLineMinMaxX(f32(j), projection);
-        let imin_x = max(int(floor(bounds.x)), 0);
-        let imax_x = min(int(ceil(bounds.y)), int(camera.size.x));
-        for (var i = imin_x; i < imax_x; i++) {
-            let p = vec2f(f32(i), f32(j));
-            let ray = RayFromPixel(camera, p);
-            let intersection = intersectEllipsoid(ray, ellipsoid);
-            if (intersection.t > 0.0) 
-            {   
-                var pix_color = color;
-                if(custom.RenderMode > 0.5)  {
-                   pix_color *= (dot(intersection.normal, vec3f(1.0, 0.0, 0.0)) * 0.15 + 0.85);
-                }
-                //pix_color = intersection.normal * 0.5 + 0.5;
-                RasterizePixel(pix_color, intersection.t, int2(p.xy));
-            } 
-            else // misses
-            {
-                 //RasterizePixel(vec3f(1.0, 0.0, 0.0), projection.depth, int2(p.xy));
-            }
-        }
-    }
-}
+//     // Rasterize the ellipse
+//     let imin_y = max(int(floor(bbox_min.y)), 0);
+//     let imax_y = min(int(ceil(bbox_max.y)), int(camera.size.y));
+//     for (var j = imin_y; j < imax_y; j++) {
+//         let bounds = ellipseLineMinMaxX(f32(j), projection);
+//         let imin_x = max(int(floor(bounds.x)), 0);
+//         let imax_x = min(int(ceil(bounds.y)), int(camera.size.x));
+//         for (var i = imin_x; i < imax_x; i++) {
+//             let p = vec2f(f32(i), f32(j));
+//             let ray = RayFromPixel(camera, p);
+//             let intersection = intersectEllipsoid(ray, ellipsoid);
+//             if (intersection.t > 0.0) 
+//             {   
+//                 var pix_color = color;
+//                 if(custom.RenderMode > 0.5)  {
+//                    pix_color *= (dot(intersection.normal, vec3f(1.0, 0.0, 0.0)) * 0.15 + 0.85);
+//                 }
+//                 //pix_color = intersection.normal * 0.5 + 0.5;
+//                 RasterizePixel(pix_color, intersection.t, int2(p.xy));
+//             } 
+//             else // misses
+//             {
+//                  //RasterizePixel(vec3f(1.0, 0.0, 0.0), projection.depth, int2(p.xy));
+//             }
+//         }
+//     }
+// }
 
 #storage gstate GlobalState
 
