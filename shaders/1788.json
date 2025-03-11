@@ -7,19 +7,19 @@
     "uniforms": [
       {
         "name": "steps",
-        "value": 0.782,
+        "value": 2.958,
         "minRange": 0,
         "maxRange": 10
       },
       {
         "name": "threshold",
-        "value": 0.145,
+        "value": 0.094,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "threshold2",
-        "value": 0.196,
+        "value": 0.102,
         "minRange": 0,
         "maxRange": 1
       },
@@ -34,6 +34,12 @@
         "value": 0.001,
         "minRange": 0,
         "maxRange": 0.01
+      },
+      {
+        "name": "tolerance",
+        "value": 375.254,
+        "minRange": 100,
+        "maxRange": 400
       }
     ],
     "textures": [

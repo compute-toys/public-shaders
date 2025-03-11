@@ -13,25 +13,25 @@
       },
       {
         "name": "Pressure",
-        "value": 1.152,
+        "value": 0.859,
         "minRange": 0,
         "maxRange": 5
       },
       {
         "name": "Viscosity",
-        "value": 0.848,
+        "value": 1.063,
         "minRange": 0,
         "maxRange": 3
       },
       {
         "name": "Spike",
-        "value": 0.366,
+        "value": 0.32,
         "minRange": 0,
         "maxRange": 3
       },
       {
         "name": "TimeStep",
-        "value": 1.004,
+        "value": 1.008,
         "minRange": 0,
         "maxRange": 2
       },
@@ -43,7 +43,7 @@
       },
       {
         "name": "Gravity",
-        "value": 0.009,
+        "value": 0.007,
         "minRange": 0,
         "maxRange": 0.05
       },
@@ -55,13 +55,13 @@
       },
       {
         "name": "GravityOscill",
-        "value": 0.408,
+        "value": 0.402,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "Isovalue",
-        "value": 0.571,
+        "value": 0.691,
         "minRange": 0,
         "maxRange": 1
       },

@@ -573,7 +573,7 @@ fn Simulate(@builtin(global_invocation_id) id: uint3) {
     p.pos = clamp(p.pos, vec3f(0.0), vec3f(size3d) - 1.0);
 
     // Add random offset to make sure particles dont clump
-    p.pos += 0.001 * nrand4(1.0, float4(0.0, 0.0, 0.0, 0.0)).xyz;
+    p.pos += DELTA_TIME * 0.01 * nrand4(1.0, float4(0.0, 0.0, 0.0, 0.0)).xyz;
 
     // Save particle state
     SaveParticle(idx, p); 

@@ -184,7 +184,7 @@ fn img(@builtin(global_invocation_id) id: vec3u) {
         O = vec4f(f32(data)/f32(1<<31));
     }
 
-    //O = pow(O, vec4f(1./2.2));
+    O = pow(O, vec4f(2.2));
     O += bg;
 
     textureStore(screen, ic, O);
