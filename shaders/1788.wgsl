@@ -7,8 +7,50 @@ const PI = acos(-1.);
 
 #define resolution vec2f(textureDimensions(screen).xy)
 
+fn texelFetch(channel: int, coord: vec2i, lod: i32) -> vec4f {
+    return passLoad(channel, coord, lod);
+}
+
+fn textureLod(channel: int, coord: vec2f, lod: f32) -> vec4f {
+    return textureSampleLevel(pass_in, bilinear, coord, channel, lod);
+}
+
+fn texture(channel: int, coord: vec2f) -> vec4f {
+    // this is not a fragment shader, so mip level estimation is impossible/hard
+    // just use the 0th mip level
+    return textureSampleLevel(pass_in, bilinear, coord, channel, 0.0);
+}
+
+fn gaussian(pos: vec2<f32>, sigma: f32) -> f32 {
+	let left: f32 = 1. / (2. * PI * sigma * sigma);
+	let right: f32 = exp(-dot(pos, pos) / (2. * sigma * sigma));
+	return left * right;
+} 
+
+fn get_dir(dir: vec2f) -> vec2f {
+    let d = normalize(texture(BufferC, dir).xy);
+    return select(vec2f(1.0, 0.0), d, all(d == d)); // If NaN, return default direction
+}
+
+fn lum( v : vec3f) -> f32 {
+	return dot(v, vec3(.299, .587, .114));
+}
+
+struct Camera {
+    pos: vec2f,
+    zoom : f32,
+}
+const ZOOM_SPEED = 0.0001;
+const MOV_SPEED = 300.;
+
+#storage state Camera
+
 fn intensity(color: vec4f) -> f32 {
 	return sqrt(color.x * color.x + color.y * color.y + color.z * color.z);
+}
+
+fn rgb2Luminance(rgb : vec3f) -> f32 {
+    return 0.299*rgb.x + 0.587*rgb.y + 0.114*rgb.z ;
 }
 
 fn find_closest_vector(vectors: array<vec3f, 256>) -> vec3f {
@@ -20,10 +62,10 @@ fn find_closest_vector(vectors: array<vec3f, 256>) -> vec3f {
     );
 
     let weights = array<f32, 4>(
-		1.,
-		1.,
-		1,
-		1
+		1.1,
+		1.1,
+		0.8,
+		0.8
 		);
 
     var best_match: vec3f = vec3f(0.0, 0.0, 0.0); // Default to black
@@ -78,7 +120,7 @@ fn map_outline (color:vec3f) -> i32 {
 	if (all(color == vec3f(1,1,0))) {
 		return 92;
 	}
-	if (all(color == vec3f(1,1,1))) {
+	if (all(color == vec3f(0,1,1))) {
 		return 47;
 	}
 	return 0;
@@ -121,22 +163,25 @@ fn map_char(value: i32) -> i32 {
 }
 
 fn sobel(channel: int, stepx: f32, stepy: f32, center: vec2f) -> vec3f {
-	let tleft: f32 = intensity(texture( channel, center + vec2f(-stepx, stepy)));
-	let left: f32 = intensity(texture( channel, center + vec2f(-stepx, 0.)));
-	let bleft: f32 = intensity(texture( channel, center + vec2f(-stepx, -stepy)));
-	let top: f32 = intensity(texture( channel, center + vec2f(0., stepy)));
-	let bottom: f32 = intensity(texture( channel, center + vec2f(0., -stepy)));
-	let tright: f32 = intensity(texture( channel, center + vec2f(stepx, stepy)));
-	let right: f32 = intensity(texture( channel, center + vec2f(stepx, 0.)));
-	let bright: f32 = intensity(texture( channel, center + vec2f(stepx, -stepy)));
+    let offsets = array<vec2f, 8>(
+        vec2f(-stepx, stepy), 	vec2f(-stepx, 0.),	 	vec2f(-stepx, -stepy),
+        vec2f(0., stepy), 		vec2f(0., -stepy),
+        vec2f(stepx, stepy), 	vec2f(stepx, 0.), 		vec2f(stepx, -stepy)
+    );
 
-	let x: f32 = tleft + 2. * left + bleft - tright - 2. * right - bright;
-	let y: f32 = -tleft - 2. * top - tright + bleft + 2. * bottom + bright;
-	
-	let color: f32 = sqrt(x * x + y * y);
-	// return vec3f(color);
-	return vec3f(x*x - x*y *20,y*y , x*y) /255;
-} 
+    var intensities: array<f32, 8>;
+    for (var i: i32 = 0; i < 8; i++) {
+        intensities[i] = intensity(texture(channel, center + offsets[i]));
+    }
+
+    let x = intensities[0] + 2.0 * intensities[1] + intensities[2] -
+            intensities[5] - 2.0 * intensities[6] - intensities[7];
+
+    let y = -intensities[0] - 2.0 * intensities[3] - intensities[5] +
+             intensities[2] + 2.0 * intensities[4] + intensities[7];
+
+    return vec3f(x * x - x * y, y * y - x * y, x * y);
+}
 
 
 fn soft_threshold (lum: f32 , threshold: f32, soft: f32) -> f32 {
@@ -151,53 +196,49 @@ fn is_nan(v: vec3f) -> bool {
     return any(v != v); // True if any component is NaN
 }
 
-fn texelFetch(channel: int, coord: vec2i, lod: i32) -> vec4f {
-    return passLoad(channel, coord, lod);
-}
-
-fn textureLod(channel: int, coord: vec2f, lod: f32) -> vec4f {
-    return textureSampleLevel(pass_in, bilinear, coord, channel, lod);
-}
-
-fn texture(channel: int, coord: vec2f) -> vec4f {
-    // this is not a fragment shader, so mip level estimation is impossible/hard
-    // just use the 0th mip level
-    return textureSampleLevel(pass_in, bilinear, coord, channel, 0.0);
-}
-
-fn gaussian(pos: vec2<f32>, sigma: f32) -> f32 {
-	let left: f32 = 1. / (2. * PI * sigma * sigma);
-	let right: f32 = exp(-dot(pos, pos) / (2. * sigma * sigma));
-	return left * right;
-} 
-
-fn get_dir(dir:vec2f) -> vec2f {
-	var d = normalize(texture(BufferC, dir).xy);
-
-	if (d.x != d.x || d.y != d.y) {
-        return vec2f(1.0, 0.0); // Debug: If NaN, return a valid direction
-    }
-
-	return d;
-}
-
-fn lum( v : vec3f) -> f32 {
-	return dot(v, vec3(.299, .587, .114));
+@compute @workgroup_size(1, 1)
+#dispatch_once initialization
+fn initialization() {
+    let screen_size = textureDimensions(screen);
+    let texture_size = textureDimensions(channel1);
+    state.pos = vec2f(screen_size / 2);
+    state.zoom = 1;
 }
 
 @compute @workgroup_size(16, 16)
 fn Pass_Threshold(@builtin(global_invocation_id) id: vec3u) {
     // Viewport resolution (in pixels)
     let screen_size = textureDimensions(screen);
-
+	let texture_size = textureDimensions(channel1);
     // Prevent overdraw for workgroups on the edge of the viewport
     if (id.x >= screen_size.x || id.y >= screen_size.y) { return; }
 
-    // Pixel coordinates (centre of pixel, origin at bottom left)
-    let fragCoord = vec2f(id.xy);
+    //update view
+    if keyDown(83) {
+        state.pos += (vec2f(0, MOV_SPEED) / vec2f(f32(screen_size.x)) ) ;
+    }
+	if keyDown(87) {
+        state.pos += ( vec2f(0, - MOV_SPEED) / vec2f(f32(screen_size.x)) )  ;
+    }
+	if keyDown(68) {
+        state.pos += ( vec2f(MOV_SPEED, 0 ) / vec2f(f32(screen_size.y)) )  ;
+    }
+	if keyDown(65) {
+        state.pos += ( vec2f(- MOV_SPEED, 0 ) / vec2f(f32(screen_size.y)) )  ;
+    }
+    if keyDown(16) { // up arrow
+        state.zoom += ZOOM_SPEED ;
+    }
+    if keyDown(17) { // down arrow
+        state.zoom -= ZOOM_SPEED;
+    }
 
-    // Normalised pixel coordinates (from 0 to 1)
-    let uv = fragCoord / vec2f(screen_size);
+
+    //navigating the image
+    var uv = vec2f(id.xy);
+    uv /= vec2f(texture_size) ;
+    uv = uv  * state.zoom;
+    uv = uv + state.pos/ vec2f(screen_size);
 
 	var col = textureSampleLevel(channel1, trilinear,uv,0.).rgb;
 
@@ -456,50 +497,60 @@ fn Pass_Sobel(@builtin(global_invocation_id) id: uint3) {
     col = vec3f(sobel( BufferB ,custom.steps/ float(resolution.x),custom.steps/ float(resolution.y),uv));
 
     // Output to screen (linear colour space)
-    textureStore(screen ,int2(id.xy), vec4f(col, 0.));
+    textureStore(pass_out ,int2(id.xy), BufferA, vec4f(col, 0.));
 }
 
 var<workgroup> wgmem: array<vec3f,256>;
 enable subgroups;
 
-// @compute @workgroup_size(16, 16)
-// fn  Pass_Pix(
-//         @builtin(global_invocation_id) gid: vec3u,
-//         @builtin(subgroup_size) subgroupSize : u32,
-//         @builtin(subgroup_invocation_id) sgid : u32,
-//         @builtin(local_invocation_index) lid : u32,
-// ) {
-//     // Viewport resolution (in pixels)
-//     let screen_size = textureDimensions(screen);
+@compute @workgroup_size(10, 10)
+fn Pass_ascii(
+    @builtin(global_invocation_id) gid: vec3u,
+    @builtin(workgroup_id) wid: vec3u,
+    @builtin(local_invocation_index) lid: u32,
+    @builtin(subgroup_invocation_id) sgid: u32
+) {
+    let screen_size = textureDimensions(screen);
+	let texture_size = textureDimensions(channel1);
 
-//     let fragCoord = vec2f(gid.xy);
+    // Compute UV coordinates
+    let fragCoord = vec2f(gid.xy);
+    let uv = fragCoord / vec2f(screen_size);
 
-//     let uv = fragCoord / vec2f(screen_size);
+    // UV for character mapping (optimized)
+    let uv_char = vec2f(f32(lid % 10), f32(lid / 10)) * 0.1;
 
-// 	let uv_char = vec2f(f32(gid.x) % 16, f32(gid.y) % 16) / 16 ;
+    // Load color from texture (avoiding redundant operations)
+    let col = textureSampleLevel(pass_in, bilinear, uv, BufferA, 0.0).rgb;
 
-//     let col = textureSampleLevel(pass_in, bilinear, uv, BufferA, 0.0).rgb ;
+    // Store in shared memory
+    wgmem[lid] = col;
+    workgroupBarrier(); // Only needed before reading shared memory
 
-//     // One thread per workgroup writes the value to workgroup memory.
-//     wgmem[lid] = col;
+    var v: vec3f;
+    var c: i32;
+	var col_ascii: vec3f;
+	var char : i32;
 
-//     workgroupBarrier();
+    // Only first thread in the subgroup calculates
+    if (lid == 0) {
+        v = find_closest_vector(wgmem);
+        c = map_outline(v);
+		col_ascii = textureSampleLevel(channel1, bilinear,uv,0.).rgb;
+		let l = rgb2Luminance(col_ascii);
+		 char = map_char(int(l * 24));
+    }
 
-//     var v : vec3f;
-// 	var c :i32;
+    // Efficient subgroup broadcasting
+    c = subgroupBroadcastFirst(c);
+	char = subgroupBroadcastFirst(char);
 
-//     if (sgid == 0) {
-// 		v = find_closest_vector(wgmem);
-// 		c = map_outline(v);
-// 		// v = vec3f(float(c));
-//     }
-//     c = subgroupBroadcast(c, 0);
-// 	v = subgroupBroadcast(v, 0);
-//     var res = char_( uv_char ,vec3f(1) ,c ).rgb;;
+    // Compute final result
+    let line = char_(uv_char, vec3f(1), c).rgb;
+	// col_ascii = char_(uv_char, col_ascii, char).xyz;
+    col_ascii = char_(uv_char, vec3f(1), char).xyz;
 
-//     // Output to screen (linear colour space)
-//     // textureStore(screen, gid.xy, vec4f(res, 0.));
-// 	textureStore(screen, gid.xy, vec4f(v, 1.));
-// 	// textureStore(screen, gid.xy, vec4f(uv_char,0, 1.));
-// 	// textureStore(screen, gid.xy, vec4f(uv,0, 1.));
-// }
+    // Store output
+    textureStore(screen, gid.xy, vec4f(line, 0.));
+	// textureStore(screen, gid.xy, vec4f(col_ascii, 0.));
+}
