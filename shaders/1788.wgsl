@@ -53,55 +53,6 @@ fn rgb2Luminance(rgb : vec3f) -> f32 {
     return 0.299*rgb.x + 0.587*rgb.y + 0.114*rgb.z ;
 }
 
-fn find_closest_vector(vectors: array<vec3f, 256>) -> vec3f {
-    let directions = array<vec3f, 4>(
-        vec3f(1.0, 0.0, 0.0),  // Vertical
-        vec3f(0.0, 1.0, 0.0),  // Horizontal
-        vec3f(1.0, 1.0, 0.0),  // Descending Diagonal
-        vec3f(0.0, 1.0, 1.0)   // Ascending Diagonal
-    );
-
-    let weights = array<f32, 4>(
-		1.1,
-		1.1,
-		0.8,
-		0.8
-		);
-
-    var best_match: vec3f = vec3f(0.0, 0.0, 0.0); // Default to black
-    var max_similarity: f32 = -1.0;
-    var has_direction: bool = false;
-    var black_pixel_count: i32 = 0;
-    let black_threshold: i32 = int(custom.tolerance); // Adjust this threshold as needed
-
-    for (var i: i32 = 0; i < 256; i++) {
-        let v = vectors[i];
-
-        if (all(v == vec3f(0.0, 0.0, 0.0))) {
-            black_pixel_count += 1;
-            continue; // Skip black pixels
-        }
-
-        has_direction = true;
-        let norm_v = normalize(v);
-
-        for (var j: i32 = 0; j < 4; j++) {
-            let similarity = dot(norm_v, directions[j]) * weights[j]; // Apply bias
-            if (similarity > max_similarity) {
-                max_similarity = similarity;
-                best_match = directions[j];
-            }
-        }
-    }
-
-    // If too many black pixels, return black
-    if (black_pixel_count > black_threshold) {
-        return vec3f(0.0, 0.0, 0.0);
-    }
-
-    return select(vec3f(0.0, 0.0, 0.0), best_match, has_direction);
-}
-
 fn char_(pos: vec2f, colour:vec3f, c: int) -> float4 {
     var p = pos % vec2f(1);
 
@@ -226,10 +177,10 @@ fn Pass_Threshold(@builtin(global_invocation_id) id: vec3u) {
 	if keyDown(65) {
         state.pos += ( vec2f(- MOV_SPEED, 0 ) / vec2f(f32(screen_size.y)) )  ;
     }
-    if keyDown(16) { // up arrow
+    if keyDown(90) { // up arrow
         state.zoom += ZOOM_SPEED ;
     }
-    if keyDown(17) { // down arrow
+    if keyDown(88) { // down arrow
         state.zoom -= ZOOM_SPEED;
     }
 
@@ -500,15 +451,67 @@ fn Pass_Sobel(@builtin(global_invocation_id) id: uint3) {
     textureStore(pass_out ,int2(id.xy), BufferA, vec4f(col, 0.));
 }
 
-var<workgroup> wgmem: array<vec3f,256>;
-enable subgroups;
+#define BLOCK_SIZE_X 8
+#define BLOCK_SIZE_Y 8
 
-@compute @workgroup_size(10, 10)
+var<workgroup> wgmem: array<vec3f,BLOCK_SIZE_X * BLOCK_SIZE_Y - 1>;
+var<workgroup> wgline: i32;
+var<workgroup> wgchar: i32;
+var<workgroup> wgcolor: vec3f;
+
+fn find_closest_vector(vectors: array<vec3f, BLOCK_SIZE_X * BLOCK_SIZE_Y - 1>) -> vec3f {
+    let directions = array<vec3f, 4>(
+        vec3f(1.0, 0.0, 0.0),  // Vertical
+        vec3f(0.0, 1.0, 0.0),  // Horizontal
+        vec3f(1.0, 1.0, 0.0),  // Descending Diagonal
+        vec3f(0.0, 1.0, 1.0)   // Ascending Diagonal
+    );
+
+    let weights = array<f32, 4>(
+		1.1,
+		1.1,
+		0.9,
+		0.9
+		);
+
+    var best_match: vec3f = vec3f(0.0, 0.0, 0.0); // Default to black
+    var max_similarity: f32 = -1.0;
+    var has_direction: bool = false;
+    var black_pixel_count: i32 = 0;
+    let black_threshold: i32 = int(custom.tolerance); // Adjust this threshold as needed
+
+    for (var i: i32 = 0; i < BLOCK_SIZE_X * BLOCK_SIZE_Y; i++) {
+        let v = vectors[i];
+
+        if (all(v == vec3f(0.0, 0.0, 0.0))) {
+            black_pixel_count += 1;
+            continue; // Skip black pixels
+        }
+
+        has_direction = true;
+        let norm_v = normalize(v);
+
+        for (var j: i32 = 0; j < 4; j++) {
+            let similarity = dot(norm_v, directions[j]) * weights[j]; // Apply bias
+            if (similarity > max_similarity) {
+                max_similarity = similarity;
+                best_match = directions[j];
+            }
+        }
+    }
+
+    // If too many black pixels, return black
+    if (black_pixel_count > black_threshold) {
+        return vec3f(0.0, 0.0, 0.0);
+    }
+
+    return select(vec3f(0.0, 0.0, 0.0), best_match, has_direction);
+}
+
+@compute @workgroup_size(BLOCK_SIZE_X, BLOCK_SIZE_Y)
 fn Pass_ascii(
     @builtin(global_invocation_id) gid: vec3u,
-    @builtin(workgroup_id) wid: vec3u,
     @builtin(local_invocation_index) lid: u32,
-    @builtin(subgroup_invocation_id) sgid: u32
 ) {
     let screen_size = textureDimensions(screen);
 	let texture_size = textureDimensions(channel1);
@@ -518,39 +521,44 @@ fn Pass_ascii(
     let uv = fragCoord / vec2f(screen_size);
 
     // UV for character mapping (optimized)
-    let uv_char = vec2f(f32(lid % 10), f32(lid / 10)) * 0.1;
+    let uv_char = vec2f(f32(lid % BLOCK_SIZE_X), f32(lid / BLOCK_SIZE_X)) / vec2f(BLOCK_SIZE_X,BLOCK_SIZE_Y);
+
+	var uv_ascii = vec2f(gid.xy);
+    uv_ascii /= vec2f(texture_size) ;
+    uv_ascii = uv_ascii  * state.zoom;
+    uv_ascii = uv_ascii + state.pos/ vec2f(screen_size);
 
     // Load color from texture (avoiding redundant operations)
     let col = textureSampleLevel(pass_in, bilinear, uv, BufferA, 0.0).rgb;
 
     // Store in shared memory
     wgmem[lid] = col;
-    workgroupBarrier(); // Only needed before reading shared memory
+    workgroupBarrier();
 
     var v: vec3f;
     var c: i32;
-	var col_ascii: vec3f;
-	var char : i32;
 
-    // Only first thread in the subgroup calculates
+
+    
     if (lid == 0) {
+		let col_ascii = textureSampleLevel(channel1, bilinear,uv_ascii,0.).rgb;
         v = find_closest_vector(wgmem);
-        c = map_outline(v);
-		col_ascii = textureSampleLevel(channel1, bilinear,uv,0.).rgb;
-		let l = rgb2Luminance(col_ascii);
-		 char = map_char(int(l * 24));
+        wgline = map_outline(v);
+		wgchar = map_char(int(rgb2Luminance(col_ascii) * 24));
+		wgcolor = col_ascii;
     }
+	workgroupBarrier();
+    
+	//compute res
+	// let color = vec3f(200, 131, 255) / 255;
+	let color = wgcolor;
+    let line = char_(uv_char, color, wgline).rgb;
+    let ascii = char_(uv_char, color, wgchar).rgb;
+	let mask = vec3f(float(min(1,wgline)));
+	let res = mix(ascii,line,mask);
 
-    // Efficient subgroup broadcasting
-    c = subgroupBroadcastFirst(c);
-	char = subgroupBroadcastFirst(char);
 
-    // Compute final result
-    let line = char_(uv_char, vec3f(1), c).rgb;
-	// col_ascii = char_(uv_char, col_ascii, char).xyz;
-    col_ascii = char_(uv_char, vec3f(1), char).xyz;
 
     // Store output
-    textureStore(screen, gid.xy, vec4f(line, 0.));
-	// textureStore(screen, gid.xy, vec4f(col_ascii, 0.));
+	textureStore(screen, gid.xy, vec4f(res, 0.));
 }
