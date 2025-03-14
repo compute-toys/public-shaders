@@ -37,8 +37,8 @@
       },
       {
         "name": "tolerance",
-        "value": 56.147,
-        "minRange": 0,
+        "value": 151.436,
+        "minRange": 100,
         "maxRange": 400
       }
     ],
