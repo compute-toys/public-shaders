@@ -4,7 +4,8 @@
 //thats the distance of blue points to the white point
 //red point is the anchor point which is controlled by gradient descent
 //the other points are only controlled by physics
-//this uses basic method which gets stuck on a dumb local minimum
+//also minimize distance traveled by all points except red points
+//this basic method gets stuck on a dumb local minimum
 //similar to the worst performing method in this video https://youtu.be/-uXFYpVumh4?t=64
 //using SLANG automatic differentiation to find derivatives of the physics simulation
 
@@ -196,10 +197,10 @@ fn s_bwd_dis2_0( _S59 : ptr<function, DiffPair_vectorx3Cfloatx2C2x3E_0>,  _S60 :
 
 
 #define PI 3.14159265358979323846f
-#define B  3            //balls
-#define K  2            //bars per ball
-#define T  512           //total time to simulate
-#define P  2            //properties per ball (pos,vel)
+#define B 3            //balls
+#define K 2            //bars per ball
+#define T 512           //total time to simulate
+#define P 2            //properties per ball (pos,vel)
 #storage D array<vec2f,B*P*T+1>
 var<workgroup> D2: array<vec2f,B*P>;        //current ball properties
 var<workgroup> D3: array<vec2f,B*P>;        //current ball properties
@@ -279,9 +280,11 @@ fn backward(@builtin(global_invocation_id) id3: vec3u)
         //var j2_0 = DiffPair_vectorx3Cfloatx2C2x3E_0(trp,vec2f(0));
         //s_bwd_dis2_0(&(j1_0), &(j2_0), 1f); //ff);
         //var drv = j1_0.differential_0;
-        var drv = D[id1 + B*0 + B*P*t]-trp;
-        if(id1 != B-1){drv = vec2f(0);}
-        D3[id1 + B*0] += drv;
+        var                       ps2 = D[id1 + B*0 + B*P*(t-0)];
+        var ps1 = ps2; if(t+1< T){ps1 = D[id1 + B*0 + B*P*(t+1)];}
+        var ps3 = ps2; if(t-1>=0){ps3 = D[id1 + B*0 + B*P*(t-1)];}
+        D3[id1 + B*0] += f32(id1 == B-1)*(ps2-trp);             //minimize distance to target on blue points
+        D3[id1 + B*0] += f32(id1 !=   0)*(ps1-ps2  +  ps2-ps3); //minimize distance traveled  on all points exept red
         D3[id1 + B*1] += D3[id1 + B*0]*stp;
         //if pendulum anchorpoint
         if(id1==0){var a = D3[id1 + B*0]*vec2f(-1,0);  D4[t] = a;  tz+=dot(a,a);}
@@ -334,7 +337,7 @@ fn clear(@builtin(global_invocation_id) id: vec3u)
     if(id.y >= SCREEN_HEIGHT){ return; }
     textureStore(screen, id.xy, vec4f(0));
 }
-#workgroup_count draw 256 1 1
+#workgroup_count draw T 1 1
 @compute @workgroup_size(B,1,1)
 fn draw(@builtin(local_invocation_id) id3: vec3u, @builtin(workgroup_id) iw3: vec3u)
 {
@@ -345,6 +348,7 @@ fn draw(@builtin(local_invocation_id) id3: vec3u, @builtin(workgroup_id) iw3: ve
     var res = vec2f(SCREEN_WIDTH,SCREEN_HEIGHT);
     var m = (2f*vec2f(mouse.pos)-res)/res.y;
     var camPos = cos(time.elapsed*vec3f(-23,-9,27)*.02f+vec3f(11,2,22));
+        camPos = cos(0f*vec3f(-23,-9,27)*.02f+vec3f(11,2,22));
     if(mouse.click!=0){camPos = vec3f(cos(m.x),m.y,sin(m.x));}
         //camPos = normalize(camPos)*4f;
     var camDir = -normalize(camPos);
