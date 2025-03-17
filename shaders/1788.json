@@ -44,10 +44,10 @@
     ],
     "textures": [
       {
-        "img": "https://raw.githubusercontent.com/klownie/KlowniePortofolio/refs/heads/main/assets/Plus_IBM_BIOS.png"
+        "img": "https://raw.githubusercontent.com/klownie/ComputeToyTexturesForMe/refs/heads/main/Plus_IBM_BIOS.png"
       },
       {
-        "img": "https://raw.githubusercontent.com/klownie/KlowniePortofolio/refs/heads/main/assets/projects/Intru/HighRes/model_03.jpg"
+        "img": "https://raw.githubusercontent.com/klownie/ComputeToyTexturesForMe/refs/heads/main/model_03.jpg"
       }
     ],
     "float32Enabled": false
