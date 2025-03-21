@@ -252,7 +252,7 @@ fn trace(@builtin(global_invocation_id) id: vec3u) {
 
     let wavelength = 350+h.z*400;
 
-    var hit = path(o, dir, ior / wavelength * 500., &rd, &p);
+    var hit = path(o, dir, mix(ior, ior / wavelength * 500., custom.dispersionAmount), &rd, &p);
 
     if (hit.z > .5){
         stuff
