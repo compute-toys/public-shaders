@@ -8,6 +8,30 @@ const res = 1024;
 
 const lightDir = vec3f(0,0,-1);
 
+// Yoinked from https://64.github.io/tonemapping/, translated to wgsl by ahs3n //
+fn uncharted2_tonemap_partial(x: vec3f) -> vec3f
+{
+    let A = 0.15f;
+    let B = 0.50f;
+    let C = 0.10f;
+    let D = 0.20f;
+    let E = 0.02f;
+    let F = 0.30f;
+    return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
+}
+
+fn uncharted2_filmic(v: vec3f) -> vec3f
+{
+    let exposure_bias = 2.0f;
+    let curr = uncharted2_tonemap_partial(v * exposure_bias);
+
+    let W = vec3(11.2f);
+    let white_scale = vec3(1.0f) / uncharted2_tonemap_partial(W);
+    return curr * white_scale;
+}
+// [END YOINK] //
+
+
 // Yoinked from https://www.shadertoy.com/view/ls2Bz1 //
 
 // --- Spectral Zucconi --------------------------------------------
@@ -16,6 +40,7 @@ const lightDir = vec3f(0,0,-1);
 // But with values optimised to match as close as possible the visible spectrum
 // Fits this: https://commons.wikimedia.org/wiki/File:Linear_visible_spectrum.svg
 // With weighter MSE (RGB weights: 0.3, 0.59, 0.11)
+// Translated to wgsl by ahs3n
 fn sat (x: vec3f) -> vec3f {
     return min(vec3(1), max(vec3(0),x));
 }
@@ -319,21 +344,23 @@ fn img(@builtin(global_invocation_id) id: vec3u) {
 
         col *= vec3f(.533,.533,1);
 
-
-        col /= col + 1.;
+        //col /= col + 1.;
 
     } else {
         
         //col = vec3f(1,0,1); // Failed to terminate
         
     }
-    //col = hit.xyz;
+
+    col = uncharted2_filmic(col);
 
     // vignette 
-    // col = vec3f(1);
     col = mix(bg, col, 1./(1.+5.*dot(uv-.5, uv-.5)));
 
-    // col = spectrum(350 + uv.x*400);
+    // col = pow(spectrum(400 + uv.x*300), vec3f(2.2));
 
+    col += (hash(uint3(id.xy, time.frame))*2.-1.)/512.; // Naive dither
+
+    
     textureStore(screen, id.xy, vec4f(col, 1.));
 }
