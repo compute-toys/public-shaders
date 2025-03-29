@@ -1,6 +1,6 @@
 const pi = 3.1415926535897931;
 const eps = 1e-3;
-const ior = 1.5;
+const ior = 1.3;
 const bg =  vec3f(0.005,.007,.010);// vec3f(.079,.104,.12);
 
 const res = 1024;
@@ -277,7 +277,9 @@ fn trace(@builtin(global_invocation_id) id: vec3u) {
 
     let wavelength = 350+h.z*400;
 
-    var hit = path(o, dir, mix(ior, ior / wavelength * 500., custom.dispersionAmount), &rd, &p);
+    var hit = path(o, dir, 
+        mix(ior, (ior-1.) / wavelength * 500. + 1., custom.dispersionAmount),
+        &rd, &p);
 
     if (hit.z > .5){
         stuff
