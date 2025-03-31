@@ -275,7 +275,7 @@ fn trace(@builtin(global_invocation_id) id: vec3u) {
     var rd: vec3f;
     var p: vec3f;
 
-    let wavelength = 350+h.z*400;
+    let wavelength = 400+h.z*300;
 
     var hit = path(o, dir, 
         mix(ior, (ior-1.) / wavelength * 500. + 1., custom.dispersionAmount),
