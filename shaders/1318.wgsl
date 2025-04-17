@@ -6,7 +6,10 @@ const bg =  vec3f(0.005,.007,.010);// vec3f(.079,.104,.12);
 const res = 1024;
 #storage stuff array<array<vec3f, res>, res>
 
-const lightDir = vec3f(0,0,-1);
+const enableTotalInternalReflection = true;
+// Less accurate if you disable but removes noise. One path per pixel 
+// for the viewport, so it's a bit funny with raymarching lots of bounces
+
 
 // Yoinked from https://64.github.io/tonemapping/, translated to wgsl by ahs3n //
 fn uncharted2_tonemap_partial(x: vec3f) -> vec3f
@@ -62,8 +65,8 @@ fn spectral_zucconi (w: f32) -> vec3f {
 
 	return bump3y (	cs * (x - xs), ys);
 }
-
 // [ END YOINK ] //
+
 
 fn spectrum(l: f32) -> vec3f {
     // return pow(
@@ -78,34 +81,34 @@ fn spectrum(l: f32) -> vec3f {
     return spectral_zucconi(l);
 }
 
+fn sd_sunlight(l: f32) -> float { // spectral distribution, blackbody radiation formula. Might be accurate?
+    let f = 170.;
+    // magic numbers trying to fit the curve
+    return pow(l/f, 3.) / (exp(l/f) - 1.);
+}
+
 fn refr(
-    incoming: vec3f, 
-    norm: vec3f, 
-    index: f32, 
-    tir: ptr<function, bool>
+    i: vec3f, // Incoming vector
+    n: vec3f, // Normal vector, pointing from high to low ior
+    mu: f32,  // Index of refraction ratio high/low
+    tir: ptr<function, bool> // Total internal reflection
 ) -> vec3f {
 
-    var i = incoming;
-    var n = norm;
-    var mu = index;
     *tir = false;
 
-    if (dot(i, n) < 0){
-        mu = 1/mu;
-        n = -n;
-    } else {
-        if (dot(i,n) < cos(asin(1/mu))){
+    var t: vec3f;
+    if (dot(i, n) > 0.){
+        
+        if (dot(i, n) > sqrt(mu*mu - 1.)/mu){
+            t = refract(i, -n, mu);
+        } else {
+            t = reflect(i, n);
             *tir = true;
-            return reflect(i, n);
         }
-    }
 
-    var t = refract(i, -n, mu);
-    // (
-    //     n*sqrt(1-mu*mu*(1 - dot(n, i)*dot(n, i)))
-    //     + mu * (i - dot(n,i)*n)
-    // );
-    // https://physics.stackexchange.com/questions/435512/snells-law-in-vector-form
+    } else {
+        t = refract(i, n, 1./mu);
+    }
 
     return t;
 }
@@ -121,16 +124,37 @@ fn hash(y: uint3 ) -> vec3f {
 } //hash by IQ https://www.shadertoy.com/view/XlXcW4. Ported to wgsl by ahs3n.
 
 fn df(p: vec3f) -> float {
-    return 
-    length(p-vec3f(0,0,1.))-.6 + sin(p.x*30.)*.01
-    // max(abs(p.x), max(abs(p.y), abs(p.z-.7)))-.3
-    //max(length(p.xy)-.2, -p.z-.1)// + sin(p.z*50.)*.002
-    // max(
-    //     max(-p.z + .2, abs(p.x)-.9), 
-    //     max(abs(p.y)-.9, p.z-.5 - sin((p.x + p.y)*20.)*.004)
-    // )
-    // max(abs(p.x)-.5, max(abs(p.y)-.3, abs(p.z-.7) -.2- p.x*.3))
-    ;
+    let n = i32(custom.geometry*5);
+    switch (n) {
+
+        case 0: {
+            return length(p-vec3f(0,0,1.))-.6 + sin(p.x*30.)*.01;
+        }
+
+        case 1: {
+            return max(
+                max(-p.z + .2, abs(p.x)-.9), 
+                max(abs(p.y)-.9, p.z-.5 - sin((p.x + p.y)*20.)*.02)
+            );
+        }
+
+        case 2: {
+            return max(abs(p.x)-.5, max(abs(p.y)-.3, abs(p.z-.7) -.2- p.x*.3));
+        }
+
+        case 3: {
+            return max(abs(p.x), max(abs(p.y), abs(p.z-.7)))-.3;
+        }
+
+        case 4: {
+            return max(length(p.xy)-.2, -p.z-.1)// + sin(p.z*50.)*.002
+            ;
+        }
+
+        default: {
+            return length(p - vec3f(0,0,1)) - .4;
+        }
+    }
 }
 
 fn baseDF(p: vec3f) -> float {
@@ -215,7 +239,7 @@ fn path(
     var p = o + hit.x * dir;
     var rd = dir;
 
-    if (hit.y > .5 && hit.z < .5){
+    if (hit.y > .5 && hit.z < .5){ // hit and not ground
         var norm = normal(p);
         p -= norm*eps*3;
         var tir: bool;
@@ -223,11 +247,7 @@ fn path(
         var tHit: vec4f;
         var inside = true;
 
-        for (var i = 0; i < 16; i++){
-
-            // if (i == 2){
-            //     return vec4f(p,1);
-            // }
+        for (var i = 0; i < 8; i++){
 
             tHit = ray(p, rd, inside);
 
@@ -237,19 +257,28 @@ fn path(
                 break;
             }
 
-
             norm = normal(p);
-            p += norm*eps*3;
 
             let prd = rd;
             rd = refr(rd, norm, ior, &tir);
 
-            let a = dot(norm, prd)>0;
-            let b = dot(norm, rd )>0;
+            if (enableTotalInternalReflection){
+                if (!tir){
+                    p += norm*eps*3;
+                } else {
+                    p -= norm*eps*2;
+                }
+            } else {
+                p += norm*eps*3;
+                tir = false;
+            }
 
             if (!tir){
                 inside = !inside;
             }
+            let a = dot(norm, prd)>0;
+            let b = dot(norm, rd )>0;
+
         }
 
         hit = tHit;
@@ -268,7 +297,33 @@ fn trace(@builtin(global_invocation_id) id: vec3u) {
         h.xy*2.-1.,
         0
     );
-    //o.x = 0.;
+
+    var lightDir: vec3f;
+    
+    let n = int(custom.light*5);
+    switch (n) {
+
+        case 2: {
+            lightDir = vec3f(0, 0, -1);
+            o.x = 0.;
+            break;
+        }
+
+        case 3: {
+            lightDir = vec3f(1, 1, -3);
+        }
+
+        case 4: {
+            lightDir = vec3f(1, 1, -.2);
+            break;
+        }
+
+        default: {
+            lightDir = vec3f(0, 0, -1);
+            break;
+        }
+    }
+
     var dir = normalize(lightDir);
     o -= dir*20.;
 
@@ -285,7 +340,7 @@ fn trace(@builtin(global_invocation_id) id: vec3u) {
         stuff
             [max(0, min(int(p.x*res/2)+res/2, res))]
             [max(0, min(int(p.y*res/2)+res/2, res))] 
-            += spectrum(wavelength);
+            += spectrum(wavelength)*sd_sunlight(wavelength);
     }
 }
 
@@ -320,8 +375,6 @@ fn img(@builtin(global_invocation_id) id: vec3u) {
     
     if (hit.y < .5) { // Sky
 
-        // col = vec3f(.005,.007,.009);
-
         col = exp(rd.z*2.)*bg;
 
         // col = vec3f(
@@ -344,13 +397,14 @@ fn img(@builtin(global_invocation_id) id: vec3u) {
 
         col = mix(exp(rd.z*2.)*bg, col, exp(op.z*3.));
 
-        col *= vec3f(.533,.533,1);
+        //col *= vec3f(.533,.533,1);
 
-        //col /= col + 1.;
+        // col /= col + 1.;
 
     } else {
         
-        //col = vec3f(1,0,1); // Failed to terminate
+        col = bg;
+        // col = vec3f(1,0,1); // Failed to terminate
         
     }
 
@@ -359,10 +413,9 @@ fn img(@builtin(global_invocation_id) id: vec3u) {
     // vignette 
     col = mix(bg, col, 1./(1.+5.*dot(uv-.5, uv-.5)));
 
-    // col = pow(spectrum(400 + uv.x*300), vec3f(2.2));
+    //col = pow(spectrum(400 + uv.x*300), vec3f(2.2));
 
     col += (hash(uint3(id.xy, time.frame))*2.-1.)/512.; // Naive dither
 
-    
     textureStore(screen, id.xy, vec4f(col, 1.));
 }
