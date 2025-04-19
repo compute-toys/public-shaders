@@ -1,0 +1,71 @@
+{
+  "id": 1895,
+  "created_at": "2025-04-18T01:49:58.488558+00:00",
+  "name": "Perlin Noise",
+  "description": "Perlin Noise",
+  "body": {
+    "uniforms": [
+      {
+        "name": "octaves",
+        "value": 5.946,
+        "minRange": 1,
+        "maxRange": 8
+      },
+      {
+        "name": "persistence",
+        "value": 0.759,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "lacunarity",
+        "value": 3.124,
+        "minRange": 1.5,
+        "maxRange": 4
+      },
+      {
+        "name": "gain",
+        "value": 0.246,
+        "minRange": 0,
+        "maxRange": 1.5
+      },
+      {
+        "name": "exponent",
+        "value": 0.887,
+        "minRange": 0.1,
+        "maxRange": 4
+      },
+      {
+        "name": "range",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "smoothing",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "scale",
+        "value": 29.677,
+        "minRange": 0,
+        "maxRange": 64
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": null
+  }
+}
