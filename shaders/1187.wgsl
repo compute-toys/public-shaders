@@ -33,7 +33,7 @@ const LOG4_N = LOG2_N / 2;
 const PI = 3.1415927;
 
 fn sinc(x: f32) -> f32 {
-    return select(sin(x) / x, 1.0 - x * x / 6.0, abs(x) < 1e-4);
+    return select(sin(x) / x, 1.0, abs(x) < 4e-4);
 }
 
 fn mul(x: vec2f, y: vec2f) -> vec2f {

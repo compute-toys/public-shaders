@@ -1,0 +1,23 @@
+{
+  "id": 1912,
+  "created_at": "2025-04-30T12:10:29.142631+00:00",
+  "name": "Simple Groupshared FFT 2",
+  "description": "Did some simplifications to the algo and more explanation ",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/book_pattern/book_pattern_col2_1k.jpg",
+        "url": "https://polyhaven.com/a/book_pattern"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}

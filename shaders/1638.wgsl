@@ -1,5 +1,5 @@
 #define SIZE 256
-#define IT_NUM 7 //floor(log2(N))-1
+#define IT_NUM 8 //floor(log2(N))-1
 #define WG_SIZE 128
 #define PI 3.14159265
 #define INVPI 0.31830988
@@ -86,19 +86,6 @@ fn getAxisIndex(id: u32, group: u32, axis: u32) -> u32
     return linearIndex(vec3u(groupGrid, id));
 }
 
-fn reverseLowestBits(num: u32, bits: u32) -> u32 {
-    let reversed = reverseBits(num);
-    let shifted_reversed = reversed >> (32u - bits);
-    let upper_bits = (num >> bits) << bits;
-    return shifted_reversed + upper_bits;
-}
-
-fn getIndexPair(i: u32, it: u32) -> vec2<u32> {
-    let k1 = reverseLowestBits(2u * i, it + 1u);
-    let k2 = k1 + (1u << it);
-    return vec2u(k1, k2);
-}
-
 fn expi(angle: float) -> vec2f {
     return vec2f(cos(angle), sin(angle));
 }
@@ -132,32 +119,67 @@ fn ifftshift(index: u32) -> u32
 }
 
 var<workgroup> TEMP: array<vec2f, SIZE>;
+fn reverseGivenBits(num: u32, bits: u32) -> u32
+{
+    return reverseBits(num) >> (32u - bits);
+}
 
 fn fft(index: u32, group: u32, axis: u32, inverse: bool) {
-    for (var iteration = 0u; iteration <= u32(IT_NUM); iteration++)
+    //number of elements to load per workgroup thread
+    let M = SIZE / WG_SIZE;
+    
+    //load elements from input buffer and store them at bit reversed indices
+    for (var i = 0u; i < u32(M); i++) {
+        let rowIndex = index + i * WG_SIZE;
+        let idx = reverseGivenBits(rowIndex, IT_NUM);
+        TEMP[idx] = sim[getAxisIndex(rowIndex, group, axis)];
+    }
+
+    //wait for data be loaded
+    workgroupBarrier();
+
+    //in-place FFT loop
+    for (var it = 0u; it < u32(IT_NUM); it++)
     {
-        var ids = getIndexPair(index, select(iteration, IT_NUM, iteration == 0u));
-        let v1 = select(TEMP[ids.x], sim[getAxisIndex(ids.x, group, axis)], iteration == 0u);
-        let v2 = select(TEMP[ids.y], sim[getAxisIndex(ids.y, group, axis)], iteration == 0u);
+        //compute pair of indices of elements 
+        //to perform the radix2 butterfly to
+        let group_half_size = (1u << it); 
+        //every iteration we operate on groups of 2^(it + 1) elements
+        let group_size = group_half_size << 1;
+        let group_half_mask = group_half_size - 1;
+        //get the index of this thread within its group
+        let group_offset = index & group_half_mask;
+        //get the index of the group this thread is in times two
+        let group_index = (index & (~group_half_mask)) << 1;
+        //first element is group + offset in first group half
+        let k1 = group_index + group_offset;
+        //second element is group + offset in second group half
+        let k2 = k1 + group_half_size;
 
-        ids = getIndexPair(index, iteration);
-        let rootIndex = (ids.x & ((1u << iteration) - 1u)) << (u32(IT_NUM) - iteration);
-        let V = cmul(unityRoot(rootIndex, SIZE, inverse), v2);
-        TEMP[ids.x] = v1 + V;
-        TEMP[ids.y] = v1 - V;
+        //radix2 butterfly
+        let v1 = TEMP[k1];
+        let v2 = TEMP[k2];
+        //the unity root of this element pair in this group
+        let uroot = unityRoot(group_offset, group_size, inverse);
+        let V = cmul(uroot, v2);
+        TEMP[k1] = v1 + V;
+        TEMP[k2] = v1 - V;
 
+        //wait for all warps to complete work
         workgroupBarrier();
     }
 
-    let M = SIZE / WG_SIZE;
+    //store the result back into input buffer
     for (var i = 0u; i < u32(M); i++) {
         let rowIndex = index + i * WG_SIZE;
         let idx = getAxisIndex(rowIndex, group, axis);
         sim[idx] = TEMP[rowIndex] / select(1.0, SIZE, inverse);
     }
 
+    //make sure the data is written
     storageBarrier();
 }
+
 
 fn gaussian(dx: vec3f, sigma: float) -> float {
     return exp(-dot(dx, dx) / (2.0 * sigma * sigma));
