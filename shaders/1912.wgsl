@@ -50,14 +50,12 @@ fn reverseGivenBits(num: u32, bits: u32) -> u32
     return reverseBits(num) >> (32u - bits);
 }
 
-fn radix2(it: uint, index: uint, inverse: bool)
+fn radix2(span: uint, index: uint, inverse: bool)
 {
     //compute pair of indices of elements 
     //to perform the radix2 butterfly to
-    let group_half_size = (1u << it); 
-    //every iteration we operate on groups of 2^(it + 1) elements
-    let group_size = group_half_size << 1;
-    let group_half_mask = group_half_size - 1;
+    let group_size = span << 1;
+    let group_half_mask = span - 1;
     //get the index of this thread relative to group
     let group_offset = index & group_half_mask;
     //get the index offset of the group this thread is in times two
@@ -65,7 +63,7 @@ fn radix2(it: uint, index: uint, inverse: bool)
     //first element is group + offset in first group half
     let k1 = group_index + group_offset;
     //second element is group + offset in second group half
-    let k2 = k1 + group_half_size;
+    let k2 = k1 + span;
 
     //radix2 butterfly
     let v1 = TEMP[k1];
@@ -92,11 +90,11 @@ fn fft(index: u32, group: u32, axis: u32, inverse: bool) {
     workgroupBarrier();
 
     //in-place FFT loop
-    for (var it = 0u; it < u32(IT_NUM); it++)
+    for (var span = 1u; span < u32(SIZE); span*=2u)
     {
         for (var j = 0u; j < u32(M >> 1); j++) {
             let rowIndex = index + j * WG_SIZE;
-            radix2(it, rowIndex, inverse);
+            radix2(span, rowIndex, inverse);
         }
         //wait for all warps to complete work
         workgroupBarrier();
