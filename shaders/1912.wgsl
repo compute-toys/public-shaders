@@ -1,8 +1,9 @@
-#define SIZE 512
-#define IT_NUM 9 //floor(log2(N))
+#define SIZE 1024
+#define IT_NUM 10 //floor(log2(N))
 #define WG_SIZE 128
-#define WG_COUNT_IMAGE 32 //SIZE / 16
+#define WG_COUNT_IMAGE 64 //SIZE / 16
 #define PI 3.14159265
+#define TWO_PI (2*PI)
 #define AXIS_COUNT 2
 #define ELEMENT_COUNT SIZE*SIZE
 #storage sim array<vec2f, ELEMENT_COUNT>
@@ -28,11 +29,6 @@ fn cmul(a: vec2f, b: vec2f) -> vec2f {
     return vec2f(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
 }
 
-fn unityRoot(k: u32, N: u32, inverse: bool) -> vec2f {
-    let d = select(1.0, -1.0, inverse);
-    return expi(- 2.0 * PI * d * float(k) / float(N));
-}
-
 fn fftshift(index: u32) -> u32 
 {
     return (index + SIZE / 2) % SIZE;
@@ -54,6 +50,7 @@ fn radix2(span: uint, index: uint, inverse: bool)
 {
     //compute pair of indices of elements 
     //to perform the radix2 butterfly to
+    //every iteration we operate on groups of N * span elements, n our radix
     let group_size = span << 1;
     let group_half_mask = span - 1;
     //get the index of this thread relative to group
@@ -65,14 +62,14 @@ fn radix2(span: uint, index: uint, inverse: bool)
     //second element is group + offset in second group half
     let k2 = k1 + span;
 
+    let d = select(-1.0, 1.0, inverse);
+    let angle = TWO_PI * d * float(group_offset) / float(group_size);
+
     //radix2 butterfly
     let v1 = TEMP[k1];
-    let v2 = TEMP[k2];
-    //the unity root of this element pair in this group
-    let uroot = unityRoot(group_offset, group_size, inverse);
-    let V = cmul(uroot, v2);
-    TEMP[k1] = v1 + V;
-    TEMP[k2] = v1 - V;
+    let v2 = cmul(expi(angle), TEMP[k2]);
+    TEMP[k1] = v1 + v2;
+    TEMP[k2] = v1 - v2;
 }
 
 fn fft(index: u32, group: u32, axis: u32, inverse: bool) {

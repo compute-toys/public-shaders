@@ -4,7 +4,7 @@
 #define RADIX2_N 7
 #define RADIX3_N 1   
 #define RADIX4_N 0 
-#define RADIX5_N 1   
+#define RADIX5_N 1 
 #define MAX_RADIX 5
 
 #define WG_COUNT_IMAGE 120 //SIZE / 16
@@ -67,8 +67,8 @@ fn mixed_radix_reverse(n_in: u32) -> u32 {
     var out = 0u;
 
     out += reverse_digits(&n, &q, 5, RADIX5_N);
-    out += reverse_digits(&n, &q, 4, RADIX4_N);
     out += reverse_digits(&n, &q, 3, RADIX3_N);
+    out += reverse_digits(&n, &q, 4, RADIX4_N);
     out += reverse_digits(&n, &q, 2, RADIX2_N);
 
     return out;
@@ -90,8 +90,8 @@ fn radix2(span: uint, index: uint, inverse: bool)
     //second element is group + offset in second group half
     let k2 = k1 + span;
 
-    let d = TWO_PI * select(-1.0, 1.0, inverse);
-    let angle = d * float(group_offset) / float(group_size);
+    let d = select(-1.0, 1.0, inverse);
+    let angle = TWO_PI * d * float(group_offset) / float(group_size);
 
     //radix2 butterfly
     let v1 = TEMP[k1];
@@ -103,15 +103,16 @@ fn radix2(span: uint, index: uint, inverse: bool)
 fn radix4(span: uint, index: uint, inverse: bool)
 {
     let group_size = span << 2;
-    let group_index = (index / span) * span;
-    let group_offset = index - group_index;
+    let group_half_mask = span - 1;
+    let group_offset = index & group_half_mask;
+    let group_index = index - group_offset;
     let k0 = (group_index << 2) + group_offset;
     let k1 = k0 + span;
     let k2 = k1 + span;
     let k3 = k2 + span;
 
-    let d = TWO_PI * select(-1.0, 1.0, inverse);
-    let angle = d * float(group_offset) / float(group_size);
+    let d = select(-1.0, 1.0, inverse);
+    let angle = TWO_PI * d * float(group_offset) / float(group_size);
 
     let v0 = TEMP[k0];
     let v1 = cmul(expi(angle), TEMP[k1]);
@@ -173,21 +174,21 @@ fn fft(index: u32, group: u32, axis: u32, inverse: bool) {
         workgroupBarrier();
     }
 
-    for (var i = 0u; i < RADIX3_N; i++)
-    {
-        for (var j = 0u; j < u32(M) / 3; j++) {
-            radixN(span, 3, index + j * WG_SIZE, inverse);
-        }
-        span*=3;
-        workgroupBarrier();
-    }
-
     for (var i = 0u; i < RADIX4_N; i++)
     {
         for (var j = 0u; j < u32(M) / 4; j++) {
             radix4(span, index + j * WG_SIZE, inverse);
         }
         span*=4;
+        workgroupBarrier();
+    }
+
+    for (var i = 0u; i < RADIX3_N; i++)
+    {
+        for (var j = 0u; j < u32(M) / 3; j++) {
+            radixN(span, 3, index + j * WG_SIZE, inverse);
+        }
+        span*=3;
         workgroupBarrier();
     }
 
