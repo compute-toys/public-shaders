@@ -115,7 +115,7 @@ void set_image(uint3 id : SV_DispatchThreadID) {
 [shader("compute")]
 [numthreads(FFT_WG_SIZE, 1, 1)]
 void fft_kernel(uint3 gtid : SV_GroupThreadID, uint3 gid: SV_GroupID) {
-    fft(gtid.x, gid.x, dispatch.id, false);
+    fft(gtid.x, gid.x, dispatch.id%2, ((dispatch.id/2)%2) == 0);
 }
 
 [shader("compute")]
@@ -137,7 +137,8 @@ void main_image(uint3 id : SV_DispatchThreadID)
     // Get image 
     uint idx = linearIndex(uint2(fftshift(posu.x), fftshift(posu.y)));
     float2 value = image[idx];
-    float len = length(value)*0.005;
+    float2 center = image[3];
+    float len = length(value)/length(center);
     float3 col = float3(len, len, len);
 
     // Output to screen (linear colour space)
