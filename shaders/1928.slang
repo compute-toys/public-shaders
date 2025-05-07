@@ -6,7 +6,7 @@ static const float m = 1.0;
 static const float Q = 0.0;
 static const float PI = 3.14159265f;
 static const float FOV = 2.5;
-static const float Radius = 10.0;
+static const float Radius = 15.0;
 static const float deltaTimeMin = 0.01;
 static const float deltaTimeMax = 0.20;
 static const float eps = 1e-3;
@@ -159,18 +159,21 @@ void main_image(uint3 id : SV_DispatchThreadID) {
         float dt = lerp(deltaTimeMin, deltaTimeMax, r/10.0);
         step(P, Q, dt);
         //if(r < 1.0) {hitEH = true;  break;}
-        if(r > 20.0) {break;}
+        if(r > 40.0) {break;}
     }
     
     float4 qt = P2Vec(P,Q);
     rd = normalize(qt.yzw);
 
-    float l = length(P.yzw);
+    float l = length(P);
 
     float3 col = sampleSky(rd);
     if(hitEH) col = 0.0;
 
     col = col/(l*0.10);
+
+    // col = l*0.01;
+    // col += float3(0.2, 0.0, 0.0)*smoothstep(40.0,45.0,l);
 
     screen[id.xy] = float4(tanh(col), 1.0);
 }
