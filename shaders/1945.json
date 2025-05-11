@@ -1,0 +1,56 @@
+{
+  "id": 1945,
+  "created_at": "2025-05-10T03:27:09.302125+00:00",
+  "name": "Improved Kerr Ringularity",
+  "description": "Forked from https://compute.toys/view/1928\n1/2/3 for debug views\nNot yet working in main branch",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Spin",
+        "value": 2.303,
+        "minRange": 0,
+        "maxRange": 3
+      },
+      {
+        "name": "Mass",
+        "value": 1,
+        "minRange": 0.5,
+        "maxRange": 1.5
+      },
+      {
+        "name": "Charge",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "FOV",
+        "value": 2.502,
+        "minRange": 0,
+        "maxRange": 4
+      },
+      {
+        "name": "Radius",
+        "value": 20.506,
+        "minRange": 0,
+        "maxRange": 40
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/spruit_sunrise_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/spruit_sunrise.jpg",
+        "url": "https://polyhaven.com/a/spruit_sunrise"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}
