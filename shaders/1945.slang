@@ -2,7 +2,7 @@ import std;
 
 //Kerr params
 static float a = custom.Spin;
-static float m = custom.Mass;
+static float m = custom.Mass; 
 static float Q = custom.Charge;
 static float FOV = custom.FOV;
 static float Radius = custom.Radius;

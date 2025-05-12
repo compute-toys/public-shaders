@@ -1,0 +1,60 @@
+{
+  "id": 1948,
+  "created_at": "2025-05-11T13:40:34.733558+00:00",
+  "name": "Paint streams",
+  "description": "ported from shadertoy https://www.shadertoy.com/view/WtfyDj",
+  "body": {
+    "uniforms": [
+      {
+        "name": "TimeStep",
+        "value": 1.548,
+        "minRange": 0,
+        "maxRange": 2
+      },
+      {
+        "name": "RestDensity",
+        "value": 0.504,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Diffusion",
+        "value": 0.979,
+        "minRange": 0.5,
+        "maxRange": 1.5
+      },
+      {
+        "name": "Pressure",
+        "value": 0.602,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "PaintAHue",
+        "value": 0.092,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "PaintBHue",
+        "value": 0.599,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}
