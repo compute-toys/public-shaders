@@ -1,0 +1,25 @@
+{
+  "id": 1952,
+  "created_at": "2025-05-12T12:36:35.206585+00:00",
+  "name": "Fully Ray Traced Water",
+  "description": "Forked from https://compute.toys/view/1947 and https://www.shadertoy.com/view/w3sXzs",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/autumn_crossing_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/autumn_crossing.jpg",
+        "url": "https://polyhaven.com/a/autumn_crossing"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}
