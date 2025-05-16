@@ -4,7 +4,14 @@
   "name": "Slang Shadertoy Template",
   "description": "To port shadertoys to computetoys\n",
   "body": {
-    "uniforms": [],
+    "uniforms": [
+      {
+        "name": "Speed",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 2
+      }
+    ],
     "textures": [
       {
         "img": "/textures/blank.png"

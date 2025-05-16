@@ -376,33 +376,29 @@ void mainImage( out vec4 col, in vec2 pos )
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
 
+#define BufferPass(bid, bfunc, id)  \
+    vec4 fragColor; \
+    bfunc(fragColor, vec2(id.xy) + 0.5); \
+    pass_out[int3(id.xy, bid)] = fragColor; 
+
 [DispatchCount(IterationsPerFrame * 2)]
 [shader("compute")]
 [numthreads(16, 16, 1)]
 void DispatchAB(uint3 id : SV_DispatchThreadID) {
     if(dispatch.id % 2 == 0)
     {
-        vec2 fragCoord = vec2(id.xy) + 0.5;
-        vec4 fragColor;
-        mainImageA(fragColor, fragCoord);
-        pass_out[int3(id.xy, 0)] = fragColor;
+        BufferPass(0, mainImageA, id)
     }
     else
     {
-        vec2 fragCoord = vec2(id.xy) + 0.5;
-        vec4 fragColor;
-        mainImageB(fragColor, fragCoord);
-        pass_out[int3(id.xy, 1)] = fragColor;
+        BufferPass(1, mainImageB, id)
     }
 }
 
 [shader("compute")]
 [numthreads(16, 16, 1)]
 void BufferC(uint3 id : SV_DispatchThreadID) {
-    vec2 fragCoord = vec2(id.xy) + 0.5;
-    vec4 fragColor;
-    mainImageC(fragColor, fragCoord);
-    pass_out[int3(id.xy, 2)] = fragColor;
+    BufferPass(2, mainImageC, id)
 }
 
 [shader("compute")]
