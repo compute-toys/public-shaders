@@ -1,0 +1,30 @@
+{
+  "id": 1974,
+  "created_at": "2025-05-16T15:47:29.482192+00:00",
+  "name": "Slang Shadertoy Buffer Template",
+  "description": "Its faster than using pass_in/pass_out, but also limited to fullhd buffer size due to implementation specifics(all \"buffers\" are in one webgpu buffer) and WebGPU 128mb buffer limit",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Speed",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 2
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}
