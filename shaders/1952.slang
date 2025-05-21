@@ -1,13 +1,6 @@
 import std;
 import shadertoy;
 
-public __generic<int S> vector<bool, S> lessThan(vector<float, S> x, vector<float, S> y) { return x < y; }
-public __generic<int S> vector<bool, S> lessThanEqual(vector<float, S> x, vector<float, S> y) { return x <= y; }
-public __generic<int S> vector<bool, S> greaterThan(vector<float, S> x, vector<float, S> y) { return x > y; }
-public __generic<int S> vector<bool, S> greaterThanEqual(vector<float, S> x, vector<float, S> y) { return x >= y; }
-public __generic<int S> vector<bool, S> equal(vector<float, S> x, vector<float, S> y) { return x == y; }
-public __generic<int S> vector<bool, S> notEqual(vector<float, S> x, vector<float, S> y) { return x != y; }
-
 #define ChBufferA 0
 #define ChBufferB 1
 #define ChBufferC 2
@@ -498,7 +491,7 @@ mat3 getCamera(vec2 angles)
         		       -sin(angles.x),   cos(angles.x), 0.,
         		        0.,              0.,            1.); 
         
-   return mul(phi_rot, theta_rot);
+   return theta_rot * phi_rot;
 }
 
 vec2 iBox( in vec3 ro, in vec3 rd, in vec3 boxSize ) 
