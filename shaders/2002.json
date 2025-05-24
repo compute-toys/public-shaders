@@ -1,0 +1,30 @@
+{
+  "id": 2002,
+  "created_at": "2025-05-23T19:54:41.895296+00:00",
+  "name": "It's fine!",
+  "description": "Trying to port my shadertoy.\nBasically copy/paste.",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Speed",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 2
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "munrocket"
+  }
+}

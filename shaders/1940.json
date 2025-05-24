@@ -1,0 +1,23 @@
+{
+  "id": 1940,
+  "created_at": "2025-05-08T23:28:16.406606+00:00",
+  "name": "SDF Editor Demo Scene",
+  "description": "A simple scene made to demo my browser-based SDF editor:\nhttps://propolisa.github.io/sdf-editor/spa/#/",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "Propolisa"
+  }
+}
