@@ -2,7 +2,7 @@
   "id": 1940,
   "created_at": "2025-05-08T23:28:16.406606+00:00",
   "name": "SDF Editor Demo Scene",
-  "description": "A simple scene made to demo my browser-based SDF editor:\nhttps://propolisa.github.io/sdf-editor/spa/#/",
+  "description": "A simple scene made to demo the export feature my browser-based SDF editor:\nhttps://propolisa.github.io/sdf-editor/spa/#/\nRelease notes & discussion: https://forum.babylonjs.com/t/signed-distance-field-sdf-editor/58626",
   "body": {
     "uniforms": [],
     "textures": [
