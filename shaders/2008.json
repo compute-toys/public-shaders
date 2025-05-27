@@ -1,0 +1,36 @@
+{
+  "id": 2008,
+  "created_at": "2025-05-26T03:31:20.907286+00:00",
+  "name": "Toposorted particle sim attempt",
+  "description": "Forked from https://compute.toys/view/2007\nIf only there was a way to make the sort much faster at converging",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Speed",
+        "value": 1.293,
+        "minRange": 0,
+        "maxRange": 2
+      },
+      {
+        "name": "Str",
+        "value": 0.022,
+        "minRange": 0,
+        "maxRange": 0.1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}
