@@ -1,0 +1,42 @@
+{
+  "id": 2013,
+  "created_at": "2025-05-28T02:38:01.399773+00:00",
+  "name": "brush test",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "t_dn",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "t_up",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "grain_strength",
+        "value": 0.073,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://raw.githubusercontent.com/otaviogood/shader_fontgen/master/codepage12.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": 2015,
+  "created_at": "2025-05-28T10:35:19.490453+00:00",
+  "name": "dithering level impact",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "scale",
+        "value": 0.501,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/bayer0.png"
+      },
+      {
+        "img": "/textures/noise4.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}
