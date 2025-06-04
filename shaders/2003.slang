@@ -361,7 +361,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     
     vec2 uv = (2.*fragCoord - iResolution.xy) / min(iResolution.x, iResolution.y);
     vec3 dir = normalize(vec3(uv, -2.5));
-    vec3 camera = vec3(0., 0.04+.04*cos(iTime), 1.65 - .3 * cos(iTime));
+    vec3 camera = vec3(0., 0.04+.04*cos(iTime), 1.9);
     
     vec4 mouse = qmouse(iMouse, iResolution, iTime, .1);
     dir = rotate(dir, mouse);

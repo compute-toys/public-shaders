@@ -7,25 +7,25 @@
     "uniforms": [
       {
         "name": "WIND_SPEED_X",
-        "value": 2.905,
+        "value": 4.347,
         "minRange": 0,
         "maxRange": 10
       },
       {
         "name": "WIND_SPEED_Y",
-        "value": 2.395,
+        "value": 3.393,
         "minRange": 0,
         "maxRange": 10
       },
       {
         "name": "WIND_FETCH_X",
-        "value": 457.105,
+        "value": 489.476,
         "minRange": 0,
         "maxRange": 1000
       },
       {
         "name": "WIND_FETCH_Y",
-        "value": 347.565,
+        "value": 530.023,
         "minRange": 0,
         "maxRange": 1000
       }
