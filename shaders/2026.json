@@ -1,0 +1,48 @@
+{
+  "id": 2026,
+  "created_at": "2025-06-04T05:17:55.597195+00:00",
+  "name": "animated,persimmons,diffuse",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "radius",
+        "value": 63.456,
+        "minRange": 0,
+        "maxRange": 128
+      },
+      {
+        "name": "grain_strength",
+        "value": 0.056,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "gap",
+        "value": 0.982,
+        "minRange": 0,
+        "maxRange": 4
+      },
+      {
+        "name": "step",
+        "value": 0.43,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}

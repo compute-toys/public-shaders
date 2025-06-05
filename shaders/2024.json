@@ -1,21 +1,15 @@
 {
   "id": 2024,
   "created_at": "2025-06-03T01:30:23.682508+00:00",
-  "name": "ease function in sdf gradient",
+  "name": "ease function balls",
   "description": "",
   "body": {
     "uniforms": [
       {
-        "name": "range",
-        "value": 43.001,
+        "name": "gap",
+        "value": 1.012,
         "minRange": 0,
-        "maxRange": 100
-      },
-      {
-        "name": "radius",
-        "value": 2.293,
-        "minRange": 0,
-        "maxRange": 100
+        "maxRange": 4
       }
     ],
     "textures": [

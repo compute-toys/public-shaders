@@ -2,7 +2,7 @@ const PI: f32 = radians(180.);
 const SIZE: vec2u = vec2u(150, 100);
 const COUNT: vec2u = vec2u(6, 5);
 
-const COLOR_0: vec3f =vec3f(0.9, 0.2, 0.1);
+const COLOR_0: vec3f =vec3f(0.18);
 const COLOR_1: vec3f = vec3f(0.92);
 
 @compute @workgroup_size(16, 16)
@@ -20,96 +20,96 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
 
     let frag_coord = vec2f(id.xy) % size_f - 0.5 * size_f;
 
-    var d = sdf_circle(frag_coord, custom.radius);
-    d = normalize_range(0, custom.range, d);
+    let t = time.elapsed % custom.gap / custom.gap;
+    let n = floor(time.elapsed / custom.gap);
+    let se = vec2f(-40., 40.) * select(-1., 1., n % 2. == 0.);
 
-    var f = 0.;
-
+    var x = mix(se.x, se.y, t);
     // sine
     if frag_idx == 0 {
-        f = i_ease_sine(d);
+        x = mix(se.x, se.y, i_ease_sine(t));
     } else if frag_idx == 1 {
-        f = o_ease_sine(d);
+        x = mix(se.x, se.y, o_ease_sine(t));
     } else if frag_idx == 2 {
-        f = io_ease_sine(d);
+        x = mix(se.x, se.y, io_ease_sine(t));
     }
     // quad
     else if frag_idx == 3 {
-        f = i_ease_quad(d);
+        x = mix(se.x, se.y, i_ease_quad(t));
     } else if frag_idx == 4 {
-        f = o_ease_quad(d);
+        x = mix(se.x, se.y, o_ease_quad(t));
     } else if frag_idx == 5 {
-        f = io_ease_quad(d);
+        x = mix(se.x, se.y, io_ease_quad(t));
     }
     // cubic
     else if frag_idx == 6 {
-        f = i_ease_cubic(d);
+        x = mix(se.x, se.y, i_ease_cubic(t));
     } else if frag_idx == 7 {
-        f = o_ease_cubic(d);
+        x = mix(se.x, se.y, o_ease_cubic(t));
     } else if frag_idx == 8 {
-        f = io_ease_cubic(d);
+        x = mix(se.x, se.y, io_ease_cubic(t));
     }
     // quart
     else if frag_idx == 9 {
-        f = i_ease_quart(d);
+        x = mix(se.x, se.y, i_ease_quart(t));
     } else if frag_idx == 10 {
-        f = o_ease_quart(d);
+        x = mix(se.x, se.y, o_ease_quart(t));
     } else if frag_idx == 11 {
-        f = io_ease_quart(d);
+        x = mix(se.x, se.y, io_ease_quart(t));
     }
     // quint
     else if frag_idx == 12 {
-        f = i_ease_quint(d);
+        x = mix(se.x, se.y, i_ease_quint(t));
     } else if frag_idx == 13 {
-        f = o_ease_quint(d);
+        x = mix(se.x, se.y, o_ease_quint(t));
     } else if frag_idx == 14 {
-        f = io_ease_quint(d);
+        x = mix(se.x, se.y, io_ease_quint(t));
     }
     // expo
     else if frag_idx == 15 {
-        f = i_ease_expo(d);
+        x = mix(se.x, se.y, i_ease_expo(t));
     } else if frag_idx == 16 {
-        f = o_ease_expo(d);
+        x = mix(se.x, se.y, o_ease_expo(t));
     } else if frag_idx == 17 {
-        f = io_ease_expo(d);
+        x = mix(se.x, se.y, io_ease_expo(t));
     }
     // circ
     else if frag_idx == 18 {
-        f = i_ease_circ(d);
+        x = mix(se.x, se.y, i_ease_circ(t));
     } else if frag_idx == 19 {
-        f = o_ease_circ(d);
+        x = mix(se.x, se.y, o_ease_circ(t));
     } else if frag_idx == 20 {
-        f = io_ease_circ(d);
+        x = mix(se.x, se.y, io_ease_circ(t));
     }
     // back
     else if frag_idx == 21 {
-        f = i_ease_back(d);
+        x = mix(se.x, se.y, i_ease_back(t));
     } else if frag_idx == 22 {
-        f = o_ease_back(d);
+        x = mix(se.x, se.y, o_ease_back(t));
     } else if frag_idx == 23 {
-        f = io_ease_back(d);
+        x = mix(se.x, se.y, io_ease_back(t));
     }
     // elastic
     else if frag_idx == 24 {
-        f = i_ease_elastic(d);
+        x = mix(se.x, se.y, i_ease_elastic(t));
     } else if frag_idx == 25 {
-        f = o_ease_elastic(d);
+        x = mix(se.x, se.y, o_ease_elastic(t));
     } else if frag_idx == 26 {
-        f = io_ease_elastic(d);
+        x = mix(se.x, se.y, io_ease_elastic(t));
     }
     // bounce
     else if frag_idx == 27 {
-        f = i_ease_bounce(d);
+        x = mix(se.x, se.y, i_ease_bounce(t));
     } else if frag_idx == 28 {
-        f = o_ease_bounce(d);
+        x = mix(se.x, se.y, o_ease_bounce(t));
     } else if frag_idx == 29 {
-        f = io_ease_bounce(d);
-    }
-    else {
-        f = 1.;
+        x = mix(se.x, se.y, io_ease_bounce(t));
     }
 
-    var col = mix(COLOR_0, COLOR_1, f);
+    var d = sdf_circle(frag_coord - vec2f(x, 0.), 8.0);
+    d = smoothstep(-1., 1., d);
+
+    var col = mix(COLOR_0, COLOR_1, d);
 
     // Convert from gamma-encoded to linear colour space
     col = pow(col, vec3f(2.2));
