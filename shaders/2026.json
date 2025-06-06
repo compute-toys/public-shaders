@@ -19,15 +19,15 @@
       },
       {
         "name": "gap",
-        "value": 0.982,
+        "value": 1.002,
         "minRange": 0,
-        "maxRange": 4
+        "maxRange": 1
       },
       {
         "name": "step",
-        "value": 0.43,
+        "value": 0.655,
         "minRange": 0,
-        "maxRange": 1
+        "maxRange": 0.5
       }
     ],
     "textures": [

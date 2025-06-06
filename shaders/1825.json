@@ -2,7 +2,7 @@
   "id": 1825,
   "created_at": "2025-03-16T19:23:09.93357+00:00",
   "name": "Orbital Chaos",
-  "description": "The \"planet\" is more massive than it should be because it's also much faster than it should be",
+  "description": "The blue dot is a planet orbiting the star, but the camera rotation is fixed relative to the rotation of the planet.",
   "body": {
     "uniforms": [
       {
@@ -20,7 +20,8 @@
         "img": "/textures/blank.png"
       }
     ],
-    "float32Enabled": false
+    "float32Enabled": false,
+    "language": "wgsl"
   },
   "visibility": "public",
   "profile": {

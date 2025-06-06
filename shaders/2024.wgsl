@@ -18,8 +18,6 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
     let frag_id = id.xy / SIZE;
     let frag_idx = frag_id.y * COUNT.x + frag_id.x;
 
-    let frag_coord = vec2f(id.xy) % size_f - 0.5 * size_f;
-
     let t = time.elapsed % custom.gap / custom.gap;
     let n = floor(time.elapsed / custom.gap);
     let se = vec2f(-40., 40.) * select(-1., 1., n % 2. == 0.);
@@ -106,10 +104,22 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
         x = mix(se.x, se.y, io_ease_bounce(t));
     }
 
-    var d = sdf_circle(frag_coord - vec2f(x, 0.), 8.0);
+    let frag_coord = vec2f(id.xy);
+    let frag_coord_l = vec2f(id.xy) % size_f - 0.5 * size_f;
+
+    var d = sdf_circle(frag_coord_l - vec2f(x, 0.), 8.0);
     d = smoothstep(-1., 1., d);
 
     var col = mix(COLOR_0, COLOR_1, d);
+
+    var l = 1000.0;
+    for (var y = 0; y < 4; y++) {
+        l = min(l, sdf_line_t(frag_coord, 0., 1., -(f32(y) + 1.) * size_f.y, 1.));
+    }
+    for (var x = 0; x < 5; x++) {
+        l = min(l, sdf_line_t(frag_coord, 1., 0., -(f32(x) + 1.) * size_f.x, 1.));
+    }
+    col *= mix(COLOR_0, vec3f(1.), clamp(l, 0., 1.));
 
     // Convert from gamma-encoded to linear colour space
     col = pow(col, vec3f(2.2));
@@ -121,6 +131,14 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
 fn sdf_circle(p: vec2f, r: f32) -> f32 {
     return length(p) - r;
 }
+
+fn sdf_line(p: vec2f, a: f32, b: f32, c: f32) -> f32 {
+    return (a * p.x + b * p.y + c) / sqrt(a * a + b * b);
+}
+
+fn sdf_line_t(p: vec2f, a: f32, b: f32, c: f32, ht: f32) -> f32 {
+    return abs(sdf_line(p, a, b, c)) - ht;
+} 
 
 fn normalize_range(a: f32, b: f32, x: f32) -> f32 {
     return clamp((x - a) / (b - a), 0., 1.);
