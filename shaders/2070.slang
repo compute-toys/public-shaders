@@ -6,7 +6,6 @@
 //click to change final location
 //starting location is the dark  point
 //final    location is the white point
-
 import std;
 static const int    thrd = 16;     //gpu threads
 static const int    mapz = thrd*16;

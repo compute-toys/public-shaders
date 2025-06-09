@@ -1,10 +1,10 @@
 import std;
 import shadertoy;
 
-static float WIND_SPEED_X = custom.WIND_SPEED_X;
-static float WIND_SPEED_Y = custom.WIND_SPEED_Y;
-static float WIND_FETCH_X = custom.WIND_FETCH_X;
-static float WIND_FETCH_Y = custom.WIND_FETCH_Y;
+static float WIND_SPEED = custom.WIND_SPEED;
+static float WIND_ANGLE = custom.WIND_ANGLE;
+static float LEEWARD_FETCH = custom.LEEWARD_FETCH;
+static float DEPTH = custom.DEPTH;
 
 static const int SIZE = 1024;
 static const int ELEMENTS = SIZE*SIZE;
@@ -14,12 +14,14 @@ static const int IMG_WG_SIZE = 16;
 static const int WG_COUNT_IMAGE = SIZE / IMG_WG_SIZE;
 static const int AXIS_COUNT = 2;
 
+static const float g = 9.81f;
 static const float PI = 3.14159265f;
 static const float TWO_PI = 2.0f*PI;
 
 [StorageBuffer(ELEMENTS)]
 RWStructuredBuffer<float2> image;
 
+// ---------------------------- RNG ----------------------------
 struct Rng {
 	uint state;
 }
@@ -49,56 +51,120 @@ uint xorshift32() {
 public float rand_f32() {
 	return asfloat(0x3f800000u | (xorshift32() >> 9u)) - 1.;
 }
-public float2 random_unit_vector() {
+public float2 random_unit_vector2() {
 	return normalize(float2(rand_f32() * 2. - 1., rand_f32() * 2. - 1.));
 }
 
-//-------------------- JONSWAP -------------------
-const static float g = 9.81;
-const static float e = 2.71828;
+// ---------------------------- Base JONSWAP ----------------------------
+public float jonswap(float dispersion, float dispersion_peak, float speed, float fetch) {
+	if (dispersion == 0.0) {
+		return 0.0;
+	}
 
-public float2 jonswap(float f, float speed, float fetch) {
-	let f_peak = peak(speed, fetch);
-	let alpha = intensity(f, f_peak, speed);
+	let alpha = intensity(dispersion_peak, speed);
 
 	let beta = 5.0 / 4.0;
-	let exponent = -beta * powr(f_peak, 4) / powr(f, 4);
+	let exponent = -beta * powr(dispersion_peak, 4) / powr(dispersion, 4);
 
 	let gamma = 3.3;
-    let power = ((alpha * g * g) / powr(f, 5)) * powr(e, exponent) * powr(gamma, jonswap_exponent(f, f_peak));
-    let amplitude = sqrt(power/2.0);
 
-	return amplitude * random_unit_vector() * 2000000.0;
+	return ((alpha * g * g) / powr(dispersion, 5)) * exp(exponent) * powr(gamma, jonswap_exponent(dispersion, dispersion_peak));
 }
 
-float peak(float speed, float fetch) {
-	return 2.84 * powr(g, 0.7) * powr(fetch, -0.3) * pow(speed, -0.4);
+float peak_dispersion(float wind_speed, float fetch) {
+	return 22.0 * powr(g * g / (wind_speed * fetch), 0.333333);
 }
 
 // A constant that relates to the wind speed and fetch length.
 // Typical values in the northern north sea are in the range of 0.0081 to 0.01 (https://www.codecogs.com/library/engineering/fluid_mechanics/waves/spectra/jonswap.php)
-float intensity(float f, float f_peak, float wind_speed) {
-	return 0.033 * pow((f_peak * wind_speed) / g, 2.0 / 3.0);
-    // return 0.01;
+float intensity(float wind_speed, float fetch) {
+	return 0.076 * powr(wind_speed * wind_speed / (fetch * g), 0.22);
 }
 
-float jonswap_exponent(float f, float f_peak) {
-	let s = sigma(f, f_peak);
+float jonswap_exponent(float dispersion, float dispersion_peak) {
+	let s = sigma(dispersion, dispersion_peak);
 
-	let num = (f - f_peak) * (f - f_peak);
-	let den = 2.0 * f_peak * f_peak * s * s;
+	let num = (dispersion - dispersion_peak) * (dispersion - dispersion_peak);
+	let den = 2.0 * dispersion_peak * dispersion_peak * s * s;
 
-	return powr(e, -(num / den));
+	return exp(-(num / den));
 }
 
-float sigma(float f, float f_peak) {
-	if (f <= f_peak) {
+float sigma(float dispersion, float dispersion_peak) {
+	if (dispersion <= dispersion_peak) {
 		return 0.07;
 	} else {
 		return 0.09;
 	}
 }
-//--------------------------------------------------
+
+// ---------------------------- Kitaigordskii Depth Correction ----------------------------
+float depth_correction(float dispersion, float depth) {
+	let omega_h = dispersion * sqrt(depth / g);
+	if (omega_h <= 1.0) {
+		return 0.5 * omega_h * omega_h;
+	} else if (omega_h <= 2.0) {
+		return 1.0 - 0.5 * (2 - omega_h) * (2 - omega_h);
+	} else {
+		return 1.0;
+	}
+}
+
+// ---------------------------- Donelan-Banner Directional Spreading ----------------------------
+float directional_spreading(float dispersion, float dispersion_peak, float relative_wind_angle) {
+	let ratio = dispersion / dispersion_peak;
+	float beta = 0.0;
+	if (ratio < 0.56) {
+		beta = 2.61 * powr(0.56, 1.3);	// TODO: Verify this is how we want to deal with values outside the equation
+	} else if (ratio <= 0.95) {
+		beta = 2.61 * powr(ratio, 1.3);
+	} else if (ratio <= 1.6) {
+		beta = 2.28 * powr(ratio, -1.3);
+	} else {
+		beta = powr(10.0, -0.4 + 0.8393 * exp(-0.567 * powr(log(ratio), 2)));
+	}
+	return beta * pow(cosh(beta * relative_wind_angle), -2) / (2.0 * tanh(beta * PI));
+}
+
+// ---------------------------- Final Wave Spectrum ----------------------------
+float wave_spectrum(float2 wave_vector, float wave_vector_mag, float dispersion, float wind_speed, float fetch, float wind_angle, float depth, float2 delta_k) {
+	let relative_wind_angle = (atan2(wave_vector.y, wave_vector.x) - wind_angle) % PI;
+	let dispersion_peak = peak_dispersion(wind_speed, fetch);
+
+	let S_j = jonswap(dispersion, dispersion_peak, wind_speed, fetch);
+	let D = directional_spreading(dispersion, dispersion_peak, relative_wind_angle);
+
+	float dw_dk_k = 0.0;
+
+	if (wave_vector_mag != 0.0) {
+		dw_dk_k = g / (2 * sqrt(g * wave_vector_mag)) / wave_vector_mag;
+	}
+
+	return 2 * S_j * depth_correction(dispersion, depth) * D * dw_dk_k * delta_k.x * delta_k.y;
+}
+
+// ---------------------------- Fourier Spectrum ----------------------------
+float2 h_0_tilde(float2 wave_vector, float wave_vector_mag, float dispersion, float wind_speed, float fetch, float wind_angle, float depth, float2 delta_k) {
+	let common = sqrt(wave_spectrum(wave_vector, wave_vector_mag, dispersion, wind_speed, fetch, wind_angle, depth, delta_k) / 2.0);
+	return common * random_unit_vector2();
+}
+
+float2 fourier_spectrum(float2 wave_vector, float wind_speed, float fetch, float wind_angle, float depth, float2 delta_k, float t) {
+	let wave_vector_mag = length(wave_vector);
+	let dispersion = sqrt(g * wave_vector_mag);
+
+	var base = h_0_tilde(wave_vector, wave_vector_mag, dispersion, wind_speed, fetch, wind_angle, depth, delta_k);
+	var conj = h_0_tilde(-wave_vector, wave_vector_mag, dispersion, wind_speed, fetch, wind_angle, depth, delta_k);
+	conj.y = -conj.y;
+
+	var x = dispersion * t;
+	base *= float2(sin(x), cos(x));
+	conj *= float2(sin(-x), cos(-x));
+
+	return base + conj;
+}
+
+// ---------------------------- FFT ----------------------------
 
 uint linearIndex(uint2 id) {
     return id.x + id.y * SIZE;
@@ -191,27 +257,16 @@ void fft(uint index, uint group, uint axis, bool inverse) {
 [shader("compute")]
 [numthreads(IMG_WG_SIZE, IMG_WG_SIZE, 1)]
 void set_image(uint3 id : SV_DispatchThreadID) {
-    init_rng(id.xy, SIZE, (uint)(time.elapsed*1000.0));
-        // Viewport resolution (in pixels)
-    // uint width, height;
-    // screen.GetDimensions(width, height);
-        
-    // Prevent overdraw for workgroups on the edge of the viewport
-    // int2 pos = int2(id.xy) - (int2(width, height) - (SIZE)) /2;
+    // Generate a seed that's constant between all subsequent frames
+    init_rng(id.xy, SIZE, 0);
 
-    // if (any(pos >= SIZE) || any(pos < 0)) return;
+    // Viewport resolution (in pixels)
+    uint width, height;
+    screen.GetDimensions(width, height);
 
-    int2 distance_from_center = int2(id.xy) - int2(SIZE/2);
-    float distance = sqrt(distance_from_center.x*distance_from_center.x + distance_from_center.y*distance_from_center.y);
-
-    // float2 j = jonswap(distance, WIND_SPEED_X, WIND_FETCH_X);
-    // let j_y = jonswap(id.y/float(SIZE/2), WIND_SPEED_Y, WIND_FETCH_Y);
-
-    // float4 color = channel0[id.xy];
-    // image[linearIndex(id.xy)] = color.xy;
-    // image[linearIndex(id.xy)] = float2(j_x, j_y);
-    image[linearIndex(id.xy)] = jonswap(distance, WIND_SPEED_X, WIND_FETCH_X);
-    // image[linearIndex(id.xy)] = float2(1.0, 0.6);
+    float2 wave_vector = float2(id.xy) / float2(width, height) * 2 * PI;
+    float2 delta_k = float2(2*PI/float(SIZE));
+    image[linearIndex(id.xy)] = fourier_spectrum(wave_vector,  WIND_SPEED,  LEEWARD_FETCH,  WIND_ANGLE,  DEPTH, delta_k,  time.elapsed)*10000;
 }
 
 [DispatchCount(2)]
@@ -219,8 +274,7 @@ void set_image(uint3 id : SV_DispatchThreadID) {
 [shader("compute")]
 [numthreads(FFT_WG_SIZE, 1, 1)]
 void fft_kernel(uint3 gtid : SV_GroupThreadID, uint3 gid: SV_GroupID) {
-    // fft(gtid.x, gid.x, dispatch.id%2, true);
-    // fft(gtid.x, gid.x, dispatch.id%2, ((dispatch.id/2)%2) == 0);
+    fft(gtid.x, gid.x, dispatch.id%2, true);
 }
 
 [shader("compute")]
@@ -231,30 +285,9 @@ void main_image(uint3 id : SV_DispatchThreadID)
     uint width, height;
     screen.GetDimensions(width, height);
         
-    // Prevent overdraw for workgroups on the edge of the viewport
-    // int2 pos = int2(id.xy) - (int2(width, height) - (SIZE)) /2;
-
-    // if (any(pos >= SIZE) || any(pos < 0)) {
-    //     return;
-    // }
-
-    // uint2 posu = uint2(pos);
-    // Get image 
-    // uint idx = linearIndex(uint2(fftshift(posu.x), fftshift(posu.y)));
     uint idx = linearIndex(uint2(ifftshift(id.x), ifftshift(id.y)));
-    float2 value = image[idx];
-    // float2 center = image[3];
-    // float len = length(value)/length(center);
-    // float3 col = float3(len, len, len);
+    float2 value = image[idx]*30_000;
 
-    // Output to screen (linear colour space)
-    // screen[id.xy] = float4(col, 1.0);
     screen[id.xy] = float4(value.xy,0.0, 1.0);
-
-    // let j_x = jonswap(id.x/float(width/2), WIND_SPEED_X, WIND_FETCH_X);
-    // let j_y = jonswap(id.y/float(height/2), WIND_SPEED_Y, WIND_FETCH_Y);
-
-    // screen[id.xy] = float4(j_x, j_y, 0.6, 1.0);
-    // screen[id.xy] = float4(id.x / float(width), id.y / float(height),0.6,1.0);
 }
 

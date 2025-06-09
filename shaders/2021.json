@@ -2,32 +2,32 @@
   "id": 2021,
   "created_at": "2025-05-30T09:40:22.545372+00:00",
   "name": "Jonswap",
-  "description": "Based on FFT implementation from https://compute.toys/view/1922",
+  "description": "Ocean height map simulation based on Based on \"Realistic Ocean Simulation using Fourier Transform\" by Saulius Vincevičius and using the FFT implementation from https://compute.toys/view/1922",
   "body": {
     "uniforms": [
       {
-        "name": "WIND_SPEED_X",
-        "value": 3.213,
+        "name": "WIND_SPEED",
+        "value": 5.03,
         "minRange": 0,
         "maxRange": 10
       },
       {
-        "name": "WIND_SPEED_Y",
-        "value": 4.85,
+        "name": "WIND_ANGLE",
+        "value": 2.275,
         "minRange": 0,
-        "maxRange": 10
+        "maxRange": 3.2
       },
       {
-        "name": "WIND_FETCH_X",
-        "value": 612.619,
+        "name": "LEEWARD_FETCH",
+        "value": 281.297,
         "minRange": 0,
         "maxRange": 1000
       },
       {
-        "name": "WIND_FETCH_Y",
-        "value": 666.667,
-        "minRange": 0,
-        "maxRange": 1000
+        "name": "DEPTH",
+        "value": 60.524,
+        "minRange": 0.1,
+        "maxRange": 100
       }
     ],
     "textures": [
@@ -44,6 +44,6 @@
   },
   "visibility": "public",
   "profile": {
-    "username": null
+    "username": "Roberto"
   }
 }
