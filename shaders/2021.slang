@@ -288,6 +288,6 @@ void main_image(uint3 id : SV_DispatchThreadID)
     uint idx = linearIndex(uint2(ifftshift(id.x), ifftshift(id.y)));
     float2 value = image[idx]*30_000;
 
-    screen[id.xy] = float4(value.xy,0.0, 1.0);
+    screen[id.xy] = float4(0.0, 0.01, value.x, 1.0);
 }
 
