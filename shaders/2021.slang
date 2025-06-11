@@ -128,11 +128,19 @@ float directional_spreading(float dispersion, float dispersion_peak, float relat
 
 // ---------------------------- Final Wave Spectrum ----------------------------
 float wave_spectrum(float2 wave_vector, float wave_vector_mag, float dispersion, float wind_speed, float fetch, float wind_angle, float depth, float2 delta_k) {
-	let relative_wind_angle = (atan2(wave_vector.y, wave_vector.x) - wind_angle) % PI;
+	// let relative_wind_angle = (atan(wave_vector.y/ wave_vector.x) - wind_angle) % PI;
+	var relative_wind_angle = (atan2(wave_vector.y, wave_vector.x) - wind_angle);
+	if (relative_wind_angle > PI) {
+		relative_wind_angle -= PI;
+	} else if (relative_wind_angle < -PI) {
+		relative_wind_angle += PI;
+	}
+
 	let dispersion_peak = peak_dispersion(wind_speed, fetch);
 
 	let S_j = jonswap(dispersion, dispersion_peak, wind_speed, fetch);
-	let D = directional_spreading(dispersion, dispersion_peak, relative_wind_angle);
+	// let D = directional_spreading(dispersion, dispersion_peak, relative_wind_angle);
+	let D = 1;
 
 	float dw_dk_k = 0.0;
 
@@ -265,6 +273,7 @@ void set_image(uint3 id : SV_DispatchThreadID) {
     screen.GetDimensions(width, height);
 
     float2 wave_vector = float2(id.xy) / float2(width, height) * 2 * PI;
+	wave_vector /= 0.5; // Length scale of ocean patch 
     float2 delta_k = float2(2*PI/float(SIZE));
     image[linearIndex(id.xy)] = fourier_spectrum(wave_vector,  WIND_SPEED,  LEEWARD_FETCH,  WIND_ANGLE,  DEPTH, delta_k,  time.elapsed)*10000;
 }
