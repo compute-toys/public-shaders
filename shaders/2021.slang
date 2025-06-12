@@ -5,6 +5,7 @@ static float WIND_SPEED = custom.WIND_SPEED;
 static float WIND_ANGLE = custom.WIND_ANGLE;
 static float LEEWARD_FETCH = custom.LEEWARD_FETCH;
 static float DEPTH = custom.DEPTH;
+static float LENGTH_SCALE = custom.LENGTH_SCALE;
 
 static const int SIZE = 1024;
 static const int ELEMENTS = SIZE*SIZE;
@@ -131,16 +132,16 @@ float wave_spectrum(float2 wave_vector, float wave_vector_mag, float dispersion,
 	// let relative_wind_angle = (atan(wave_vector.y/ wave_vector.x) - wind_angle) % PI;
 	var relative_wind_angle = (atan2(wave_vector.y, wave_vector.x) - wind_angle);
 	if (relative_wind_angle > PI) {
-		relative_wind_angle -= PI;
+		relative_wind_angle -= 2*PI;
 	} else if (relative_wind_angle < -PI) {
-		relative_wind_angle += PI;
+		relative_wind_angle += 2*PI;
 	}
 
 	let dispersion_peak = peak_dispersion(wind_speed, fetch);
 
 	let S_j = jonswap(dispersion, dispersion_peak, wind_speed, fetch);
-	// let D = directional_spreading(dispersion, dispersion_peak, relative_wind_angle);
-	let D = 1;
+	let D = directional_spreading(dispersion, dispersion_peak, relative_wind_angle);
+	// let D = 1;
 
 	float dw_dk_k = 0.0;
 
@@ -268,12 +269,8 @@ void set_image(uint3 id : SV_DispatchThreadID) {
     // Generate a seed that's constant between all subsequent frames
     init_rng(id.xy, SIZE, 0);
 
-    // Viewport resolution (in pixels)
-    uint width, height;
-    screen.GetDimensions(width, height);
-
-    float2 wave_vector = float2(id.xy) / float2(width, height) * 2 * PI;
-	wave_vector /= 0.5; // Length scale of ocean patch 
+    float2 wave_vector = float2(id.xy) / float2(SIZE) * 2 * PI;
+	wave_vector /= LENGTH_SCALE; // Length scale of ocean patch 
     float2 delta_k = float2(2*PI/float(SIZE));
     image[linearIndex(id.xy)] = fourier_spectrum(wave_vector,  WIND_SPEED,  LEEWARD_FETCH,  WIND_ANGLE,  DEPTH, delta_k,  time.elapsed)*10000;
 }
@@ -295,8 +292,9 @@ void main_image(uint3 id : SV_DispatchThreadID)
     screen.GetDimensions(width, height);
         
     uint idx = linearIndex(uint2(ifftshift(id.x), ifftshift(id.y)));
-    float2 value = image[idx]*30_000;
+    float2 value = image[idx]*30000;
 
-    screen[id.xy] = float4(0.0, 0.01, value.x, 1.0);
+    screen[id.xy] = float4(value.x, 0.0, value.x, 1.0);
+    // screen[id.xy] = float4(value.x, 0.0, 0.0, 1.0);
+    // screen[id.xy] = float4(0.0, 0.01, value.x, 1.0);
 }
-
