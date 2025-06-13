@@ -1,0 +1,36 @@
+{
+  "id": 2082,
+  "created_at": "2025-06-12T09:14:41.396427+00:00",
+  "name": "Practice_06_02",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "alpha",
+        "value": 2.453,
+        "minRange": 0,
+        "maxRange": 3.14
+      },
+      {
+        "name": "scale",
+        "value": 13.912,
+        "minRange": 1,
+        "maxRange": 32
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}
