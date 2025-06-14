@@ -1,0 +1,30 @@
+{
+  "id": 2086,
+  "created_at": "2025-06-13T15:11:16.044745+00:00",
+  "name": "Liquid Glass",
+  "description": "This is a port from https://www.shadertoy.com/view/3cdXDX\nThat propose change direction Y in shadertoy.slang module.\n",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Speed",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 2
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Regent_Street_Clay_Gregory.jpg/1920px-Regent_Street_Clay_Gregory.jpg"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "munrocket"
+  }
+}

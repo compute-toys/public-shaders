@@ -1,0 +1,30 @@
+{
+  "id": 2083,
+  "created_at": "2025-06-13T03:53:45.9867+00:00",
+  "name": "Practice_06_Dither",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "depth",
+        "value": 8.782,
+        "minRange": 1,
+        "maxRange": 256
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/noise4.png"
+      },
+      {
+        "img": "/textures/bayer0.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}
