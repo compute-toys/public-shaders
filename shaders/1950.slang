@@ -213,8 +213,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
 [shader("compute")]
 [numthreads(16, 16, 1)]
 void Image(uint3 id : SV_DispatchThreadID) {
-    vec2 fragCoord = vec2(id.xy) + 0.5;
+    vec2 fragCoord = vec2(id.x, SCREEN_SIZE.y - 1 - id.y) + 0.5;
     vec4 fragColor;
     mainImage(fragColor, fragCoord);
-    screen[ivec2(id.x, SCREEN_SIZE.y - 1 - id.y)] = pow(fragColor, 2.2);
+    screen[id.xy] = pow(fragColor, 2.2);
 }
