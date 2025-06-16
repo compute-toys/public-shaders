@@ -1,21 +1,6 @@
 import std;
 import shadertoy;
 
-// There are, however, some differences from Shadertoy:
-// 1. All samples from iChannels that are mapped to Buffer A-D
-//    must be replaced with ChBufferA-D
-//    channel0/channel1 can be used normally, 
-//    but note they are called channel0 not channel0
-// 2. Globals must be static
-// 3. Compute shaders don't support screen derivatives, so dFdx/dFdy/fwidth won't work
-//    They must be emulated, either analytically, or doing multiple passes
-//    This also means that texture(ch, p) always samples the 0th MIP level
-//    Technically can be fully emulated using subgroup operations and clever mapping,
-//    but not supported here at the moment.
-// 4. There are no sampler2D or other GLSL texture types
-//    Those must be either replaced by an int (for the buffer index)
-//    Or replaced with Texture2D<float4> which is the type of the input channel0/1
-
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
     vec2 uv = fragCoord/iResolution.xy;
@@ -27,7 +12,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     } vec2 m2 = (uv-mouse/iResolution.xy);
     
     float roundedBox = pow(abs(m2.x*iResolution.x/iResolution.y),8.0)+pow(abs(m2.y),8.0);    
-    float rb1 = clamp((1.0-roundedBox*10000.0)*8.0, 0.,1.); // rounded box
+    float rb1 = clamp((1.0-roundedBox*10000.0)*8.0, 0.,1.);
     float rb2 = clamp((0.95-roundedBox*9500.0)*16.0, 0.,1.)-clamp(pow(0.9-roundedBox*9500.0, 1.0)*16.0, 0.,1.); // borders
     float rb3 = (clamp((1.5-roundedBox*11000.0)*2.0, 0.,1.)-clamp(pow(1.0-roundedBox*11000.0, 1.0)*2.0, 0.,1.)); // shadow gradient
 
@@ -38,18 +23,18 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     if (transition>0.0) {
     
         vec2 lens;
-        
-        // Sample 0
+
+    #define TYPE 0
+
+    #if (TYPE == 0)
         lens = ((uv-0.5)*1.0*(1.0-roundedBox*5000.0)+0.5);
-        
-        // Sample 1
-        // lens = ((uv-0.5)*1.0*(1.0-roundedBox*1000.0)+0.5);
-        
-        // Sample 2
-        // lens = ((uv-0.5)*(roundedBox*1000.0+0.9)+0.5);
-        
-        // Sample 3
-        // lens = ((uv-0.5)*0.9*(roundedBox*5000.0+0.9)+0.5);
+    #elif (TYPE == 1)
+        lens = ((uv-0.5)*1.0*(1.0-roundedBox*1000.0)+0.5);
+    #elif (TYPE == 2)
+        lens = ((uv-0.5)*(roundedBox*1000.0+0.9)+0.5);
+    #elif (TYPE == 3)
+        lens = ((uv-0.5)*0.9*(roundedBox*5000.0+0.9)+0.5);
+    #endif
        
         // Blur
         float total = 0.0;
@@ -72,14 +57,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         fragColor = texture(channel0, uv);
     }
 }
-
-////////////////////////////////////////////////////////////
-//Compute dispatches emulating fullscreen fragment shaders//
-////////////////////////////////////////////////////////////
-
-// 5. Unlike fragment shaders here you actually can control how the GPU spawns
-//    the "pixel" threads.  Depending on the algorithm it might be preferrable 
-//    to change the size of the workgroups
 
 static const int WG_X = 16;
 static const int WG_Y = 16;

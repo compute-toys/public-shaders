@@ -280,7 +280,7 @@ void set_image(uint3 id : SV_DispatchThreadID) {
 [shader("compute")]
 [numthreads(FFT_WG_SIZE, 1, 1)]
 void fft_kernel(uint3 gtid : SV_GroupThreadID, uint3 gid: SV_GroupID) {
-    fft(gtid.x, gid.x, dispatch.id%2, true);
+    // fft(gtid.x, gid.x, dispatch.id%2, true);
 }
 
 [shader("compute")]

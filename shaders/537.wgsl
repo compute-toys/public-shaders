@@ -7,8 +7,8 @@ const COUNT = 256*32;
 #define point_size 1.41421356237 * .7
 
 // change after preprocessor eval feature:
-#define TILES_X 70 //SCREEN_WIDTH/16
-#define TILES_Y 50 //SCREEN_HEIGHT/16
+#calcdefine TILES_X 70
+#calcdefine TILES_Y 50
 #define TILE_CAPACITY 2048
 struct Tile {
     amount: atomic<u32>,
