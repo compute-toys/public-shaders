@@ -7,7 +7,7 @@
     "uniforms": [
       {
         "name": "WIND_SPEED",
-        "value": 1.979,
+        "value": 0.134,
         "minRange": 0,
         "maxRange": 10
       },
@@ -19,9 +19,9 @@
       },
       {
         "name": "LEEWARD_FETCH",
-        "value": 425.819,
+        "value": 44810.35,
         "minRange": 0,
-        "maxRange": 1000
+        "maxRange": 100000
       },
       {
         "name": "DEPTH",

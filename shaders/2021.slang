@@ -280,7 +280,7 @@ void set_image(uint3 id : SV_DispatchThreadID) {
 [shader("compute")]
 [numthreads(FFT_WG_SIZE, 1, 1)]
 void fft_kernel(uint3 gtid : SV_GroupThreadID, uint3 gid: SV_GroupID) {
-    // fft(gtid.x, gid.x, dispatch.id%2, true);
+    fft(gtid.x, gid.x, dispatch.id%2, true);
 }
 
 [shader("compute")]
@@ -294,7 +294,7 @@ void main_image(uint3 id : SV_DispatchThreadID)
     uint idx = linearIndex(uint2(ifftshift(id.x), ifftshift(id.y)));
     float2 value = image[idx]*30000;
 
-    screen[id.xy] = float4(value.x, 0.0, value.x, 1.0);
+    screen[id.xy] = float4(value.x, 0.0, value.y, 1.0);
     // screen[id.xy] = float4(value.x, 0.0, 0.0, 1.0);
     // screen[id.xy] = float4(0.0, 0.01, value.x, 1.0);
 }
