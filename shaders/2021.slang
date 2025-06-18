@@ -281,6 +281,10 @@ void set_image(uint3 id : SV_DispatchThreadID) {
 [numthreads(FFT_WG_SIZE, 1, 1)]
 void fft_kernel(uint3 gtid : SV_GroupThreadID, uint3 gid: SV_GroupID) {
     fft(gtid.x, gid.x, dispatch.id%2, true);
+    // fft(gtid.x, gid.x, gtid.z%2, true);
+    // fft(gtid.x, gid.x, 1, true);
+	//         GroupMemoryBarrierWithGroupSync();
+    // fft(gtid.x, gid.x, 0, true);
 }
 
 [shader("compute")]

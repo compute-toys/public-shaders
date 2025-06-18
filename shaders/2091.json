@@ -1,0 +1,30 @@
+{
+  "id": 2091,
+  "created_at": "2025-06-17T06:46:24.21646+00:00",
+  "name": "magic",
+  "description": "try of https://www.youtube.com/watch?v=f4s1h2YETNY",
+  "body": {
+    "uniforms": [
+      {
+        "name": "t",
+        "value": 1.629,
+        "minRange": 0,
+        "maxRange": 4
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}

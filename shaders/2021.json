@@ -7,7 +7,7 @@
     "uniforms": [
       {
         "name": "WIND_SPEED",
-        "value": 0.134,
+        "value": 1.87,
         "minRange": 0,
         "maxRange": 10
       },

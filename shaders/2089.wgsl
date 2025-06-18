@@ -32,8 +32,8 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
 
     var col = vec3f(mask + 0.1 * out + 0.8 * ctr);
 
-    // Convert from gamma-encoded to linear colour space
-    col = pow(col, vec3f(2.2));
+    // // Convert from gamma-encoded to linear colour space
+    // col = pow(col, vec3f(2.2));
 
     // Output to screen (linear colour space)
     textureStore(screen, id.xy, vec4f(col, 1.));
