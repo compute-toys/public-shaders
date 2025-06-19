@@ -62,7 +62,7 @@ public float jonswap(float dispersion, float dispersion_peak, float speed, float
 		return 0.0;
 	}
 
-	let alpha = intensity(dispersion_peak, speed);
+	let alpha = intensity(speed, fetch);
 
 	let beta = 5.0 / 4.0;
 	let exponent = -beta * powr(dispersion_peak, 4) / powr(dispersion, 4);
