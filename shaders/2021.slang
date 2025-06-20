@@ -266,13 +266,18 @@ void fft(uint index, uint group, uint axis, bool inverse) {
 [shader("compute")]
 [numthreads(IMG_WG_SIZE, IMG_WG_SIZE, 1)]
 void set_image(uint3 id : SV_DispatchThreadID) {
+	if (id.x > SIZE || id.y > SIZE) {
+		return;
+	}
     // Generate a seed that's constant between all subsequent frames
     init_rng(id.xy, SIZE, 0);
 
-    float2 wave_vector = float2(id.xy) / float2(SIZE) * 2 * PI;
+    // float2 wave_vector = float2(id.xy) / float2(SIZE);
+    float2 wave_vector = float2(id.xy) / float2(SIZE) * 2 * PI - PI;
 	wave_vector /= LENGTH_SCALE; // Length scale of ocean patch 
     float2 delta_k = float2(2*PI/float(SIZE));
-    image[linearIndex(id.xy)] = fourier_spectrum(wave_vector,  WIND_SPEED,  LEEWARD_FETCH,  WIND_ANGLE,  DEPTH, delta_k,  time.elapsed)*10000;
+    image[linearIndex(id.xy)] = fourier_spectrum(wave_vector,  WIND_SPEED,  LEEWARD_FETCH,  WIND_ANGLE,  DEPTH, delta_k,  time.elapsed)*1000;
+    // image[linearIndex(id.xy)] = wave_vector;
 }
 
 [DispatchCount(2)]
@@ -294,11 +299,19 @@ void main_image(uint3 id : SV_DispatchThreadID)
     // Viewport resolution (in pixels)
     uint width, height;
     screen.GetDimensions(width, height);
-        
-    uint idx = linearIndex(uint2(ifftshift(id.x), ifftshift(id.y)));
-    float2 value = image[idx]*30000;
 
-    screen[id.xy] = float4(value.x, 0.0, value.y, 1.0);
+    // uint idx = linearIndex(id.xy);
+    // float2 value = image[idx];
+
+    uint idx = linearIndex(uint2(ifftshift(id.x), ifftshift(id.y)));
+    float2 value = image[idx] * 500;
+
+ 	// if (id.x > SIZE || id.y > SIZE) {
+	// 	value = float2(0.0);
+	// }
+
+    screen[id.xy] = float4(value.x, 0.0, value.x, 1.0);
     // screen[id.xy] = float4(value.x, 0.0, 0.0, 1.0);
     // screen[id.xy] = float4(0.0, 0.01, value.x, 1.0);
 }
+ 

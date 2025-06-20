@@ -7,31 +7,31 @@
     "uniforms": [
       {
         "name": "WIND_SPEED",
-        "value": 1.87,
+        "value": 2.297,
         "minRange": 0,
         "maxRange": 10
       },
       {
         "name": "WIND_ANGLE",
-        "value": -0.648,
+        "value": -0.987,
         "minRange": -3.1,
         "maxRange": 3.1
       },
       {
         "name": "LEEWARD_FETCH",
-        "value": 44810.35,
+        "value": 20714.738,
         "minRange": 0,
         "maxRange": 100000
       },
       {
         "name": "DEPTH",
-        "value": 50.05,
+        "value": 40.147,
         "minRange": 0.1,
         "maxRange": 100
       },
       {
         "name": "LENGTH_SCALE",
-        "value": 1.35,
+        "value": 1.03,
         "minRange": 0.1,
         "maxRange": 2.5
       }
