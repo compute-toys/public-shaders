@@ -6,7 +6,7 @@
 #define noise_simplex_3d_hash hash33
 #include "nikat/noise_simplex_3d"
 
-#define COUNT (1<<20)
+#define COUNT (1<<19)
 #define PARTICLE_WORKGROUP_SIZE 128
 #define PARTICLE_WORKGROUP_COUNT 8192
 #storage PARTICLES array<Particle, COUNT>
@@ -61,7 +61,7 @@ fn update(@builtin(global_invocation_id) id: vec3u) {
 		return;
 	}
     let density_index = pix.y * SCREEN_WIDTH + pix.x;
-    DENSITIES[density_index] += 1;
+    // DENSITIES[density_index] += 1;
     atomicAdd(&DENSITIES[density_index], 1);
 }
 

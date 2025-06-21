@@ -288,7 +288,8 @@ void fft_kernel(uint3 gtid : SV_GroupThreadID, uint3 gid: SV_GroupID) {
     fft(gtid.x, gid.x, dispatch.id%2, true);
     // fft(gtid.x, gid.x, gtid.z%2, true);
     // fft(gtid.x, gid.x, 1, true);
-	//         GroupMemoryBarrierWithGroupSync();
+	// GroupMemoryBarrier();
+	// GroupMemoryBarrierWithGroupSync();
     // fft(gtid.x, gid.x, 0, true);
 }
 
@@ -304,7 +305,7 @@ void main_image(uint3 id : SV_DispatchThreadID)
     // float2 value = image[idx];
 
     uint idx = linearIndex(uint2(ifftshift(id.x), ifftshift(id.y)));
-    float2 value = image[idx] * 500;
+    float2 value = image[idx] * 1000;
 
  	// if (id.x > SIZE || id.y > SIZE) {
 	// 	value = float2(0.0);
