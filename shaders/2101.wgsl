@@ -34,7 +34,6 @@ fn getSwirl(p_in: vec2f, time_offset: f32) -> f32 {
     let c = cos(a);
     let s = sin(a);
     
-    // In GLSL, `p *= M * s` means `p = (M * s) * p`. This is the correct translation.
     let scale = 1.0 - sin(d * 7.0 - (time.elapsed * 2.0 + time_offset)) * 0.03;
     let transform = mat2x2f(c, -s, s, s) * scale;
     p = transform * p;
