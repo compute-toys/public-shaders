@@ -2,9 +2,9 @@
 // --- CONFIGURATION ---
 // =================================================================================
 const NOISE_AMOUNT: f32 = 0.01;
-const SCANLINE_FREQUENCY: f32 = 400.0;
+const SCANLINE_FREQUENCY: f32 = 30.0;
 const SCANLINE_INTENSITY: f32 = 0.3;
-const DITHER_STRENGTH: f32 = 30.0 / 255.0;
+const DITHER_STRENGTH: f32 = 1.0 / 255.0;
 
 const COLOR_BACKGROUND:    vec3f = vec3f(0.01,  0.02,  0.025);
 const COLOR_RED_PRIMARY:   vec3f = vec3f(1.0,   0.1,   0.2);
@@ -95,8 +95,8 @@ fn renderScene(uv: vec2f) -> vec3f {
 // =================================================================================
 
 @compute @workgroup_size(16, 16)
-fn main(@builtin(global_invocation_id) id: vec3u) {
-    // Get screen dimensions directly from the output texture. THIS IS THE KEY FIX.
+fn main_image(@builtin(global_invocation_id) id: vec3u) {
+
     let screen_dims = textureDimensions(screen);
 
     // Prevent overdraw for workgroups on the edge of the screen.
