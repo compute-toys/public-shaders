@@ -1,0 +1,23 @@
+{
+  "id": 2111,
+  "created_at": "2025-06-23T12:25:02.382919+00:00",
+  "name": "Wormhole",
+  "description": "",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "Matchew123"
+  }
+}

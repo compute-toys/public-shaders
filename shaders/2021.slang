@@ -22,6 +22,11 @@ static const float TWO_PI = 2.0f*PI;
 [StorageBuffer(ELEMENTS)]
 RWStructuredBuffer<float2> image;
 
+[StorageBuffer(ELEMENTS)]
+RWStructuredBuffer<float2> tangent;
+[StorageBuffer(ELEMENTS)]
+RWStructuredBuffer<float2> bitangent;
+
 // ---------------------------- RNG ----------------------------
 struct Rng {
 	uint state;
@@ -166,9 +171,10 @@ float2 fourier_spectrum(float2 wave_vector, float wind_speed, float fetch, float
 	var conj = h_0_tilde(-wave_vector, wave_vector_mag, dispersion, wind_speed, fetch, wind_angle, depth, delta_k);
 	conj.y = -conj.y;
 
-	var x = dispersion * t;
-	base *= float2(sin(x), cos(x));
-	conj *= float2(sin(-x), cos(-x));
+	var phase = dispersion * t;
+
+	base = cmul(base, float2(sin(phase), cos(phase)));
+	conj = cmul(conj, float2(sin(-phase), cos(-phase)));
 
 	return base + conj;
 }
@@ -229,7 +235,7 @@ void radix2(uint span, uint index, bool inverse) {
     temp[k2] = v1 - v2;
 }
 
-void fft(uint index, uint group, uint axis, bool inverse) {
+void fft(uint index, uint group, uint axis, bool inverse, RWStructuredBuffer<float2> img) {
     //number of elements to load per workgroup thread
     uint M = SIZE / FFT_WG_SIZE;
     
@@ -237,7 +243,7 @@ void fft(uint index, uint group, uint axis, bool inverse) {
     for (uint i = 0u; i < M; i++) {
         uint rowIndex = index + i * FFT_WG_SIZE;
         uint idx = reversebits(rowIndex) >> (32u - RADIX2);
-        temp[idx] = image[getAxisIndex(rowIndex, group, axis)];
+        temp[idx] = img[getAxisIndex(rowIndex, group, axis)];
     }
 
     //wait for data be loaded
@@ -258,7 +264,7 @@ void fft(uint index, uint group, uint axis, bool inverse) {
     for (uint i = 0u; i < M; i++) {
         uint rowIndex = index + i * FFT_WG_SIZE;
         uint idx = getAxisIndex(rowIndex, group, axis);
-        image[idx] = temp[rowIndex] / (inverse ? SIZE : 1.0);
+        img[idx] = temp[rowIndex] / (inverse ? SIZE : 1.0);
     }
 }
 
@@ -272,12 +278,20 @@ void set_image(uint3 id : SV_DispatchThreadID) {
     // Generate a seed that's constant between all subsequent frames
     init_rng(id.xy, SIZE, 0);
 
-    // float2 wave_vector = float2(id.xy) / float2(SIZE);
+	// Wave vector is a value [-pi, pi] mapped to the axes of the texture
     float2 wave_vector = float2(id.xy) / float2(SIZE) * 2 * PI - PI;
 	wave_vector /= LENGTH_SCALE; // Length scale of ocean patch 
     float2 delta_k = float2(2*PI/float(SIZE));
-    image[linearIndex(id.xy)] = fourier_spectrum(wave_vector,  WIND_SPEED,  LEEWARD_FETCH,  WIND_ANGLE,  DEPTH, delta_k,  time.elapsed)*1000;
-    // image[linearIndex(id.xy)] = wave_vector;
+
+	float2 h = fourier_spectrum(wave_vector,  WIND_SPEED,  LEEWARD_FETCH,  WIND_ANGLE,  DEPTH, delta_k,  time.elapsed);
+
+	let ih = float2(-h.y, h.x);
+
+    tangent[linearIndex(id.xy)] = ih * wave_vector.x;
+	bitangent[linearIndex(id.xy)] = ih * wave_vector.y;
+
+    // image[linearIndex(id.xy)] = h.y / length(wave_vector) * wave_vector;
+    image[linearIndex(id.xy)] = ih * 1000;
 }
 
 [DispatchCount(2)]
@@ -285,12 +299,9 @@ void set_image(uint3 id : SV_DispatchThreadID) {
 [shader("compute")]
 [numthreads(FFT_WG_SIZE, 1, 1)]
 void fft_kernel(uint3 gtid : SV_GroupThreadID, uint3 gid: SV_GroupID) {
-    fft(gtid.x, gid.x, dispatch.id%2, true);
-    // fft(gtid.x, gid.x, gtid.z%2, true);
-    // fft(gtid.x, gid.x, 1, true);
-	// GroupMemoryBarrier();
-	// GroupMemoryBarrierWithGroupSync();
-    // fft(gtid.x, gid.x, 0, true);
+    fft(gtid.x, gid.x, dispatch.id%2, true, image);
+    fft(gtid.x, gid.x, dispatch.id%2, true, tangent);
+    fft(gtid.x, gid.x, dispatch.id%2, true, bitangent);
 }
 
 [shader("compute")]
@@ -307,12 +318,18 @@ void main_image(uint3 id : SV_DispatchThreadID)
     uint idx = linearIndex(uint2(ifftshift(id.x), ifftshift(id.y)));
     float2 value = image[idx] * 1000;
 
+	let tang = tangent[idx].x*SIZE*SIZE*100;
+	let bitang = tangent[idx].x*SIZE*SIZE*100;
+
+	let normal = normalize(float3(-tang, 1, bitang));
+
  	// if (id.x > SIZE || id.y > SIZE) {
 	// 	value = float2(0.0);
 	// }
 
     screen[id.xy] = float4(value.x, 0.0, value.x, 1.0);
-    // screen[id.xy] = float4(value.x, 0.0, 0.0, 1.0);
+    // screen[id.xy] = float4(normal, 1.0);
+    // screen[id.xy] = float4(tang, 0.0, 0.0, 1.0);
     // screen[id.xy] = float4(0.0, 0.01, value.x, 1.0);
 }
  

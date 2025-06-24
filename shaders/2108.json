@@ -1,0 +1,23 @@
+{
+  "id": 2108,
+  "created_at": "2025-06-23T04:40:17.512848+00:00",
+  "name": "Comparison of Angular Repetition",
+  "description": "Left: single sdf evaluation. it guarantees a gemetrically correct(no clamp no aliasing).\nRight: two sdf evaluation. it guarantees the sdf itself correct(no clamp no aliasing).(fork from https://www.shadertoy.com/view/XtSczV)",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}

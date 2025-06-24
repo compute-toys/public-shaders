@@ -1,0 +1,23 @@
+{
+  "id": 928,
+  "created_at": "2023-12-26T13:58:46.588617+00:00",
+  "name": "blue-noise-issue",
+  "description": "bug issue: https://github.com/compute-toys/compute.toys/issues/70",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/noise4.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}
