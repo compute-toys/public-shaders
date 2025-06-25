@@ -285,8 +285,8 @@ fn GetHeight(X : i32, Z : i32) -> f32{
 
 
 
-const MaxIterations = 5000u;
-const EquirectangularSize = 2.7;
+const MaxIterations = 250000u;
+const EquirectangularSize = 6.0;
 
 fn KeyDown(Code : u32) -> u32{
     return (_keyboard[Code >> 7u][(Code >> 5u) & 3u] >> (Code & 31u)) & 1u;
@@ -410,8 +410,15 @@ fn EquirectangularSample(Coordinate : vec2<f32>, Resolution : vec2<u32>) -> vec2
     return Memory.EquirectangularImage[Pixel.y * Resolution.x + Pixel.x];
 }
 
+fn Tan(x : f32) -> f32{
+    return x * (2.471688400562703 - 0.189759681063053 * x * x) / (2.4674011002723397 - x * x);
+}
 
-#workgroup_count Equirectangular 1024 1 1
+fn InvTan(x : f32) -> f32{
+    return (2.4674011002723397 - x * x) / (x * (2.471688400562703 - 0.189759681063053 * x * x));
+}
+
+#workgroup_count Equirectangular 16384 1 1
 @compute @workgroup_size(32)
 fn Equirectangular(@builtin(global_invocation_id) Pixel: uint3) {
     let Resolution = vec2<u32>(vec2<f32>(textureDimensions(screen).xy) * EquirectangularSize);
@@ -445,14 +452,14 @@ fn Equirectangular(@builtin(global_invocation_id) Pixel: uint3) {
     let DeltaDistanceX = abs(1. / RayDirectionX);
     let DeltaDistanceZ = abs(1. / RayDirectionZ);
 
-    let RayStepX = sign(RayDirectionX);
-    let RayStepZ = sign(RayDirectionZ);
+    let RayStepX = i32(sign(RayDirectionX));
+    let RayStepZ = i32(sign(RayDirectionZ));
 
-    var MapPositionX = floor(RayPositionX);
-    var MapPositionZ = floor(RayPositionZ);
+    var MapPositionX = i32(floor(RayPositionX));
+    var MapPositionZ = i32(floor(RayPositionZ));
 
-    var SideDistanceX = (RayStepX * (MapPositionX - RayPositionX) + RayStepX * .5 + .5) * DeltaDistanceX;
-    var SideDistanceZ = (RayStepZ * (MapPositionZ - RayPositionZ) + RayStepZ * .5 + .5) * DeltaDistanceZ;
+    var SideDistanceX = (sign(RayDirectionX) * (floor(RayPositionX) - RayPositionX) + sign(RayDirectionX) * .5 + .5) * DeltaDistanceX;
+    var SideDistanceZ = (sign(RayDirectionZ) * (floor(RayPositionZ) - RayPositionZ) + sign(RayDirectionZ) * .5 + .5) * DeltaDistanceZ;
 
     var Distance = 0.;
     var PreviousHeight = 1.e37;
@@ -466,52 +473,42 @@ fn Equirectangular(@builtin(global_invocation_id) Pixel: uint3) {
         return;
     }
 
-    
+    let InvResolutionY = 3.14159265359 / f32(Resolution.y);
+    let Minus = -1.57079632679;
+
     var y = MaxY;
 
-    var RayDirectionY = tan((f32(y) / f32(Resolution.y) - .5) * 3.14159);
+    var RayDirectionY = Tan(fma(f32(y), InvResolutionY, Minus));
 
     for(var i = 0u; i <= MaxIterations && y != MinY; i++){
-        while(y != MinY){
-            let CurrentY = RayPositionY + RayDirectionY * Distance;
-            if(PreviousHeight < CurrentY){
-                let A = (PreviousHeight - RayPositionY) / RayDirectionY;
-                let B = (PreviousHeight - RayPositionY);
-                let Distance3D = sqrt(A * A + B * B);
-                EquirectangularStore(vec2<u32>(x, y), vec2<f32>(Distance3D, PreviousHeight), Resolution);
-                y--;
-                //RayDirectionY -= RayDirectionYIncrement;
-                RayDirectionY = tan((f32(y) / f32(Resolution.y) - .5) * 3.14159);
-            } else{
-                break;
-            }
+        while(y != MinY && PreviousHeight < RayPositionY + RayDirectionY * Distance){
+            let B = (PreviousHeight - RayPositionY);
+            let A = B / RayDirectionY;
+            let Distance3D = sqrt(A * A + B * B);
+            EquirectangularStore(vec2<u32>(x, y), vec2<f32>(Distance3D, PreviousHeight), Resolution);
+            y--;
+            //RayDirectionY -= RayDirectionYIncrement;
+            RayDirectionY = Tan(fma(f32(y), InvResolutionY, Minus));
         }
-        PreviousHeight = WorldData[((i32(MapPositionZ) & 4095) << 12) | (i32(MapPositionX) & 4095)];//GetHeight(i32(MapPositionX) << 7, i32(MapPositionZ) << 7) * .02;
-        while(y != MinY){
-            let CurrentY = RayPositionY + RayDirectionY * Distance;
-            if(PreviousHeight < CurrentY){
-                let A = Distance;
-                let B = RayDirectionY * Distance;
-                let Distance3D = sqrt(A * A + B * B);
-                EquirectangularStore(vec2<u32>(x, y), vec2<f32>(Distance3D, PreviousHeight), Resolution);
+        PreviousHeight = sin(f32(MapPositionZ + MapPositionX) / 10.) * 50.;//WorldData[(((MapPositionZ) & 4095) << 12) | ((MapPositionX) & 4095)];//GetHeight(i32(MapPositionX) << 7, i32(MapPositionZ) << 7) * .02;
+        while(y != MinY && PreviousHeight < RayPositionY + RayDirectionY * Distance){
+            let A = Distance;
+            let B = RayDirectionY * Distance;
+            let Distance3D = sqrt(A * A + B * B);
+            EquirectangularStore(vec2<u32>(x, y), vec2<f32>(Distance3D, PreviousHeight), Resolution);
 
-                y--;
-                //RayDirectionY -= RayDirectionYIncrement;
-                RayDirectionY = tan((f32(y) / f32(Resolution.y) - .5) * 3.14159);
-            } else{
-                break;
-            }
+            y--;
+            //RayDirectionY -= RayDirectionYIncrement;
+            RayDirectionY = Tan(fma(f32(y), InvResolutionY, Minus));
         }
         
 
         SideIsX = SideDistanceX < SideDistanceZ;
-
+        Distance = select(SideDistanceZ, SideDistanceX, SideIsX);
         if(SideIsX){
-          Distance = SideDistanceX;
           SideDistanceX += DeltaDistanceX;
           MapPositionX += RayStepX;
         } else{
-          Distance = SideDistanceZ;
           SideDistanceZ += DeltaDistanceZ;
           MapPositionZ += RayStepZ;
         }
