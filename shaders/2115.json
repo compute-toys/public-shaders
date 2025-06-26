@@ -1,0 +1,36 @@
+{
+  "id": 2115,
+  "created_at": "2025-06-25T10:39:17.065443+00:00",
+  "name": "anti moiré aliasing",
+  "description": "Up: No anti_moiré_pattern\nDown: ANTI_moiré pattern",
+  "body": {
+    "uniforms": [
+      {
+        "name": "lambda",
+        "value": 64,
+        "minRange": 0,
+        "maxRange": 64
+      },
+      {
+        "name": "scale",
+        "value": 56.66,
+        "minRange": 0,
+        "maxRange": 128
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}

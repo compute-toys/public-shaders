@@ -285,7 +285,7 @@ fn GetHeight(X : i32, Z : i32) -> f32{
 
 
 
-const MaxIterations = 250000u;
+const MaxIterations = 130000u;
 const EquirectangularSize = 6.0;
 
 fn KeyDown(Code : u32) -> u32{
@@ -401,24 +401,22 @@ fn GetRayDirection(UV : vec2<f32>) -> vec3<f32>{
 }
 
 fn EquirectangularStore(Pixel : vec2<u32>, Value : vec2<f32>, Resolution : vec2<u32>){
-    let Index = Pixel.y * Resolution.x + Pixel.x;
+    let Index = Pixel.x * Resolution.y + Pixel.y;
     Memory.EquirectangularImage[Index] = Value;
 }
 
 fn EquirectangularSample(Coordinate : vec2<f32>, Resolution : vec2<u32>) -> vec2<f32>{
     let Pixel = vec2<u32>(Coordinate * vec2<f32>(Resolution));
-    return Memory.EquirectangularImage[Pixel.y * Resolution.x + Pixel.x];
+    return Memory.EquirectangularImage[Pixel.x * Resolution.y + Pixel.y];
 }
 
 fn Tan(x : f32) -> f32{
-    return x * (2.471688400562703 - 0.189759681063053 * x * x) / (2.4674011002723397 - x * x);
+    let S = x * x;
+    return x * (2.471688400562703 - 0.189759681063053 * S) / (2.4674011002723397 - S);
+    //return x * fma(x * -0.189759681063053, x, 2.471688400562703) / fma(x, -x, 2.4674011002723397);
 }
 
-fn InvTan(x : f32) -> f32{
-    return (2.4674011002723397 - x * x) / (x * (2.471688400562703 - 0.189759681063053 * x * x));
-}
-
-#workgroup_count Equirectangular 16384 1 1
+#workgroup_count Equirectangular 2048 1 1
 @compute @workgroup_size(32)
 fn Equirectangular(@builtin(global_invocation_id) Pixel: uint3) {
     let Resolution = vec2<u32>(vec2<f32>(textureDimensions(screen).xy) * EquirectangularSize);
@@ -432,9 +430,9 @@ fn Equirectangular(@builtin(global_invocation_id) Pixel: uint3) {
     let RotationX = f32(Memory.MousePos.x) / 100.;
     let RotationY = f32(Memory.MousePos.y) / 100.;
 
-    var RayPositionX = Memory.Position.x;
-    var RayPositionY = Memory.Position.y;
-    var RayPositionZ = Memory.Position.z;
+    let RayPositionX = Memory.Position.x;
+    let RayPositionY = Memory.Position.y;
+    let RayPositionZ = Memory.Position.z;
 
     let CosRotationX = cos(RotationX);
     let SinRotationX = sin(RotationX);
@@ -449,15 +447,20 @@ fn Equirectangular(@builtin(global_invocation_id) Pixel: uint3) {
     let RayDirectionX = cos(a);
     let RayDirectionZ = sin(a);
 
-    let DeltaDistanceX = abs(1. / RayDirectionX);
-    let DeltaDistanceZ = abs(1. / RayDirectionZ);
-
     let RayStepX = i32(sign(RayDirectionX));
     let RayStepZ = i32(sign(RayDirectionZ));
 
-    var MapPositionX = i32(floor(RayPositionX));
-    var MapPositionZ = i32(floor(RayPositionZ));
+    let StartMapPositionX = i32(floor(RayPositionX));
+    let StartMapPositionZ = i32(floor(RayPositionZ));
 
+    var MapPositionX = StartMapPositionX;
+    var MapPositionZ = StartMapPositionZ;
+
+    let DeltaDistanceX = abs(1. / RayDirectionX);
+    let DeltaDistanceZ = abs(1. / RayDirectionZ);
+
+    let OriginalSideDistanceX = (sign(RayDirectionX) * (floor(RayPositionX) - RayPositionX) + sign(RayDirectionX) * .5 + .5) * DeltaDistanceX;
+    let OriginalSideDistanceZ = (sign(RayDirectionZ) * (floor(RayPositionZ) - RayPositionZ) + sign(RayDirectionZ) * .5 + .5) * DeltaDistanceZ;
     var SideDistanceX = (sign(RayDirectionX) * (floor(RayPositionX) - RayPositionX) + sign(RayDirectionX) * .5 + .5) * DeltaDistanceX;
     var SideDistanceZ = (sign(RayDirectionZ) * (floor(RayPositionZ) - RayPositionZ) + sign(RayDirectionZ) * .5 + .5) * DeltaDistanceZ;
 
@@ -480,31 +483,62 @@ fn Equirectangular(@builtin(global_invocation_id) Pixel: uint3) {
 
     var RayDirectionY = Tan(fma(f32(y), InvResolutionY, Minus));
 
-    for(var i = 0u; i <= MaxIterations && y != MinY; i++){
-        while(y != MinY && PreviousHeight < RayPositionY + RayDirectionY * Distance){
-            let B = (PreviousHeight - RayPositionY);
-            let A = B / RayDirectionY;
+    for(var i = 0u; i <= (MaxIterations >> 1); i++){
+        var Height = textureLoad(channel0, vec2<i32>(MapPositionX & 4095, MapPositionZ & 4095), 0).r * -64.;//WorldData[(((MapPositionZ) & 4095) << 12) | ((MapPositionX) & 4095)];//sin(f32(MapPositionZ + MapPositionX) / 10.) * 50.;
+        var MinHeight = min(Height, PreviousHeight);
+        loop{
+            if(y == MinY || MinHeight >= fma(RayDirectionY, Distance, RayPositionY)){
+                break;
+            }
+            let C = PreviousHeight >= fma(RayDirectionY, Distance, RayPositionY);
+            let A = select(PreviousHeight - RayPositionY, Distance, C);
+            let B = select(A / RayDirectionY, RayDirectionY * Distance, C);
             let Distance3D = sqrt(A * A + B * B);
-            EquirectangularStore(vec2<u32>(x, y), vec2<f32>(Distance3D, PreviousHeight), Resolution);
+            EquirectangularStore(vec2<u32>(x, y), vec2<f32>(Distance3D, select(PreviousHeight, Height, C)), Resolution);
             y--;
             //RayDirectionY -= RayDirectionYIncrement;
             RayDirectionY = Tan(fma(f32(y), InvResolutionY, Minus));
         }
-        PreviousHeight = sin(f32(MapPositionZ + MapPositionX) / 10.) * 50.;//WorldData[(((MapPositionZ) & 4095) << 12) | ((MapPositionX) & 4095)];//GetHeight(i32(MapPositionX) << 7, i32(MapPositionZ) << 7) * .02;
-        while(y != MinY && PreviousHeight < RayPositionY + RayDirectionY * Distance){
-            let A = Distance;
-            let B = RayDirectionY * Distance;
-            let Distance3D = sqrt(A * A + B * B);
-            EquirectangularStore(vec2<u32>(x, y), vec2<f32>(Distance3D, PreviousHeight), Resolution);
-
-            y--;
-            //RayDirectionY -= RayDirectionYIncrement;
-            RayDirectionY = Tan(fma(f32(y), InvResolutionY, Minus));
-        }
-        
+        PreviousHeight = Height;//sin(f32(MapPositionZ + MapPositionX) / 10.) * 50.;//WorldData[(((MapPositionZ) & 4095) << 12) | ((MapPositionX) & 4095)];//GetHeight(i32(MapPositionX) << 7, i32(MapPositionZ) << 7) * .02;
 
         SideIsX = SideDistanceX < SideDistanceZ;
-        Distance = select(SideDistanceZ, SideDistanceX, SideIsX);
+        Distance = select(SideDistanceZ, SideDistanceX, SideIsX);/* select(
+            OriginalSideDistanceZ + abs(DeltaDistanceZ * f32(StartMapPositionZ - MapPositionZ)),
+            OriginalSideDistanceX + abs(DeltaDistanceX * f32(StartMapPositionX - MapPositionX)),
+            SideIsX
+        );*/
+        if(SideIsX){
+          SideDistanceX += DeltaDistanceX;
+          MapPositionX += RayStepX;
+        } else{
+          SideDistanceZ += DeltaDistanceZ;
+          MapPositionZ += RayStepZ;
+        }
+
+        
+        Height = textureLoad(channel0, vec2<i32>(MapPositionX & 4095, MapPositionZ & 4095), 0).r * -64.;//WorldData[(((MapPositionZ) & 4095) << 12) | ((MapPositionX) & 4095)];//sin(f32(MapPositionZ + MapPositionX) / 10.) * 50.;
+        MinHeight = min(Height, PreviousHeight);
+        loop{
+            if(y == MinY || MinHeight >= fma(RayDirectionY, Distance, RayPositionY)){
+                break;
+            }
+            let C = PreviousHeight >= fma(RayDirectionY, Distance, RayPositionY);
+            let A = select(PreviousHeight - RayPositionY, Distance, C);
+            let B = select(A / RayDirectionY, RayDirectionY * Distance, C);
+            let Distance3D = sqrt(A * A + B * B);
+            EquirectangularStore(vec2<u32>(x, y), vec2<f32>(Distance3D, select(PreviousHeight, Height, C)), Resolution);
+            y--;
+            //RayDirectionY -= RayDirectionYIncrement;
+            RayDirectionY = Tan(fma(f32(y), InvResolutionY, Minus));
+        }
+        PreviousHeight = Height;//sin(f32(MapPositionZ + MapPositionX) / 10.) * 50.;//WorldData[(((MapPositionZ) & 4095) << 12) | ((MapPositionX) & 4095)];//GetHeight(i32(MapPositionX) << 7, i32(MapPositionZ) << 7) * .02;
+
+        SideIsX = SideDistanceX < SideDistanceZ;
+        Distance = select(SideDistanceZ, SideDistanceX, SideIsX);/*select(
+            OriginalSideDistanceZ + abs(DeltaDistanceZ * f32(StartMapPositionZ - MapPositionZ)),
+            OriginalSideDistanceX + abs(DeltaDistanceX * f32(StartMapPositionX - MapPositionX)),
+            SideIsX
+        );*/
         if(SideIsX){
           SideDistanceX += DeltaDistanceX;
           MapPositionX += RayStepX;
