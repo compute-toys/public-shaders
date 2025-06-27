@@ -1,0 +1,42 @@
+{
+  "id": 2117,
+  "created_at": "2025-06-25T12:45:28.701553+00:00",
+  "name": "checkerboard tunnel/hyperspace",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "r_lambda",
+        "value": 64,
+        "minRange": 0.1,
+        "maxRange": 64
+      },
+      {
+        "name": "t_frequency",
+        "value": 10.686,
+        "minRange": 0,
+        "maxRange": 32
+      },
+      {
+        "name": "square",
+        "value": 0.202,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}
