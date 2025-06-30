@@ -1,0 +1,23 @@
+{
+  "id": 2135,
+  "created_at": "2025-06-28T23:00:48.572923+00:00",
+  "name": "Zygote (SFU GAME JAM)",
+  "description": "Move cells with mouse click.\n\nTo increase score, have all colored cells be connected.\n\nPress the HD button to increase fps",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": null
+  }
+}
