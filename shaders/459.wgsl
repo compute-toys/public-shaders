@@ -59,7 +59,7 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
     let uv = (2.*(vec2f(id.xy) + .5) - vec2f(res)) / f32(res.y);
     
     var ro = vec3f(0, 0, 4); // Coordinate system: X→, Y↑, Z⊙
-    var rd = normalize(vec3f(uv, -2));  
+    var rd = normalize(vec3f(uv, -2*mouse.zoom));  
     ro = rotM(ro, vec2f(mouse.pos) / vec2f(res) - .5);
     rd = rotM(rd, vec2f(mouse.pos) / vec2f(res) - .5);
 
