@@ -1,0 +1,23 @@
+{
+  "id": 2137,
+  "created_at": "2025-06-30T05:54:05.468059+00:00",
+  "name": "a try of truchet",
+  "description": "A Implementation of https://x.com/cristobalvila/status/1790065652012642801",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}

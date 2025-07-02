@@ -64,7 +64,7 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
         let r_sdf = sdf_circle(cell_coord - vec2f(0., wave), 0.25 * GSIZE / muv.y);
         let rflct = linearstep(2., -2., r_sdf);
 
-        var t = 0.25 * chkrb;
+        var t = 0.8 * chkrb;
         // reflection
         t = mix(t, t * set_saturation(COL, mix(0.5, 0.8, board)), rflct);
         // main shape
