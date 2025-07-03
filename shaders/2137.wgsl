@@ -22,18 +22,18 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
     let dpdy_ = pattern(frag_coord + tt.yx) - pattern(frag_coord -tt.yx);
     let fwidt = length(vec2f(dpdx_, dpdy_));
 
-    let normal = normalize(vec3f(-dpdx_, -dpdy_, 1.));
+    var n = normalize(vec3f(-dpdx_, -dpdy_, 1.));
+    n = 0.5 * n + 0.5;
 
     let mask = linearstep(-fwidt, fwidt, value);
 
     let grid = grid(frag_coord);
 
-    // var col = vec3f(normal * grid);
-    // var col = vec3f(dot(normal, LIGHT) * mask);
-    var col = vec3f(value / R * mask * grid);
+    // var col = mix(vec3f(0.0), n, mask);
+    var col = vec3f(value / R * grid);
 
     // Convert from gamma-encoded to linear colour space
-    // col = pow(col, vec3f(2.2));
+    col = pow(col, vec3f(2.2));
 
     // Output to screen (linear colour space)
     textureStore(screen, id.xy, vec4f(col, 1.));
@@ -81,11 +81,9 @@ fn pattern(p: vec2f) -> f32 {
     cell_coord = cell_coord * rmat(5. / 12 * PI);
     sdf = min(sdf, cell_pattern(cell_coord));
 
-    // var ndist = max(-sdf, 0) / R;
-    // ndist = o_ease_circ(ndist);
+    let val = 1.0 - max(-sdf, 0.0) / R;
 
-    // return ndist * R;
-    return max(-sdf, 0.);
+    return R * sqrt(max(1.0 - val * val, 0.0));
 }
 
 fn cell_pattern(p: vec2f) -> f32 {
