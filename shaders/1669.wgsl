@@ -162,7 +162,7 @@ fn main_image(
     if (gid.x >= res.x || gid.y >= res.y) { return; }
 
     let uv = (2.*(vec2f(gid.xy) + .5) - vec2f(res)) / f32(res.y);
-    var ro = vec3f(0, 0, 2);
+    var ro = vec3f(0, 0, 2*mouse.zoom);
     var rd = normalize(vec3f(uv, -2));  
     ro = rotM(ro, vec2f(mouse.pos) / vec2f(res) - .5);
     rd = rotM(rd, vec2f(mouse.pos) / vec2f(res) - .5);

@@ -660,7 +660,7 @@ fn main_image(@builtin(global_invocation_id) id: uint3) {
     for (var j = 0.; j < AA; j += 1.) {
         let dxy = (vec2f(i, j) + .5) / AA;
         let uv = (2.*(vec2f(id.xy) + dxy) - vec2f(res)) / f32(res.y);
-        var ro = vec3f(0., 0., 3.2);
+        var ro = vec3f(0., 0., 3.2*mouse.zoom);
         var rd = normalize(vec3f(uv, -2.));
 
         rd = rotM(rd, vec2f(mouse.pos) / vec2f(res) - .5);

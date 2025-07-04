@@ -92,7 +92,7 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
     for (var j = 0.; j < AA; j += 1.) {
         let dxy = (vec2f(i, j) + .5) / AA;
         uv = (2.*(vec2f(id.xy) + dxy) - vec2f(res)) / f32(res.y);
-        ro = vec3f(0, 0, 2.);
+        ro = vec3f(0, 0, 2.*mouse.zoom);
         rd = normalize(vec3f(uv, -2));
         let mousepos = vec2f(mouse.pos) / vec2f(res) - .5;
         ro = rotM(ro, mousepos);

@@ -1,7 +1,7 @@
 {
   "id": 2113,
   "created_at": "2025-06-23T15:26:47.47485+00:00",
-  "name": "Rings",
+  "name": "Rings(Fork from Xor)",
   "description": "Fork from https://www.shadertoy.com/view/sstyDX",
   "body": {
     "uniforms": [],

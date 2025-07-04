@@ -10,8 +10,8 @@ const S = .01;
 const COUNT = 256*32;
 #define COUNT_256 32
 
-#define TILES_X 70 //SCREEN_HEIGHT / 16
-#define TILES_Y 50 //SCREEN_WIDTH / 16
+#calcdefine TILES_X SCREEN_WIDTH / 16
+#calcdefine TILES_Y SCREEN_HEIGHT / 16
 #define TILE_CAPACITY 1024
 
 struct Particle { p: vec4f, v: vec4f }
@@ -54,9 +54,9 @@ fn rotY(p: vec3f, a: f32) -> vec3f { return vec3f(rot(p.xz, a), p.y).xzy; }
 fn rotM(p: vec3f, m: vec2f) -> vec3f { return rotX(rotY(p, 2. * 3.14159265 * m.x), 3.14159265 * (.5 - m.y)); }
 
 fn project(v: vec4f, res: vec2f) -> vec3f {
-    var p = rotM(v.xyz, vec2f(mouse.pos+vec2u(0,u32(res.y*.2))) / res);
+    var p = rotM(v.xyz, vec2f(mouse.pos+vec2i(0,i32(res.y*.2))) / res);
     p.y += .2;
-    p.z = 1.5 - p.z;
+    p.z = 1.5*mouse.zoom - p.z;
     let rmax = max(res.x, res.y);
     let uv = vec2f(p.xy) / p.z;
     let pixel = (uv * rmax + res) * .5;

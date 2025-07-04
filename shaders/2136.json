@@ -1,0 +1,30 @@
+{
+  "id": 2136,
+  "created_at": "2025-06-29T20:01:06.825136+00:00",
+  "name": "iMouse events",
+  "description": "test case for mouse events in shadertoy.slang",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Speed",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 2
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "munrocket"
+  }
+}
