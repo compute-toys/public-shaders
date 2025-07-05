@@ -1,0 +1,23 @@
+{
+  "id": 2161,
+  "created_at": "2025-07-04T07:32:05.053567+00:00",
+  "name": "Raymarching shader",
+  "description": "Based on https://www.shadertoy.com/view/Xds3zN",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "AICDG"
+  }
+}

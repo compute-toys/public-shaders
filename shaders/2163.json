@@ -1,0 +1,30 @@
+{
+  "id": 2163,
+  "created_at": "2025-07-04T13:09:35.947616+00:00",
+  "name": "CornellBox",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Samples100",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "AICDG"
+  }
+}

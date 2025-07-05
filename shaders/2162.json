@@ -1,0 +1,30 @@
+{
+  "id": 2162,
+  "created_at": "2025-07-04T07:57:31.891715+00:00",
+  "name": "object oriented programming",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "RandomSeed",
+        "value": 0.006,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "AICDG"
+  }
+}
