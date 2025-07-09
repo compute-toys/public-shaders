@@ -1,0 +1,23 @@
+{
+  "id": 2189,
+  "created_at": "2025-07-08T05:53:45.629398+00:00",
+  "name": "Slang Autodiff Test",
+  "description": "Testing automatic differentiation.",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "oneshade"
+  }
+}
