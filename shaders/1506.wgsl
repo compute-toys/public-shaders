@@ -5,7 +5,7 @@
 /*
 void function(){
   //If this stops working, please feel free to DM me on Discord at @57a.
-  //Last update: 2023-07-17.
+  //Last update: 2025-07-09.
   const MouseSensitivity = 0.2; //Set your sensitivity here
   const Canvas = document.querySelector("#editor-canvas");
   let x = 100000;
@@ -18,6 +18,7 @@ void function(){
     if(document.pointerLockElement !== Canvas){
         Canvas.onmousedown(new MouseEvent("mousedown", {"button": 0, "buttons": 1, "clientX": x, "clientY": y}));
         Canvas.requestPointerLock({"unadjustedMovement": true});
+        Canvas.focus();
     }
   });
   document.addEventListener("pointerlockchange", function(){
@@ -284,9 +285,8 @@ fn GetHeight(X : i32, Z : i32) -> f32{
 
 
 
-
-const MaxIterations = 130000u;
-const EquirectangularSize = 6.0;
+const MaxIterations = 13000u;
+const EquirectangularSize = 2.0;
 
 fn KeyDown(Code : u32) -> u32{
     return (_keyboard[Code >> 7u][(Code >> 5u) & 3u] >> (Code & 31u)) & 1u;

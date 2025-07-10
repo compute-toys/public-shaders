@@ -2,6 +2,7 @@ import std;
 import shadertoy;
 
 //remove after: https://github.com/compute-toys/compute.toys/pull/352
+//iDate stated from date of first commit in compute.toys repo
 public static vec4 iDate = vec4(2022., 3., 28., iTime + 31. + 60.*56. + 60.*60.*14.);
 
 // by Nikos Papadopoulos, 4rknova / 2014
