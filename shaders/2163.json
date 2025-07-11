@@ -6,10 +6,10 @@
   "body": {
     "uniforms": [
       {
-        "name": "Samples100",
-        "value": 0,
+        "name": "Samples",
+        "value": 15.198,
         "minRange": 0,
-        "maxRange": 1
+        "maxRange": 99
       }
     ],
     "textures": [

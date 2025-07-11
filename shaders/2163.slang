@@ -382,7 +382,7 @@ void first_frame(uint3 id : SV_DispatchThreadID)
     if (id.x >= width || id.y >= height)
         return;
 
-    int uSamples = max(10, int(custom.Samples100 * 100));
+    int uSamples = max(10, int(custom.Samples));
     float3 uPosition = float3(0.0, 0.0, 30.0);
 
     float2 fragCoord = float2(float(id.x) + 0.5, float(height - id.y) - 0.5);
@@ -425,7 +425,7 @@ void main_image(uint3 id : SV_DispatchThreadID)
     if (id.x >= width || id.y >= height)
         return;
 
-    int uSamples = max(10, int(custom.Samples100 * 100));
+    int uSamples = max(10, int(custom.Samples));
     float3 uPosition = float3(0.0, 0.0, 30.0);
 
     float2 fragCoord = float2(float(id.x) + 0.5, float(height - id.y) - 0.5);

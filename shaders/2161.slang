@@ -329,6 +329,7 @@ float2 map( in float3 pos )
   float2 res = float2( pos.y, 0.0 );
 
   // bounding box
+  [branch]
   if( sdBox( pos-float3(-2.0,0.3,0.25),float3(0.3,0.3,1.0) )<res.x )
   {
   res = opU( res, float2( sdSphere(    pos-float3(-2.0,0.25, 0.0), 0.25 ), 26.9 ) );
@@ -336,6 +337,7 @@ float2 map( in float3 pos )
   }
 
   // bounding box
+  [branch]
   if( sdBox( pos-float3(0.0,0.3,-1.0),float3(0.35,0.3,2.5) )<res.x )
   {
   res = opU( res, float2( sdCappedTorus((pos-float3( 0.0,0.30, 1.0))*float3(1,-1,1), float2(0.866025,-0.5), 0.25, 0.05), 25.0) );
@@ -346,6 +348,7 @@ float2 map( in float3 pos )
   }
 
   // bounding box
+  [branch]
   if( sdBox( pos-float3(1.0,0.3,-1.0),float3(0.35,0.3,2.5) )<res.x )
   {
   res = opU( res, float2( sdTorus(      (pos-float3( 1.0,0.30, 1.0)).xzy, float2(0.25,0.05) ), 7.1 ) );
@@ -356,6 +359,7 @@ float2 map( in float3 pos )
   }
 
   // bounding box
+  [branch]
   if( sdBox( pos-float3(-1.0,0.35,-1.0),float3(0.35,0.35,2.5))<res.x )
   {
   res = opU( res, float2( sdPyramid(    pos-float3(-1.0,-0.6,-3.0), 1.0 ), 13.56 ) );
@@ -366,6 +370,7 @@ float2 map( in float3 pos )
   }
 
   // bounding box
+  [branch]
   if( sdBox( pos-float3(2.0,0.3,-1.0),float3(0.35,0.3,2.5) )<res.x )
   {
   res = opU( res, float2( sdOctogonPrism(pos-float3( 2.0,0.2,-3.0), 0.2, 0.05), 51.8 ) );
@@ -610,6 +615,8 @@ void main_image(uint3 id : SV_DispatchThreadID)
   // camera
   float3 ta = float3( 0.25, -0.75, -0.75 );
   float3 ro = ta + float3( 4.5*cos(0.1*time + 7.0*mo.x), 2.2, 4.5*sin(0.1*time + 7.0*mo.x) );
+  ro *= mouse.zoom;
+  if (mouse.click == 3) ro.y -= min((mouse.pos.y / float(height) - 1.0) * 10.0, 0.0);
   // camera-to-world transformation
   float3x3 ca = setCamera( ro, ta, 0.0 );
 

@@ -1,0 +1,23 @@
+{
+  "id": 2207,
+  "created_at": "2025-07-10T07:21:12.39532+00:00",
+  "name": "Dumb Neural Network",
+  "description": "May take a while to settle, try increasing EPOCHS_PER_FRAME without killing the framerate. Also ran into several issues with slang.",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "oneshade"
+  }
+}
