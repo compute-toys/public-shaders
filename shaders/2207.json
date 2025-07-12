@@ -2,7 +2,7 @@
   "id": 2207,
   "created_at": "2025-07-10T07:21:12.39532+00:00",
   "name": "Dumb Neural Network",
-  "description": "May take a while to settle, try increasing EPOCHS_PER_FRAME without killing the framerate. Also ran into several issues with slang.",
+  "description": "May take a while to settle, try increasing EPOCHS_PER_FRAME without killing the framerate. Also try restarting the shader a few times for different parameters.",
   "body": {
     "uniforms": [],
     "textures": [

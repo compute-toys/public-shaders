@@ -1,0 +1,30 @@
+{
+  "id": 2171,
+  "created_at": "2025-07-06T00:53:31.525173+00:00",
+  "name": "Bandwydth",
+  "description": "Bandwidth graph with nod to cyberpunk",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Samples100",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": null
+  }
+}

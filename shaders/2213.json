@@ -1,0 +1,23 @@
+{
+  "id": 2213,
+  "created_at": "2025-07-11T10:16:39.34464+00:00",
+  "name": "Cast shadow",
+  "description": "",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}

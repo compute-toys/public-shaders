@@ -1,0 +1,23 @@
+{
+  "id": 2211,
+  "created_at": "2025-07-11T07:38:33.339272+00:00",
+  "name": "3D Water Box",
+  "description": "Forked from https://www.shadertoy.com/view/dscfRf",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Regent_Street_Clay_Gregory.jpg/1920px-Regent_Street_Clay_Gregory.jpg"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "AICDG"
+  }
+}

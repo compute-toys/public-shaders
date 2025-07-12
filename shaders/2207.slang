@@ -4,39 +4,43 @@ static const float LEARNING_RATE = 0.1;
 static const uint EPOCHS_PER_FRAME = 1;
 static const int DATA_POINT_RADIUS = 10;
 static const uint EXAMPLE_COUNT = 32;
-static const Tuple<float2, float> EXAMPLES[] = {
-    {{0.488845, 0.367371}, {1.0}},
-    {{0.313280, 0.261770}, {0.0}},
-    {{0.895153, 0.780527}, {0.0}},
-    {{0.515393, 0.652667}, {1.0}},
-    {{0.927011, 0.752037}, {0.0}},
-    {{0.910428, 0.570217}, {0.0}},
-    {{0.507262, 0.693612}, {1.0}},
-    {{0.813340, 0.279186}, {0.0}},
-    {{0.345013, 0.213742}, {0.0}},
-    {{0.733453, 0.149250}, {0.0}},
-    {{0.215776, 0.508310}, {0.0}},
-    {{0.922050, 0.773392}, {0.0}},
-    {{0.889062, 0.352426}, {0.0}},
-    {{0.507663, 0.332348}, {1.0}},
-    {{0.901346, 0.423011}, {0.0}},
-    {{0.683697, 0.493722}, {1.0}},
-    {{0.928846, 0.994238}, {0.0}},
-    {{0.492549, 0.502561}, {1.0}},
-    {{0.741904, 0.368015}, {0.0}},
-    {{0.663560, 0.587033}, {1.0}},
-    {{0.943349, 0.426079}, {0.0}},
-    {{0.895796, 0.678477}, {0.0}},
-    {{0.733398, 0.601963}, {0.0}},
-    {{0.120375, 0.058295}, {0.0}},
-    {{0.262164, 0.756264}, {0.0}},
-    {{0.366633, 0.104583}, {0.0}},
-    {{0.133297, 0.155483}, {0.0}},
-    {{0.420718, 0.660074}, {1.0}},
-    {{0.305777, 0.098515}, {0.0}},
-    {{0.620712, 0.649312}, {1.0}},
-    {{0.419432, 0.579353}, {1.0}},
-    {{0.448368, 0.760281}, {0.0}}
+static const float3 ID0 = {0.0, 0.0, 1.0};
+static const float3 ID1 = {0.5, 0.0, 0.5};
+static const float3 ID2 = {0.2, 0.8, 0.2};
+static const float3 ID3 = {1.0, 0.5, 0.0};
+static const Tuple<float2, float3> EXAMPLES[] = {
+    {{0.181259, 0.600128}, ID0},
+    {{0.209161, 0.686168}, ID0},
+    {{0.272544, 0.760272}, ID0},
+    {{0.210224, 0.875845}, ID0},
+    {{0.045871, 0.691806}, ID0},
+    {{0.107407, 0.879798}, ID0},
+    {{0.096386, 0.464752}, ID0},
+    {{0.705028, 0.667955}, ID1},
+    {{0.561318, 0.717127}, ID1},
+    {{0.551332, 0.755783}, ID1},
+    {{0.642029, 0.859787}, ID1},
+    {{0.578756, 0.661293}, ID1},
+    {{0.625287, 0.561804}, ID1},
+    {{0.993646, 0.878986}, ID1},
+    {{0.905712, 0.376894}, ID2},
+    {{0.828445, 0.289356}, ID2},
+    {{0.900651, 0.442489}, ID2},
+    {{0.979855, 0.145529}, ID2},
+    {{0.535972, 0.125601}, ID3},
+    {{0.535338, 0.286151}, ID3},
+    {{0.422854, 0.193598}, ID3},
+    {{0.596321, 0.269657}, ID3},
+    {{0.616100, 0.290497}, ID3},
+    {{0.540227, 0.336999}, ID3},
+    {{0.632601, 0.092070}, ID3},
+    {{0.386532, 0.083337}, ID3},
+    {{0.707578, 0.041996}, ID3},
+    {{0.308483, 0.217245}, ID3},
+    {{0.380038, 0.107003}, ID3},
+    {{0.325411, 0.257011}, ID3},
+    {{0.592546, 0.425580}, ID3},
+    {{0.415377, 0.017189}, ID3}
 };
 
 // Based on lowbias32 from https://nullprogram.com/blog/2018/07/31/
@@ -84,28 +88,28 @@ struct Activation {
 struct NNParams : IDifferentiable {
     float4x2 w0 = {}; float4 b0 = {};
     float4x4 w1 = {}; float4 b1 = {};
-    float4   w2 = {}; float  b2 = {};
+    float3x4 w2 = {}; float3 b2 = {};
 
     static NNParams new(uint seed = 332243498u) {
         return NNParams(
             (rand01<4, 2>(seed) * 2.0 - 1.0) * sqrt(2.0 / 2.0), {},
             (rand01<4, 4>(seed) * 2.0 - 1.0) * sqrt(2.0 / 4.0), {},
-            (rand01<   4>(seed) * 2.0 - 1.0) * sqrt(2.0 / 4.0), {}
+            (rand01<3, 4>(seed) * 2.0 - 1.0) * sqrt(2.0 / 4.0), {}
         );
     }
 
     [Differentiable]
-    float eval(no_diff float2 x) {
+    float3 eval(no_diff float2 x) {
         let x1 = Activation::sigmoid(mul(w0, x ) + b0);
         let x2 = Activation::sigmoid(mul(w1, x1) + b1);
-        let x3 = Activation::sigmoid(dot(w2, x2) + b2);
+        let x3 = Activation::sigmoid(mul(w2, x2) + b2);
         return x3;
     }
 
     [Differentiable]
-    static float cost(NNParams nn, no_diff float2 x, no_diff float y) {
+    static float cost(NNParams nn, no_diff float2 x, no_diff float3 y) {
         let err = y - nn.eval(x);
-        return err * err;
+        return dot(err, err);
     }
 };
 
@@ -133,7 +137,7 @@ NNParams operator*(NNParams lhs, float rhs) {
 //[DispatchOnce] // Bugged
 void init_training() {
     if (time.frame == 0) {
-        params[0] = NNParams::new(reinterpret<uint>(time.elapsed));
+        params[0] = NNParams::new(reinterpret<uint>(time.elapsed) ^ 1357880991u);
     }
 }
 
@@ -159,12 +163,12 @@ void show_output(uint3 id : SV_DispatchThreadID) {
     uint2 size;
     screen.GetDimensions(size.x, size.y);
     if (any(id.xy >= size)) { return; }
-    let value = params[0].eval(float2(id.xy) / float2(size)) * 2.0 - 1.0;
-    screen[id.xy] = float4(max(0.0, value), 0.0, max(-value, 0.0), 1.0);
+    screen[id.xy] = float4(params[0].eval(float2(id.xy) / float2(size)), 1.0);
 }
 
 [shader("compute")]
 [numthreads(EXAMPLE_COUNT, 1, 1)]
+[WorkgroupCount(1, 1, 1)]
 void splat_data_points(uint3 id : SV_DispatchThreadID) {
     if (id.x >= EXAMPLE_COUNT) return;
 
@@ -172,14 +176,15 @@ void splat_data_points(uint3 id : SV_DispatchThreadID) {
     screen.GetDimensions(size.x, size.y);
 
     let pos = int2(EXAMPLES[id.x]._0 * float2(size));
-    let cls = EXAMPLES[id.x]._1 >= 0.5;
-    let color = cls ? float4(1.0, 0.8, 0.0, 1.0) : float4(0.0, 0.5, 1.0, 1.0);
+    let color = EXAMPLES[id.x]._1;
 
     int2 offs;
     for (offs.y = -DATA_POINT_RADIUS; offs.y < DATA_POINT_RADIUS; offs.y++) {
         for (offs.x = -DATA_POINT_RADIUS; offs.x < DATA_POINT_RADIUS; offs.x++) {
-            if (offs.x * offs.x + offs.y * offs.y < DATA_POINT_RADIUS * DATA_POINT_RADIUS) {
-                screen[pos + offs] = color;
+            let uv = float2(offs) / float(DATA_POINT_RADIUS);
+            let square_dist = dot(uv, uv);
+            if (square_dist < 1.0) {
+                screen[pos + offs] = float4(color * (1.0 - square_dist), 1.0);
             }
         }
     }
