@@ -1,0 +1,30 @@
+{
+  "id": 2215,
+  "created_at": "2025-07-12T13:00:49.923553+00:00",
+  "name": "Tree (Lindenmayer System)",
+  "description": "Based on\nhttps://www.shadertoy.com/view/XtyGzh\nhttps://www.shadertoy.com/view/tdjyzz\nhttps://www.shadertoy.com/view/ltlSRl\nhttps://algorithmicbotany.org/papers/abop/abop-ch1.pdf",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Angle",
+        "value": 0.499,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "AICDG"
+  }
+}
