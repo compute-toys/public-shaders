@@ -142,7 +142,11 @@ public static float iTime = time.elapsed;
 public static float iTimeDelta = time.delta;
 public static int iFrame = time.frame;
 public static vec2 iMousePos = (mouse.pos.x == SCREEN_SIZE.x / 2 && mouse.pos.y == SCREEN_SIZE.y / 2) ? vec2(0, 0) : vec2(mouse.pos.x, SCREEN_SIZE.y - 1 - mouse.pos.y);
-public static vec4 iMouse = vec4(iMousePos, (mouse.click == 1) ? iMousePos : 0.0);
+public static vec4 iMouse = vec4(
+    (mouse.start.x == 0 && mouse.start.y == 0) ? vec2(0, 0) : vec2(mouse.pos.x, SCREEN_SIZE.y - 1 - mouse.pos.y),
+    (mouse.click > 0 ? 1 : -1) * float(mouse.start.x),
+    (mouse.click > 0 && all(mouse.pos == mouse.start) ? 1 : -1 ) * float(SCREEN_SIZE.y - 1 - mouse.start.y)
+);
 
 public vec4 texelFetch(int channel, ivec2 coord, int lod) {
     return pass_in[ivec3(coord, channel)];
@@ -349,7 +353,7 @@ vec4 hexcoord(vec2 uv, out vec4 hex2, out vec4 hex3, out vec4 hex4) {
 #define H 3.
 float spike(vec4 h, float p_y) {
     vec2 v = vec2(1.5*noise(vec3(h.zw + iTime, p_y)) - .5, 0.);
-    vec2 b = sdBezier(vec3(h.x,p_y,h.y), vec3(0, -H, 0), vec3(0, -.5*H, 0), vec3(-v.x, 0, -v.y));
+    vec2 b = sdBezier(vec3(h.x,p_y,h.y), vec3(0, -.5*H, 0), vec3(0, 0, 0), vec3(-v.x, .5*H, -v.y));
     return b.x - .58*(1. - b.y);
 }
 
@@ -389,7 +393,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     
     vec2 uv = (2. * fragCoord - iResolution.xy) / iResolution.y;    
     vec3 dir = normalize(vec3(uv, -2.));
-    vec3 camera = vec3(0., 0.00, 2.6);
+    vec3 camera = vec3(0., 0.00, 5./mouse.zoom);
     
     vec4 mouse = qmouse(iMouse, iResolution, iTime, 0.1);
     dir = rotate(dir, mouse);

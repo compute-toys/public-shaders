@@ -62,7 +62,7 @@ public float2 random_unit_vector2() {
 }
 
 // ---------------------------- Base JONSWAP ----------------------------
-public float jonswap(float dispersion, float dispersion_peak, float speed, float fetch) {
+float jonswap(float dispersion, float dispersion_peak, float speed, float fetch) {
 	if (dispersion == 0.0) {
 		return 0.0;
 	}
@@ -317,6 +317,7 @@ void main_image(uint3 id : SV_DispatchThreadID)
 
     uint idx = linearIndex(uint2(ifftshift(id.x), ifftshift(id.y)));
     float2 value = image[idx] * 1000;
+    // float2 value = image[idx];
 
 	let tang = tangent[idx].x*SIZE*SIZE*100;
 	let bitang = tangent[idx].x*SIZE*SIZE*100;
