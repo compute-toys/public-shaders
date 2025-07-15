@@ -316,7 +316,7 @@ void main_image(uint3 id : SV_DispatchThreadID)
     // float2 value = image[idx];
 
     uint idx = linearIndex(uint2(ifftshift(id.x), ifftshift(id.y)));
-    float2 value = image[idx] * 1000;
+    float2 value = abs(image[idx]) * 1000;
     // float2 value = image[idx];
 
 	let tang = tangent[idx].x*SIZE*SIZE*100;
