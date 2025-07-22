@@ -1,0 +1,102 @@
+{
+  "id": 2265,
+  "created_at": "2025-07-18T04:28:31.846554+00:00",
+  "name": "glass",
+  "description": "- [x] grid\n- [x] color gradient\n- [x] glass distortion\n- [x] glass specular/rim\n- [x] fake shadow\n- [ ] caustic\n- [ ] background blur\n- [x] color dispersion\n- [x] shape flow animation",
+  "body": {
+    "uniforms": [
+      {
+        "name": "light_height",
+        "value": 0.039,
+        "minRange": -1,
+        "maxRange": 2
+      },
+      {
+        "name": "contrast",
+        "value": 1.457,
+        "minRange": 0,
+        "maxRange": 2
+      },
+      {
+        "name": "lightness",
+        "value": 0.049,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "rim_multi",
+        "value": 0.344,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "rim_power",
+        "value": 2.159,
+        "minRange": 0,
+        "maxRange": 16
+      },
+      {
+        "name": "rim_multi2",
+        "value": 0.587,
+        "minRange": 0,
+        "maxRange": 2
+      },
+      {
+        "name": "rim_power2",
+        "value": 6.127,
+        "minRange": 0,
+        "maxRange": 16
+      },
+      {
+        "name": "distort_scale",
+        "value": 1.984,
+        "minRange": 0,
+        "maxRange": 4
+      },
+      {
+        "name": "shadow_blur",
+        "value": 5.458,
+        "minRange": 0,
+        "maxRange": 32
+      },
+      {
+        "name": "shadow_lightness",
+        "value": 0.893,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "shadow_offset",
+        "value": 7.206,
+        "minRange": 0,
+        "maxRange": 32
+      },
+      {
+        "name": "dispersion",
+        "value": 0.1,
+        "minRange": -0.5,
+        "maxRange": 0.5
+      },
+      {
+        "name": "base_ior",
+        "value": 0.669,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}
