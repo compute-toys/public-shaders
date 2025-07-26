@@ -203,6 +203,7 @@ fn hsv2rgb(c: vec3f) -> vec3f {
 
     return c.z * mix(K.xxx, clamp(p - K.xxx, vec3f(0.), vec3f(1.)), c.y);
 }
+
 const C1: f32 = 1.70158;
 const C2: f32 = C1 * 1.525;
 const C3: f32 = 1 + C1;

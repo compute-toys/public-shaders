@@ -1,0 +1,23 @@
+{
+  "id": 2294,
+  "created_at": "2025-07-25T17:57:10.570876+00:00",
+  "name": "raymarch test 0/n",
+  "description": "Work in progress.",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "slightknack"
+  }
+}

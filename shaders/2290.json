@@ -1,0 +1,30 @@
+{
+  "id": 2290,
+  "created_at": "2025-07-23T14:31:16.921715+00:00",
+  "name": "fast sdf gaussian blur",
+  "description": "An implmentation of https://raphlinus.github.io/graphics/2020/04/21/blurred-rounded-rects.html",
+  "body": {
+    "uniforms": [
+      {
+        "name": "sigma",
+        "value": 67.781,
+        "minRange": 0,
+        "maxRange": 128
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}
