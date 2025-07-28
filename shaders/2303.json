@@ -2,7 +2,7 @@
   "id": 2303,
   "created_at": "2025-07-26T22:55:55.460462+00:00",
   "name": "Functional Raymarching",
-  "description": "SDF rendering where 3D scenes are built through pure functional composition. There is no SDF function in the scene. Using SLANG",
+  "description": "SDF rendering where 3D scenes are built through pure functional composition. There is no SDF function in the scene. Only main_image needs to change for every possible scene. Using SLANG",
   "body": {
     "uniforms": [],
     "textures": [
