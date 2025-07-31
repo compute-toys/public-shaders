@@ -1,0 +1,36 @@
+{
+  "id": 2307,
+  "created_at": "2025-07-28T04:20:10.900227+00:00",
+  "name": "fast gaussian blur for squircle",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "sigma",
+        "value": 5.849,
+        "minRange": 1,
+        "maxRange": 256
+      },
+      {
+        "name": "r",
+        "value": 50.079,
+        "minRange": 0,
+        "maxRange": 64
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}
