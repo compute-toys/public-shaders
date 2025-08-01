@@ -1,0 +1,42 @@
+{
+  "id": 2327,
+  "created_at": "2025-07-31T06:17:30.55959+00:00",
+  "name": "ghosted O",
+  "description": "Remaster of https://www.shadertoy.com/view/NtyyWW",
+  "body": {
+    "uniforms": [
+      {
+        "name": "sigma",
+        "value": 73.899,
+        "minRange": 1,
+        "maxRange": 256
+      },
+      {
+        "name": "grain",
+        "value": 0.026,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "offset",
+        "value": 26.762,
+        "minRange": 0,
+        "maxRange": 64
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}
