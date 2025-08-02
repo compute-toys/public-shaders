@@ -44,7 +44,8 @@
         "img": "https://raw.githubusercontent.com/chicoden/ImageRepo/main/suzanne.jpg"
       }
     ],
-    "float32Enabled": false
+    "float32Enabled": false,
+    "language": "wgsl"
   },
   "visibility": "public",
   "profile": {
