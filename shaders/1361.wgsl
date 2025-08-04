@@ -175,7 +175,7 @@ fn drawTriangles(@builtin(global_invocation_id) id: vec3<u32>) {
             for (var y = screenA.y; y < screenB.y; y++) {
                 var bary = leftBary;
                 let deltaBary = (rightBary - leftBary) / (rightX - leftX);
-                for (var x = u32(leftX); x < u32(rightX); x++) {
+                for (var x = i32(leftX); x < i32(rightX); x++) {
                     let worldBary = bary.xyz / bary.w;
                     let depthBits = u32(dot(depths, worldBary) * f32(0xffffff)) << 8;
                     let shade = shadeFragment(&tri, worldBary);
@@ -210,7 +210,7 @@ fn drawTriangles(@builtin(global_invocation_id) id: vec3<u32>) {
             for (var y = screenB.y; y < screenC.y; y++) {
                 var bary = leftBary;
                 let deltaBary = (rightBary - leftBary) / (rightX - leftX);
-                for (var x = u32(leftX); x < u32(rightX); x++) {
+                for (var x = i32(leftX); x < i32(rightX); x++) {
                     let worldBary = bary.xyz / bary.w;
                     let depthBits = u32(dot(depths, worldBary) * f32(0xffffff)) << 8;
                     let shade = shadeFragment(&tri, worldBary);
