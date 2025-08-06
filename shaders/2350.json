@@ -1,0 +1,48 @@
+{
+  "id": 2350,
+  "created_at": "2025-08-01T20:38:41.908287+00:00",
+  "name": "Toroidal Planet",
+  "description": "Simulation of a satellite around a toroidal planet.",
+  "body": {
+    "uniforms": [
+      {
+        "name": "zNear",
+        "value": 0.013,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "zFar",
+        "value": 50.174,
+        "minRange": 0,
+        "maxRange": 1000
+      },
+      {
+        "name": "cameraDistance",
+        "value": 14.529,
+        "minRange": 3,
+        "maxRange": 20
+      },
+      {
+        "name": "focalLength",
+        "value": 4.168,
+        "minRange": 0.1,
+        "maxRange": 10
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://raw.githubusercontent.com/chicoden/ImageRepo/refs/heads/main/toroidal_planet_atlas.png"
+      },
+      {
+        "img": "/textures/noise4.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "oneshade"
+  }
+}
