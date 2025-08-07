@@ -1,0 +1,23 @@
+{
+  "id": 2374,
+  "created_at": "2025-08-06T14:48:25.577679+00:00",
+  "name": "20250421_Revision 2025",
+  "description": "The port of my live coded shader @ Revision 2025. The DJ was Lynn.\nRevision logo is not available here so the 0b5vr logo is used instead\n\nhttps://livecode.demozoo.org/event/2025_04_20_shader_jam_revision_2025.html\n",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "x0b5vr"
+  }
+}
