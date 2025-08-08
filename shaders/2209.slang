@@ -104,70 +104,125 @@ enum Char : uint {
 namespace Debug {
     static const float2 CHAR_SIZE = float2(20.0, 40.0);
     static const float4 CHAR_COLOR = float4(0.0, 0.0, 0.0, 1.0);
-    static const uint str0[] = {Char::OPEN_PAREN, Char::SPLAT, Char::COMMA, Char::SPACE, Char::SPLAT, Char::CLOSE_PAREN, Char::NEWLINE, Char::END};
-    static const uint str1[] = {Char::QUOTE2, Char::SPLAT, Char::SPACE, Char::SPLAT, Char::SPACE, Char::SPLAT, Char::QUOTE2, Char::NEWLINE, Char::END};
-    static const uint str2[] = {Char::NEWLINE, Char::END};
+    static const uint ATOMIC_CURSOR = 0u;
+    static const uint2 TERMINAL_SIZE = uint2(32u, 32u);
 
-    [StorageBuffer(16777216)] RWStructuredBuffer<uint> buffer;
+    [StorageBuffer(1048576)] RWStructuredBuffer<uint> terminal;
     [StorageBuffer(1)] RWStructuredBuffer<Atomic<uint>> atomics;
 
-    void clear() {
-        atomics[0].store(0u, MemoryOrder::Relaxed);
+    // WARNING: this is a critical section
+    uint get_cursor() {
+        return atomics[ATOMIC_CURSOR].load();
     }
 
-    //uint repr_len<T>(T val) { return 0u; }
-    //void print_repr<T>(T val, inout uint buf_pos) {}
+    // WARNING: this is a critical section
+    uint move_cursor(uint delta) {
+        return atomics[ATOMIC_CURSOR].add(delta);
+    }
 
-    uint repr_len(uint val) {
-        var len = 1u;
-        while (true) {
-            val /= 10;
-            if (val == 0) return len;
-            len++;
+    void reset() {
+        let clear_count = min(TERMINAL_SIZE.x * TERMINAL_SIZE.y, get_cursor());
+        for (var i = 0u; i < clear_count; i++) terminal[i] = 0u;
+        atomics[ATOMIC_CURSOR].store(0u);
+    }
+
+    void preput_char(uint ch, inout uint cursor) {
+        cursor = ch != Char::NEWLINE ? (cursor + 1) : (cursor - cursor % TERMINAL_SIZE.x + TERMINAL_SIZE.x);
+    }
+
+    void put_char(uint ch, inout uint cursor) {
+        if (ch != Char::NEWLINE) terminal[cursor] = ch;
+        cursor = ch != Char::NEWLINE ? (cursor + 1) : (cursor - cursor % TERMINAL_SIZE.x + TERMINAL_SIZE.x);
+    }
+
+    interface IPrintable {
+        void preprint(inout uint cursor);
+        void print(inout uint cursor);
+    }
+
+    struct Uint : IPrintable {
+        uint value;
+        uint digit_count;
+
+        __init(uint value) {
+            this.value = value;
+            this.digit_count = 1u;
+            while (true) {
+                value /= 10;
+                if (value == 0) break;
+                this.digit_count++;
+            }
+        }
+
+        void preprint(inout uint cursor) {
+            cursor += this.digit_count;
+        }
+
+        void print(inout uint cursor) {
+            cursor += this.digit_count;
+            var val = this.value;
+            for (var i = 1u; i <= this.digit_count; i++) {
+                terminal[cursor - i] = val % 10 + Char::D0;
+                val /= 10;
+            }
         }
     }
 
-    void print_repr(uint val, inout uint buf_pos) {
-        let len = repr_len(val);
-        buf_pos += len;
-        for (var i = 1u; i <= len; i++) {
-            buffer[buf_pos - i] = val % 10 + Char::D0;
-            val /= 10;
-        }
-    }
+    class stdout {
+        private static void _preprint_helper(uint fmt[], inout uint fmtptr, inout uint cursor) {
+            while (true) {
+                let ch = fmt[fmtptr];
+                if (ch == Char::END) return;
 
-    void printf_fmt_seg(uint fmt[], inout uint fmt_pos, inout uint buf_pos) {
-        while (true) {
-            let ch = fmt[fmt_pos];
-            if (ch == Char::END) return;
+                fmtptr++;
+                if (ch == Char::SPLAT) return;
 
-            fmt_pos++;
-            if (ch == Char::SPLAT) return;
-
-            buffer[buf_pos++] = ch;
-        }
-    }
-
-    void printf<each T>(uint fmt[], expand each T args) where T == uint {
-        var total_len = 0u;
-        for (var i = 0u; fmt[i] != Char::END; i++) {
-            if (fmt[i] != Char::SPLAT) total_len++;
+                preput_char(ch, cursor);
+            }
         }
 
-        expand total_len += repr_len(each args);
-        var buf_pos = atomics[0].add(total_len, MemoryOrder::AcquireRelease);
+        private static void _print_helper(uint fmt[], inout uint fmtptr, inout uint cursor) {
+            while (true) {
+                let ch = fmt[fmtptr];
+                if (ch == Char::END) return;
 
-        var fmt_pos = 0u;
-        expand (printf_fmt_seg(fmt, fmt_pos, buf_pos), print_repr(each args, buf_pos));
-        printf_fmt_seg(fmt, fmt_pos, buf_pos);
+                fmtptr++;
+                if (ch == Char::SPLAT) return;
+
+                put_char(ch, cursor);
+            }
+        }
+
+        static void printf<each T : IPrintable>(uint fmt[], expand each T args) {
+            var cursor_motion = 0u;
+            var fmtptr = 0u;
+            expand (
+                _preprint_helper(fmt, fmtptr, cursor_motion),
+                (each args).preprint(cursor_motion)
+            );
+            _preprint_helper(fmt, fmtptr, cursor_motion);
+            preput_char(Char::NEWLINE, cursor_motion); // needed to break dependency on initial cursor position
+
+            var cursor = move_cursor(cursor_motion);
+            fmtptr = 0u;
+            expand (
+                _print_helper(fmt, fmtptr, cursor),
+                (each args).print(cursor)
+            );
+            _print_helper(fmt, fmtptr, cursor);
+        }
     }
 }
+
+static const uint str0[] = {Char::OPEN_PAREN, Char::SPLAT, Char::COMMA, Char::SPACE, Char::SPLAT, Char::CLOSE_PAREN, Char::END};
+static const uint str1[] = {Char::QUOTE2, Char::SPLAT, Char::SPACE, Char::SPLAT, Char::SPACE, Char::SPLAT, Char::QUOTE2, Char::END};
+static const uint str2[] = {Char::END};
 
 [shader("compute")]
 [numthreads(1, 1, 1)]
 [WorkgroupCount(1, 1, 1)]
 void reset() {
-    Debug::clear();
+    Debug::reset();
 }
 
 [shader("compute")]
@@ -177,18 +232,21 @@ void test(uint3 id : SV_DispatchThreadID) {
     screen.GetDimensions(size.x, size.y);
     if (any(id.xy >= size)) return;
 
+    typealias stdout = Debug::stdout;
+    typealias Uint = Debug::Uint;
+
     if (all(id.xy == uint2(10, 84))) {
-        Debug::printf(Debug::str0, id.x, id.y);
+        stdout.printf(str0, Uint(id.x), Uint(id.y));
     }
 
     if (all(id.xy == uint2(17, 1))) {
-        Debug::printf(Debug::str0, id.x, id.y);
-        Debug::printf(Debug::str2);
-        Debug::printf(Debug::str1, ~0u, 45u, 1u);
+        stdout.printf(str0, Uint(id.x), Uint(id.y));
+        stdout.printf(str2);
+        stdout.printf(str1, Uint(~0), Uint(45), Uint(1));
     }
 
     if (all(id.xy == uint2(171, 2))) {
-        Debug::printf(Debug::str0, id.x, id.y);
+        stdout.printf(str0, Uint(id.x), Uint(id.y));
     }
 
     var uv = float2(id.xy) / float2(size);
@@ -202,29 +260,18 @@ void print(uint3 id : SV_DispatchThreadID) {
     uint2 size;
     screen.GetDimensions(size.x, size.y);
     if (any(id.xy >= size)) return;
-    let buffer_len = Debug::atomics[0].load(MemoryOrder::Relaxed);
     screen[id.xy] = pass_in[id];
 
     let uv = float2(id.xy) / Debug::CHAR_SIZE;
-    var char_index = 0u;
-    uint ch;
 
-    for (var row = 0u; row < uint(uv.y); row++) {
-        do {
-            if (char_index >= buffer_len) return;
-            ch = Debug::buffer[char_index++];
-        } while (ch != Char::NEWLINE);
-    }
+    let grid_pos = uint2(floor(uv));
+    if (any(grid_pos >= Debug::TERMINAL_SIZE)) return;
 
-    for (var col = 0u; col < uint(uv.x); col++) {
-        if (char_index >= buffer_len) return;
-        ch = Debug::buffer[char_index++];
-        if (ch == Char::NEWLINE) return;
-    }
+    let char_index = grid_pos.y * Debug::TERMINAL_SIZE.x + grid_pos.x;
+    if (char_index >= Debug::get_cursor()) return;
 
-    if (char_index >= buffer_len) return;
-    ch = Debug::buffer[char_index];
-    if (ch == Char::NEWLINE) return;
+    let ch = Debug::terminal[char_index];
+    if (ch == 0) return;
 
     let char_offs = float2(ch % 16, ch / 16);
     let char_uv = (fract(uv) - 0.5) * float2(Debug::CHAR_SIZE.x / Debug::CHAR_SIZE.y, 1.0) + 0.5;

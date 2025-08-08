@@ -2,7 +2,7 @@
   "id": 2209,
   "created_at": "2025-07-11T05:39:40.787493+00:00",
   "name": "Debug Printf",
-  "description": "Still haven't figured out how to make generics work with multiple types for some stupid reason.",
+  "description": "Bugged.",
   "body": {
     "uniforms": [],
     "textures": [
