@@ -79,7 +79,7 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
         // triangle sdf serves as replacement for vertex pipeline
         q = sdTriangle(f, path[i], path[i+1], vec2f(0.0,0.0), );
 
-        if q > 0. {
+        if q > 0.1 {
             inside = !inside;
             acc += .05;
         }

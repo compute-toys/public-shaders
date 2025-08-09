@@ -4,11 +4,11 @@ static const float LEARNING_RATE = 0.1;
 static const uint EPOCHS_PER_FRAME = 1;
 static const int DATA_POINT_RADIUS = 10;
 static const uint EXAMPLE_COUNT = 32;
-static const float3 ID0 = {0.0, 0.0, 1.0};
-static const float3 ID1 = {0.5, 0.0, 0.5};
-static const float3 ID2 = {0.2, 0.8, 0.2};
-static const float3 ID3 = {1.0, 0.5, 0.0};
-static const Tuple<float2, float3> EXAMPLES[] = {
+static const float4 ID0 = {1.0, 0.0, 0.0, 0.0};
+static const float4 ID1 = {0.0, 1.0, 0.0, 0.0};
+static const float4 ID2 = {0.0, 0.0, 1.0, 0.0};
+static const float4 ID3 = {0.0, 0.0, 0.0, 1.0};
+static const Tuple<float2, float4> EXAMPLES[] = {
     {{0.181259, 0.600128}, ID0},
     {{0.209161, 0.686168}, ID0},
     {{0.272544, 0.760272}, ID0},
@@ -88,18 +88,18 @@ struct Activation {
 struct NNParams : IDifferentiable {
     float4x2 w0 = {}; float4 b0 = {};
     float4x4 w1 = {}; float4 b1 = {};
-    float3x4 w2 = {}; float3 b2 = {};
+    float4x4 w2 = {}; float4 b2 = {};
 
     static NNParams new(uint seed = 332243498u) {
         return NNParams(
             (rand01<4, 2>(seed) * 2.0 - 1.0) * sqrt(2.0 / 2.0), {},
             (rand01<4, 4>(seed) * 2.0 - 1.0) * sqrt(2.0 / 4.0), {},
-            (rand01<3, 4>(seed) * 2.0 - 1.0) * sqrt(2.0 / 4.0), {}
+            (rand01<4, 4>(seed) * 2.0 - 1.0) * sqrt(2.0 / 4.0), {}
         );
     }
 
     [Differentiable]
-    float3 eval(no_diff float2 x) {
+    float4 eval(no_diff float2 x) {
         let x1 = Activation::sigmoid(mul(w0, x ) + b0);
         let x2 = Activation::sigmoid(mul(w1, x1) + b1);
         let x3 = Activation::sigmoid(mul(w2, x2) + b2);
@@ -107,7 +107,7 @@ struct NNParams : IDifferentiable {
     }
 
     [Differentiable]
-    static float cost(NNParams nn, no_diff float2 x, no_diff float3 y) {
+    static float cost(NNParams nn, no_diff float2 x, no_diff float4 y) {
         let err = y - nn.eval(x);
         return dot(err, err);
     }
@@ -127,6 +127,14 @@ NNParams operator*(NNParams lhs, float rhs) {
         lhs.w1 * rhs, lhs.b1 * rhs,
         lhs.w2 * rhs, lhs.b2 * rhs
     );
+}
+
+float3 getColorForClassification(float4 cls) {
+    return mul(float3x4(
+        0.0, 0.5, 0.2, 1.0,
+        0.0, 0.0, 0.8, 0.5,
+        1.0, 0.5, 0.2, 0.0
+    ), cls) / dot(cls, {1.0});
 }
 
 [StorageBuffer(1)] RWStructuredBuffer<NNParams> params;
@@ -163,7 +171,7 @@ void show_output(uint3 id : SV_DispatchThreadID) {
     uint2 size;
     screen.GetDimensions(size.x, size.y);
     if (any(id.xy >= size)) { return; }
-    screen[id.xy] = float4(params[0].eval(float2(id.xy) / float2(size)), 1.0);
+    screen[id.xy] = float4(getColorForClassification(params[0].eval(float2(id.xy) / float2(size))), 1.0);
 }
 
 [shader("compute")]
@@ -176,7 +184,7 @@ void splat_data_points(uint3 id : SV_DispatchThreadID) {
     screen.GetDimensions(size.x, size.y);
 
     let pos = int2(EXAMPLES[id.x]._0 * float2(size));
-    let color = EXAMPLES[id.x]._1;
+    let color = getColorForClassification(EXAMPLES[id.x]._1);
 
     int2 offs;
     for (offs.y = -DATA_POINT_RADIUS; offs.y < DATA_POINT_RADIUS; offs.y++) {
