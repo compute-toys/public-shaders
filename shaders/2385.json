@@ -1,0 +1,23 @@
+{
+  "id": 2385,
+  "created_at": "2025-08-09T13:14:08.022158+00:00",
+  "name": "Mills",
+  "description": "Implementation of the game of Mills (aka Nine Mens Morris), for now only a random agent playing, but maybe I'll add more later on.",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "gegell"
+  }
+}
