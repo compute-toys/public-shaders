@@ -1,0 +1,108 @@
+{
+  "id": 2386,
+  "created_at": "2025-08-11T04:48:36.761696+00:00",
+  "name": "Black hole rasterization test",
+  "description": "Forked from https://compute.toys/view/31\nsome cursed analytical projection for points in curved space to camera direction",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Radius",
+        "value": 0.354,
+        "minRange": 0,
+        "maxRange": 3
+      },
+      {
+        "name": "TimeStep",
+        "value": 0.01,
+        "minRange": 0,
+        "maxRange": 0.1
+      },
+      {
+        "name": "Samples",
+        "value": 0.459,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "AnimatedNoise",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Accumulation",
+        "value": 0.636,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Exposure",
+        "value": 0.442,
+        "minRange": 0,
+        "maxRange": 5
+      },
+      {
+        "name": "BlurExponent1",
+        "value": 0.473,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "BlurRadius",
+        "value": 0.422,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "BlurExponent2",
+        "value": 0.411,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "KerrA",
+        "value": 0.876,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "KerrQ",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "InitSpeed",
+        "value": 0.639,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "InitThick",
+        "value": 0.22,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Steps",
+        "value": 0.387,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}
