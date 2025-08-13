@@ -7,13 +7,13 @@
     "uniforms": [
       {
         "name": "Radius",
-        "value": 0.354,
+        "value": 0.158,
         "minRange": 0,
         "maxRange": 3
       },
       {
         "name": "TimeStep",
-        "value": 0.01,
+        "value": 0.02,
         "minRange": 0,
         "maxRange": 0.1
       },
@@ -31,13 +31,13 @@
       },
       {
         "name": "Accumulation",
-        "value": 0.636,
+        "value": 0.823,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "Exposure",
-        "value": 0.442,
+        "value": 1.194,
         "minRange": 0,
         "maxRange": 5
       },

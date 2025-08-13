@@ -19,22 +19,54 @@ fn remap_polar(angle: f32, rad: f32, rad0: f32) -> float2 {
     //     sin(angle),
     //     cos(angle) - rad0/rad
     // );
+    
+    if(rad < 2.0) { return vec2(1e10); };
+
+    // const k00 = (27.0 / 4.0);
+    // const k01 = - (27.0 / 4.0);
+    // const k02 = 0.0;
+
+    // const k10 = 1.0;
+    // const k11 = 12.0;
+    // const k12 = -2.0;
+    // const k13 = 0.0;
+    // const k14 = 0.0;
+
+    // const k20 = 1.0;
+    // const k21 = 12.0;
+    // const k22 = -2.0;
+    // const k23 = 0.0;
+    // const k24 = 0.0;
+
+    const k00 = 7.1075;
+    const k01 = -6.3856;
+    const k02 = 0.3721;
+
+    const k10 = 1.3480;
+    const k11 = 11.7537;
+    const k12 = -2.4985;
+    const k13 = 0.2915;
+    const k14 = 0.2935;
+
+    const k20 = 1.4128;
+    const k21 = 12.2816;
+    const k22 = -2.5527;
+    const k23 = 0.3702;
+    const k24 = -0.5454;
    
     let u0 = 1.0 / rad0;
-    let shadow_sin2 = (27.0 / 4.0) * (u0 * u0 - u0 * u0 * u0);
+    let shadow_sin2 = u0*u0*(k00 + k01*u0 + k02*u0*u0);
     let shadow_angle = asin(sqrt(shadow_sin2));
 
     let phi = angle / PI;
     let u = 1.0 / rad;
-    let u1 = (1.0 + 12.0*u - 2.0*u*u) * u0;
+    let u1 = (k10 + k11*u + k12*u*u) * (u0 + k13*u0 + k14*u0*u0);
     let w1 = 1.0 + pow(abs(phi), 1.0 / u1);
     let angle_step = (PI - shadow_angle) * phi * pow(w1, -u1);
 
-    let u2 = (1.0 + 12.0*u - 2.0*u*u) * u0;
+    let u2 = (k20 + k21*u + k22*u*u) * (u0 + k23*u0 + k24*u0*u0);
     let w2 = 1.0 + pow(abs(phi), 1.0 / u2);
     let lens = pow(w2, -u2 - 1.0);
-
-    if(rad < 1.0) { return vec2(1e10); };
 
     return vec2(
         sin(angle_step),
@@ -42,11 +74,71 @@ fn remap_polar(angle: f32, rad: f32, rad0: f32) -> float2 {
     );
 }
 
+fn remap_polar_new(angle: f32, rad: f32, rad0: f32) -> vec2<f32> {
+    if(rad < 3.0) { return vec2(1e10); };
+    let PI: f32 = 3.141592653589793;
+    const k00: f32 = 7.04754591;
+    const k01: f32 = -6.402629375;
+    const k02: f32 = 0.8740074635;
+    const k03: f32 = 0.1803749651;
+    const k04: f32 = -0.6353146434;
+    const k10: f32 = 1.364926577;
+    const k11: f32 = 0.1685932577;
+    const k12: f32 = -0.2699246109;
+    const k13: f32 = 0.662073195;
+    const k14: f32 = -0.08192565292;
+    const k20: f32 = 1.680511832;
+    const k21: f32 = -1.207646728;
+    const k22: f32 = 0.2052442878;
+    const k23: f32 = 1.308278322;
+    const k24: f32 = -0.8134716153;
+    const k30: f32 = 1.397432804;
+    const k31: f32 = 0.93922925;
+    const k32: f32 = -1.440697789;
+    const k33: f32 = -0.6124486327;
+    const k34: f32 = 0.08207648993;
+    const k40: f32 = -0.2353648841;
+    const k41: f32 = -1.001798153;
+    const k42: f32 = 0.3465664983;
+    const k43: f32 = 0.6256761551;
+    const k44: f32 = -0.795191586;
+    const k50: f32 = 0.8373736739;
+    const k51: f32 = 0.07787328213;
+    const k52: f32 = 0.629881382;
+    const k53: f32 = -1.737710595;
+    const k54: f32 = 1.317086101;
+    const k60: f32 = 0.09670770168;
+    const k61: f32 = -0.722327888;
+    const k62: f32 = -0.3259804845;
+    const k63: f32 = -0.2078549862;
+    const k64: f32 = -0.4431720078;
+    let u0: f32 = 1.0 / rad0;
+    let shadow_sin2: f32 = u0*u0*(k00 + k01*u0 + k02*u0*u0 + k03*u0*u0*u0 + k04*u0*u0*u0*u0);
+    let shadow_angle: f32 = asin(sqrt(shadow_sin2));
+    let phi: f32 = angle / PI;
+    let u: f32 = 1.0 / rad;
+    var u1: f32 = (k10 + k11*u + k12*u*u) * (u0 + k13*u0 + k14*u0*u0);
+    u1 = u1 + (k30 + k31*u + k32*u*u) * (u0 + k33*u0 + k34*u0*u0);
+    u1 = u1 + (k50 + k51*u + k52*u*u) * (u0 + k53*u0 + k54*u0*u0);
+    let w1: f32 = 1.0 + pow(abs(phi), 1.0 / u1);
+    let angle_step: f32 = (PI - shadow_angle) * phi * pow(w1, -u1);
+    var u2: f32 = (k20 + k21*u + k22*u*u) * (u0 + k23*u0 + k24*u0*u0);
+    u2 = u2 + (k40 + k41*u + k42*u*u) * (u0 + k43*u0 + k44*u0*u0);
+    u2 = u2 + (k60 + k61*u + k62*u*u) * (u0 + k63*u0 + k64*u0*u0);
+    let w2: f32 = 1.0 + pow(abs(phi), 1.0 / u2);
+    let lens: f32 = pow(w2, -u2 - 1.0);
+    var x: f32 = sin(angle_step);
+    var y: f32 = cos(angle_step) - lens * rad0 * u;
+    let l: f32 = sqrt(x*x + y*y);
+    return normalize(vec2<f32>(x, y));
+}
+
+
 fn remap_2d(xo: float3, e1: float3, e0: float3, rad0: float, wind: float) -> float2
 {
     let angle = atan2(dot(xo, e1), dot(xo, e0));
     let rad = length(xo);
-    return remap_polar(angle + sign(angle) * wind * PI, rad, rad0);         
+    return remap_polar_new(angle + sign(angle) * wind * PI, rad, rad0);         
 }
 
 fn remap_in_OCX_plane(C: vec3<f32>, X: vec3<f32>, wind: f32) -> vec3<f32> {
@@ -366,7 +458,7 @@ fn RasterizePoint(pos: float3, color: float3)
 
 fn RasterizePointBHwind(pos: float3, color: float3, wind: float)
 {
-    let scale = 0.5;
+    let scale = 1.0;
     //if(scale*length(pos) < 2.0) {return;}
     let transformed_pos = remap_in_OCX_plane(scale*camera.pos, scale*pos, wind)/scale;
 
