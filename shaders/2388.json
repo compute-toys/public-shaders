@@ -1,0 +1,92 @@
+{
+  "id": 2388,
+  "created_at": "2025-08-11T21:20:00.537161+00:00",
+  "name": "BH raster",
+  "description": "Forked from https://compute.toys/view/21",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Radius",
+        "value": 0.379,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Sine1",
+        "value": 0.503,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Sine2",
+        "value": 0.517,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Speed",
+        "value": 0.636,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Blur",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Samples",
+        "value": 0.067,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Mode",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "Rad",
+        "value": 0.09,
+        "minRange": 0,
+        "maxRange": 0.1
+      },
+      {
+        "name": "a0",
+        "value": 2.406,
+        "minRange": 0,
+        "maxRange": 10
+      },
+      {
+        "name": "a1",
+        "value": 0.259,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "a2",
+        "value": 0.454,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/spruit_sunrise_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/spruit_sunrise.jpg",
+        "url": "https://polyhaven.com/a/spruit_sunrise"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}
