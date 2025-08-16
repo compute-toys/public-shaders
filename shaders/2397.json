@@ -1,67 +1,67 @@
 {
-  "id": 2386,
-  "created_at": "2025-08-11T04:48:36.761696+00:00",
-  "name": "Black hole rasterization test",
-  "description": "Forked from https://compute.toys/view/31\nsome cursed analytical projection for points in curved space to camera direction",
+  "id": 2397,
+  "created_at": "2025-08-15T01:45:38.293667+00:00",
+  "name": "Accretion dist BH raster",
+  "description": "Forked from https://compute.toys/view/34",
   "body": {
     "uniforms": [
       {
         "name": "Radius",
-        "value": 0.371,
+        "value": 0.817,
         "minRange": 0,
-        "maxRange": 3
+        "maxRange": 1
       },
       {
         "name": "TimeStep",
-        "value": 0.007,
+        "value": 0.032,
         "minRange": 0,
-        "maxRange": 0.1
+        "maxRange": 1
       },
       {
         "name": "Samples",
-        "value": 0.653,
+        "value": 0.579,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "AnimatedNoise",
-        "value": 1,
+        "value": 0,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "Accumulation",
-        "value": 0.87,
+        "value": 0.348,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "Exposure",
-        "value": 2.421,
+        "value": 0.262,
         "minRange": 0,
-        "maxRange": 5
+        "maxRange": 1
       },
       {
         "name": "BlurExponent1",
-        "value": 0.473,
+        "value": 0,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "BlurRadius",
-        "value": 0.422,
+        "value": 0.011,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "BlurExponent2",
-        "value": 0.411,
+        "value": 0,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "KerrA",
-        "value": 0.876,
+        "value": 1,
         "minRange": 0,
         "maxRange": 1
       },
@@ -73,21 +73,33 @@
       },
       {
         "name": "InitSpeed",
-        "value": 0.639,
-        "minRange": 0,
-        "maxRange": 1
-      },
-      {
-        "name": "InitThick",
-        "value": 0.22,
+        "value": 0.767,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "Steps",
-        "value": 0.387,
+        "value": 0.751,
         "minRange": 0,
         "maxRange": 1
+      },
+      {
+        "name": "Pressure",
+        "value": 0.05,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "FLIP",
+        "value": 0.453,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "BHScale",
+        "value": 1.879,
+        "minRange": 0,
+        "maxRange": 5
       }
     ],
     "textures": [

@@ -13,67 +13,6 @@ const DEPTH_BITS = 16u;
 const dq = float2(0.0, 1.0);
 const eps = 0.01;
 
-fn remap_polar(angle: f32, rad: f32, rad0: f32) -> float2 {
-    // Flat space
-    // return vec2(
-    //     sin(angle),
-    //     cos(angle) - rad0/rad
-    // );
-    
-    if(rad < 2.0) { return vec2(1e10); };
-
-    // const k00 = (27.0 / 4.0);
-    // const k01 = - (27.0 / 4.0);
-    // const k02 = 0.0;
-
-    // const k10 = 1.0;
-    // const k11 = 12.0;
-    // const k12 = -2.0;
-    // const k13 = 0.0;
-    // const k14 = 0.0;
-
-    // const k20 = 1.0;
-    // const k21 = 12.0;
-    // const k22 = -2.0;
-    // const k23 = 0.0;
-    // const k24 = 0.0;
-
-    const k00 = 7.1075;
-    const k01 = -6.3856;
-    const k02 = 0.3721;
-
-    const k10 = 1.3480;
-    const k11 = 11.7537;
-    const k12 = -2.4985;
-    const k13 = 0.2915;
-    const k14 = 0.2935;
-
-    const k20 = 1.4128;
-    const k21 = 12.2816;
-    const k22 = -2.5527;
-    const k23 = 0.3702;
-    const k24 = -0.5454;
-   
-    let u0 = 1.0 / rad0;
-    let shadow_sin2 = u0*u0*(k00 + k01*u0 + k02*u0*u0);
-    let shadow_angle = asin(sqrt(shadow_sin2));
-
-    let phi = angle / PI;
-    let u = 1.0 / rad;
-    let u1 = (k10 + k11*u + k12*u*u) * (u0 + k13*u0 + k14*u0*u0);
-    let w1 = 1.0 + pow(abs(phi), 1.0 / u1);
-    let angle_step = (PI - shadow_angle) * phi * pow(w1, -u1);
-
-    let u2 = (k20 + k21*u + k22*u*u) * (u0 + k23*u0 + k24*u0*u0);
-    let w2 = 1.0 + pow(abs(phi), 1.0 / u2);
-    let lens = pow(w2, -u2 - 1.0);
-
-    return vec2(
-        sin(angle_step),
-        (cos(angle_step) - lens * rad0 * u)
-    );
-}
-
 fn remap_polar_new(angle: f32, rad: f32, rad0: f32) -> vec2<f32> {
     if(rad < 3.0) { return vec2(1e10); };
     let PI: f32 = 3.141592653589793;
@@ -458,7 +397,7 @@ fn RasterizePoint(pos: float3, color: float3)
 
 fn RasterizePointBHwind(pos: float3, color: float3, wind: float)
 {
-    let scale = 1.0;
+    let scale = 0.5;
     //if(scale*length(pos) < 2.0) {return;}
     let transformed_pos = remap_in_OCX_plane(scale*camera.pos, scale*pos, wind)/scale;
 

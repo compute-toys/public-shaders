@@ -63,10 +63,7 @@ const MOUNTAIN_HEIGHT = 0.8;
 // TODO: exclude edges with no connections (just one strip)
 fn isValidCell(gridIndex: vec2<f32>) -> bool {
     var isChecker = abs(gridIndex.x) % 2 == abs(gridIndex.y) % 2;
-    var noiseValue = perlinNoise2(gridIndex * custom.perlin_scale) * 0.5 + 0.5;
-    var isGrass = noiseValue > GRASS_HEIGHT + 0.1;
-    var isMountain = noiseValue > MOUNTAIN_HEIGHT - 0.1;
-    return isChecker && isGrass && !isMountain; 
+    return isChecker;
 }
 
 fn getCellPoint(gridIndex: vec2<f32>) -> vec2<f32> {
@@ -109,8 +106,7 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
     // Viewport resolution (in pixels)
     var screen_size = vec2<f32>(textureDimensions(screen));
     let scaleFactor = (screen_size.x/screen_size.y) * custom.scale * 0.02;
-    let offset =  vec2(i32((custom.x - 0.5) * 2000.0 - time.elapsed * 10.0) , i32((custom.y - 0.5) * 2000.0));
-    let pixel = vec2(i32(id.x), i32(textureDimensions(screen).y - id.y)) - offset;
+    let pixel = vec2(i32(id.x), i32(textureDimensions(screen).y - id.y));
 
     var st = vec2<f32>(pixel.xy);
     st *= scaleFactor;
@@ -120,16 +116,18 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
     let f_st = fract(st);
     
     var pointInCell = getCellPoint(i_st);
-    var noiseValue = perlinNoise2(st * custom.perlin_scale) * 0.5 + 0.5;
-    var color = vec3(noiseValue);
+    var color = vec3(0.0);
 
     // // Draw cell center
-    if(distance(f_st, pointInCell) < 0.2){
+    let size = perlinNoise2((i_st + pointInCell) * custom.perlin_scale)  * 0.5 + 0.5;
+    color = vec3(perlinNoise2((i_st + f_st) * custom.perlin_scale)  * 0.5 + 0.5);
+    if(distance(f_st, pointInCell) < size * 0.5){
         color = vec3(1.0, 0.0, 0.0);
     }
 
     // Draw grid
     color *= 1.0 - (step(.98, f_st.x) * 0.25 + step(.98, f_st.y) * 0.25);
+    
     textureStore(screen, id.xy, vec4f(color, 1.));
 
     for(var i = 0; i < 9; i++){

@@ -7,13 +7,13 @@
     "uniforms": [
       {
         "name": "scale",
-        "value": 0.697,
+        "value": 0.263,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "random_co",
-        "value": 0.315,
+        "value": 0.187,
         "minRange": 0,
         "maxRange": 1
       },
@@ -31,13 +31,13 @@
       },
       {
         "name": "distort",
-        "value": 0.779,
+        "value": 0,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "perlin_scale",
-        "value": 0.127,
+        "value": 0.847,
         "minRange": 0,
         "maxRange": 1
       }
