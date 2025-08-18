@@ -2,43 +2,55 @@
   "id": 992,
   "created_at": "2024-01-24T22:09:15.360947+00:00",
   "name": "Roads",
-  "description": "Uses cellular noise as a base to determine points in a grid which are then used to create splines",
+  "description": "roads",
   "body": {
     "uniforms": [
       {
         "name": "scale",
-        "value": 0.263,
-        "minRange": 0,
-        "maxRange": 1
-      },
-      {
-        "name": "random_co",
-        "value": 0.187,
-        "minRange": 0,
-        "maxRange": 1
-      },
-      {
-        "name": "x",
-        "value": 0.202,
-        "minRange": 0,
-        "maxRange": 1
-      },
-      {
-        "name": "y",
-        "value": 0.328,
+        "value": 0.673,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "distort",
-        "value": 0,
+        "value": 0.426,
         "minRange": 0,
         "maxRange": 1
       },
       {
-        "name": "perlin_scale",
-        "value": 0.847,
+        "name": "terrain_perlin_scale",
+        "value": 0.529,
         "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "road_perturb_amp",
+        "value": 9.528,
+        "minRange": 0,
+        "maxRange": 30
+      },
+      {
+        "name": "road_perturb_freq",
+        "value": 0.036,
+        "minRange": 0,
+        "maxRange": 0.2
+      },
+      {
+        "name": "sea_level",
+        "value": 0.341,
+        "minRange": 0,
+        "maxRange": 0.6
+      },
+      {
+        "name": "node_perlin_scale",
+        "value": 0.086,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "hill_level",
+        "value": 0.716,
+        "minRange": 0.5,
         "maxRange": 1
       }
     ],

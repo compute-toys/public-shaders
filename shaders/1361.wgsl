@@ -34,7 +34,7 @@ fn worldToClipSpace(worldSpacePos: vec3<f32>) -> vec4<f32> {
     return vec4<f32>(
         viewSpacePos.x * custom.focalLength / aspectRatio,
         viewSpacePos.y * custom.focalLength,
-        -custom.zNear - viewSpacePos.z,
+        custom.zNear,
         -viewSpacePos.z
     );
 }
@@ -44,6 +44,11 @@ fn ndcToScreenSpace(ndc: vec2<f32>) -> vec2<i32> {
         i32((0.5 + 0.5 * ndc.x) * f32(SCREEN_WIDTH)),
         i32((0.5 - 0.5 * ndc.y) * f32(SCREEN_HEIGHT))
     );
+}
+
+fn convertDepthToComparableUint(depth: f32) -> u32 {
+    //return u32(clamp(depth, 0.0, 1.0) * f32(0xffffff)) << 8;
+    return (bitcast<u32>(clamp(depth, 0.0, 1.0)) << 2) & 0xffffff00;
 }
 
 fn drawTriangle(tri: ptr<function, Triangle>, clipSpaceVerts: mat3x4<f32>) {
@@ -76,15 +81,12 @@ fn drawTriangle(tri: ptr<function, Triangle>, clipSpaceVerts: mat3x4<f32>) {
     if (screenB.y > screenC.y) { let tmp = screenB; screenB = screenC; screenC = tmp; }
 
     // Prepare barycentric coordinates for perspective correct interpolation
-    var baryA = vec4<f32>(0.0);
-    var baryB = vec4<f32>(0.0);
-    var baryC = vec4<f32>(0.0);
-    baryA.w = perspFactor[screenA[2]];
-    baryB.w = perspFactor[screenB[2]];
-    baryC.w = perspFactor[screenC[2]];
-    baryA[screenA[2]] = baryA.w;
-    baryB[screenB[2]] = baryB.w;
-    baryC[screenC[2]] = baryC.w;
+    var baryA = vec3<f32>(0.0);
+    var baryB = vec3<f32>(0.0);
+    var baryC = vec3<f32>(0.0);
+    baryA[screenA[2]] = 1.0;
+    baryB[screenB[2]] = 1.0;
+    baryC[screenC[2]] = 1.0;
 
     let depths = vec3<f32>(ndc[0].z, ndc[1].z, ndc[2].z);
 
@@ -102,8 +104,8 @@ fn drawTriangle(tri: ptr<function, Triangle>, clipSpaceVerts: mat3x4<f32>) {
         // Right edge
         var rightX: f32;
         var rightDeltaX: f32;
-        var rightBary: vec4<f32>;
-        var rightDeltaBary: vec4<f32>;
+        var rightBary: vec3<f32>;
+        var rightDeltaBary: vec3<f32>;
 
         // Sort first edge pair
         let swapEdgePair = i32(leftX + leftDeltaX * deltaBA.y) > screenB.x;
@@ -133,12 +135,12 @@ fn drawTriangle(tri: ptr<function, Triangle>, clipSpaceVerts: mat3x4<f32>) {
                 var bary = leftBary;
                 let deltaBary = (rightBary - leftBary) / (rightX - leftX);
                 for (var x = i32(leftX); x < i32(rightX); x++) {
-                    let worldBary = bary.xyz / bary.w;
-                    let depthBits = u32(dot(depths, worldBary) * f32(0xffffff)) << 8;
+                    let depthBits = convertDepthToComparableUint(dot(depths, bary));
+                    let worldBary = bary * perspFactor / dot(bary, perspFactor);
                     let shade = shadeFragment(tri, worldBary);
-                    atomicMin(&memory.fb[y][x][0], depthBits | u32(shade.r * f32(0xff)));
-                    atomicMin(&memory.fb[y][x][1], depthBits | u32(shade.g * f32(0xff)));
-                    atomicMin(&memory.fb[y][x][2], depthBits | u32(shade.b * f32(0xff)));
+                    atomicMax(&memory.fb[y][x][0], depthBits | u32(shade.r * f32(0xff)));
+                    atomicMax(&memory.fb[y][x][1], depthBits | u32(shade.g * f32(0xff)));
+                    atomicMax(&memory.fb[y][x][2], depthBits | u32(shade.b * f32(0xff)));
                     bary += deltaBary;
                 }
 
@@ -168,12 +170,12 @@ fn drawTriangle(tri: ptr<function, Triangle>, clipSpaceVerts: mat3x4<f32>) {
                 var bary = leftBary;
                 let deltaBary = (rightBary - leftBary) / (rightX - leftX);
                 for (var x = i32(leftX); x < i32(rightX); x++) {
-                    let worldBary = bary.xyz / bary.w;
-                    let depthBits = u32(dot(depths, worldBary) * f32(0xffffff)) << 8;
+                    let depthBits = convertDepthToComparableUint(dot(depths, bary));
+                    let worldBary = bary * perspFactor / dot(bary, perspFactor);
                     let shade = shadeFragment(tri, worldBary);
-                    atomicMin(&memory.fb[y][x][0], depthBits | u32(shade.r * f32(0xff)));
-                    atomicMin(&memory.fb[y][x][1], depthBits | u32(shade.g * f32(0xff)));
-                    atomicMin(&memory.fb[y][x][2], depthBits | u32(shade.b * f32(0xff)));
+                    atomicMax(&memory.fb[y][x][0], depthBits | u32(shade.r * f32(0xff)));
+                    atomicMax(&memory.fb[y][x][1], depthBits | u32(shade.g * f32(0xff)));
+                    atomicMax(&memory.fb[y][x][2], depthBits | u32(shade.b * f32(0xff)));
                     bary += deltaBary;
                 }
 
@@ -212,9 +214,9 @@ fn genGeometry(@builtin(global_invocation_id) id: vec3<u32>) {
 @compute @workgroup_size(16, 16)
 fn clearFramebuffer(@builtin(global_invocation_id) id: vec3<u32>) {
     if (id.x >= SCREEN_WIDTH || id.y >= SCREEN_HEIGHT) { return; }
-    atomicStore(&memory.fb[id.y][id.x][0], 0xffffff00);
-    atomicStore(&memory.fb[id.y][id.x][1], 0xffffff00);
-    atomicStore(&memory.fb[id.y][id.x][2], 0xffffff00);
+    atomicStore(&memory.fb[id.y][id.x][0], 0);
+    atomicStore(&memory.fb[id.y][id.x][1], 0);
+    atomicStore(&memory.fb[id.y][id.x][2], 0);
 }
 
 #workgroup_count drawTriangles TRIANGLE_WGCOUNT 1 1

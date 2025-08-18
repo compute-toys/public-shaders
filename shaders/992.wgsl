@@ -44,9 +44,15 @@ fn isPixelOnLine(p0: vec2<f32>, p1: vec2<f32>, pixelPos: vec2<f32>) -> bool {
     var p = p0;
     let d = p1 - p0;
     let inc = d / f32(steps);
-    for (var i: i32 = 0; i < steps; i = i + 1) {
+    for (var i: i32 = 0; i < steps; i ++) {
         p += inc;
-        if(all(round(p) == pixelPos)){
+
+        let t = f32(i) / f32(steps);
+        let distance_to_halfway = abs(t - 0.5) * 2.0;
+
+        let noise = perlinNoise2(p * custom.road_perturb_freq * custom.scale) * custom.road_perturb_amp * (1.0 - distance_to_halfway);
+
+        if(all(round(p + noise) == pixelPos)){
             return true;
         }
     }
@@ -54,25 +60,20 @@ fn isPixelOnLine(p0: vec2<f32>, p1: vec2<f32>, pixelPos: vec2<f32>) -> bool {
 }
 
 const ROAD_COLOUR = vec3(0.1, 0.1, 0.1);
-const BEACH_HEIGHT = 0.3;
-const GRASS_HEIGHT = 0.4;
-const MOUNTAIN_HEIGHT = 0.8;
-
-
-// TODO: exclude edges with too many connections (junctions)
-// TODO: exclude edges with no connections (just one strip)
-fn isValidCell(gridIndex: vec2<f32>) -> bool {
-    var isChecker = abs(gridIndex.x) % 2 == abs(gridIndex.y) % 2;
-    return isChecker;
-}
 
 fn getCellPoint(gridIndex: vec2<f32>) -> vec2<f32> {
-    if(!isValidCell(gridIndex)){
-        return vec2(-1.0);
-    }
     var point = random2(gridIndex);
-    point = 0.5 + 0.5*sin(custom.random_co * 10.0 + 6.2831*point);
+    point = 0.5 + 0.5*sin(6.2831*point);
     return mix(vec2(0.5), point, custom.distort);
+}
+
+fn getCellWeight(p: vec2<f32>) -> f32 {
+    let node_noise = perlinNoise2(p * custom.node_perlin_scale)  * 0.5 + 0.5;
+    let terrain_noise = perlinNoise2(p * custom.terrain_perlin_scale) * 0.5 + 0.5;
+    let terrain_range = custom.hill_level - custom.sea_level;
+    let terrain_valley_noise =  max(1.0 - pow(((terrain_noise - custom.sea_level)/(0.5 * terrain_range)) - 1.0, 2.0),0.0);
+    let t = terrain_valley_noise;
+    return node_noise * t;
 }
 
 fn drawLinesForCell(i_st: vec2<f32>, pixel: vec2<f32>, scaleFactor: f32) -> bool {
@@ -80,24 +81,43 @@ fn drawLinesForCell(i_st: vec2<f32>, pixel: vec2<f32>, scaleFactor: f32) -> bool
     if(pointInCell.x < 0.0){
         return false;
     }
-    // Draw from this cells point to valid neighbours
-    for(var i = 0; i < 9; i++){
-        let x = (i % 3) - 1;
-        let y = (i / 3) - 1;
-        
-        let neighbor = vec2(f32(x),f32(y));
-        var point = getCellPoint(i_st + neighbor);
-        if(point.x < 0.0){
-            continue;
-        }
-        var offsetPoint = neighbor + point;
-        var p1 = (i_st + pointInCell) / scaleFactor;
-        var p2 = (i_st + offsetPoint) / scaleFactor;
 
-        if(isPixelOnLine(p1,p2, pixel)){
-            return true;
+    let size = getCellWeight(i_st + pointInCell);
+
+    if(size <= 0.0){
+        return false;
+    }
+
+    var p1 = (i_st + pointInCell) / scaleFactor;
+
+    var largestNodePoint = vec2(-2.0);
+    var largestNodeSize = 0.0;
+
+    for(var x = -1; x <= 1; x ++){
+        for(var y = -1; y <= 1; y ++){
+            if (x == 0 && y == 0){
+                continue;
+            }
+            let neighbor = vec2(f32(x),f32(y));
+            var point = getCellPoint(i_st + neighbor);
+            var offsetPoint = neighbor + point;
+            var p1 = (i_st + pointInCell) / scaleFactor;
+            var p2 = (i_st + offsetPoint) / scaleFactor;
+
+
+            var size = getCellWeight(i_st + offsetPoint);
+           
+            if(size > largestNodeSize){
+                largestNodePoint = p2;
+                largestNodeSize = size;
+            }
         }
     }
+
+    if(isPixelOnLine(p1,largestNodePoint, pixel) && largestNodeSize > 0.0){
+        return true;
+    }
+
     return false;
 }
 
@@ -106,7 +126,7 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
     // Viewport resolution (in pixels)
     var screen_size = vec2<f32>(textureDimensions(screen));
     let scaleFactor = (screen_size.x/screen_size.y) * custom.scale * 0.02;
-    let pixel = vec2(i32(id.x), i32(textureDimensions(screen).y - id.y));
+    let pixel = vec2(i32(textureDimensions(screen).x / 2 - id.x), i32(textureDimensions(screen).y / 2 - id.y));
 
     var st = vec2<f32>(pixel.xy);
     st *= scaleFactor;
@@ -119,9 +139,21 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
     var color = vec3(0.0);
 
     // // Draw cell center
-    let size = perlinNoise2((i_st + pointInCell) * custom.perlin_scale)  * 0.5 + 0.5;
-    color = vec3(perlinNoise2((i_st + f_st) * custom.perlin_scale)  * 0.5 + 0.5);
-    if(distance(f_st, pointInCell) < size * 0.5){
+    var size = getCellWeight(i_st + pointInCell);
+
+    let terrain_noise = perlinNoise2((i_st + f_st) * custom.terrain_perlin_scale) * 0.5 + 0.5;
+    color = vec3(0.0,0.0,1.0);
+    if (terrain_noise > custom.sea_level - 0.05){
+        color = vec3(1.0,1.0,0.3);
+    }
+    if (terrain_noise > custom.sea_level){
+        color = vec3(0.0,1.0,0.0);
+    }
+    if(terrain_noise > custom.hill_level){
+        color = vec3(0.5);
+    }
+
+    if(distance(f_st, pointInCell) < size *0.4){
         color = vec3(1.0, 0.0, 0.0);
     }
 
@@ -130,16 +162,17 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
     
     textureStore(screen, id.xy, vec4f(color, 1.));
 
-    for(var i = 0; i < 9; i++){
-        let x = (i % 3) - 1;
-        let y = (i / 3) - 1;
-        if(drawLinesForCell(i_st + vec2(f32(x),f32(y)), vec2<f32>(pixel), scaleFactor)){
-            textureStore(screen, id.xy, vec4f(ROAD_COLOUR, 1.));
-            textureStore(screen, vec2<i32>(id.xy) + vec2(-1,0), vec4f(ROAD_COLOUR, 1.));
-            textureStore(screen, vec2<i32>(id.xy) + vec2(1,0), vec4f(ROAD_COLOUR, 1.));
-            textureStore(screen, vec2<i32>(id.xy) + vec2(0,-1), vec4f(ROAD_COLOUR, 1.));
-            textureStore(screen, vec2<i32>(id.xy) + vec2(0,1), vec4f(ROAD_COLOUR, 1.));
-            break;
+
+    for( var x = -1; x <= 1; x+= 1){
+        for( var y = -1; y <= 1; y+= 1){
+            if(drawLinesForCell(i_st + vec2(f32(x),f32(y)), vec2<f32>(pixel), scaleFactor)){
+                for( var x = -1; x <= 1; x+= 1){
+                    for( var y = -1; y <= 1; y+= 1){
+                        textureStore(screen, vec2(i32(id.x) + x,i32(id.y) + y), vec4f(ROAD_COLOUR, 1.));
+                    }
+                }
+                break;
+            }
         }
     }
 }
