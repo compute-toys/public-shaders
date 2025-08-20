@@ -137,6 +137,27 @@ fn remap_polar_nn(angle: f32, rad: f32, rad0: f32) -> vec2<f32> {
     return normalize(vec2<f32>(X.x + o0, X.y + o1));
 }
 
+fn remap_polar_regress(angle: f32, rad: f32, rad0: f32) -> vec2<f32> {
+    let phi = angle / PI;
+    let u  = 1.0 / max(rad,  EPS);
+    let u0 = 1.0 / max(rad0, EPS);
+    var X = vec2<f32>(sin(angle), cos(angle) - rad0 / rad);
+    X = transformRayInv(normalize(X), rad0);
+
+    let theta0 = atan2(X.y, X.x);
+
+    let x0 = phi;
+    let x1 = u;
+    let x2 = u0;
+    let x3 = theta0;
+
+    let dtheta = tanh(((x1 - -2.0537949) - (((x0 * x0) * tanh(x0)) * tanh(x3 * x0))) * ((tanh(x0 * tanh(x2 - 1.8285234)) * 1.1856408) + x0)) * 2.2246246;
+
+    let theta = theta0 + dtheta;
+
+    return vec2<f32>(cos(theta), sin(theta));
+}
+
 fn remap_2d(xo: float3, e1: float3, e0: float3, rad0: float, wind: float) -> float2
 {
     let angle = atan2(dot(xo, e1), dot(xo, e0));
@@ -304,9 +325,7 @@ fn RasterizePointBHwind(pos: float3, color: float3, wind: float)
 fn RasterizePointBH(pos: float3, color: float3)
 {
     RasterizePointBHwind(pos, color, 0.0);
-    //TODO figure out brightness and validity
     RasterizePointBHwind(pos, color, 1.0);
-    //RasterizePointBHwind(pos, color, 2.0);
 }
 
 fn skyTexture(rd: vec3f) -> vec3f

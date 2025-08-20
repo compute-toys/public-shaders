@@ -7,57 +7,63 @@
     "uniforms": [
       {
         "name": "scale",
-        "value": 1.151,
+        "value": 0.665,
         "minRange": 0,
         "maxRange": 4
       },
       {
         "name": "distort",
-        "value": 0.439,
+        "value": 0.443,
         "minRange": 0,
         "maxRange": 1
       },
       {
         "name": "terrain_perlin_scale",
-        "value": 1.784,
+        "value": 2.43,
         "minRange": 0,
         "maxRange": 5
       },
       {
         "name": "sea_level",
-        "value": 0.424,
+        "value": 0.351,
         "minRange": 0,
         "maxRange": 0.6
       },
       {
         "name": "node_perlin_scale",
-        "value": 5.534,
+        "value": 1.394,
         "minRange": 0,
         "maxRange": 9
       },
       {
         "name": "hill_level",
-        "value": 0.702,
+        "value": 0.994,
         "minRange": 0.5,
         "maxRange": 1
       },
       {
         "name": "node_weight_threshold",
-        "value": 0.018,
+        "value": 0.001,
         "minRange": 0,
-        "maxRange": 1
+        "maxRange": 0.1
       },
       {
         "name": "road_perturb_amp",
-        "value": 1.503,
+        "value": 1.267,
         "minRange": 0,
         "maxRange": 2
       },
       {
         "name": "road_perturb_freq",
-        "value": 0.302,
+        "value": 0.252,
         "minRange": 0,
         "maxRange": 0.5
+      },
+      {
+        "name": "town_node_size",
+        "value": 0.748,
+        "minRange": 0,
+        "maxRange": 1
       }
     ],
     "textures": [

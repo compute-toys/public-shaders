@@ -22,6 +22,7 @@ fn getCellPoint(gridIndex: vec2<f32>) -> vec2<f32> {
     return mix(vec2(0.5), point, custom.distort);
 }
 
+// TODO: check if this is the largest of its neighbour when determining towns
 fn getCellWeight(p: vec2<f32>) -> f32 {
     let node_noise = perlinNoise2(p * custom.node_perlin_scale) ;
     let terrain_noise = perlinNoise2(p * custom.terrain_perlin_scale);
@@ -29,7 +30,7 @@ fn getCellWeight(p: vec2<f32>) -> f32 {
     let terrain_valley_noise =  max(1.0 - pow(((terrain_noise - custom.sea_level)/(0.5 * terrain_range)) - 1.0, 2.0),0.0);
     let t = terrain_valley_noise;
     let weight = node_noise * t;
-    return max(weight, 0.0);
+    return weight;
 }
 
 fn drawLinesForCell(i_st: vec2<f32>, pixel: vec2<f32>, scaleFactor: f32) -> f32 {
@@ -118,9 +119,13 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
     }
     
     
-    color *= vec3(distanceToClosestRoad * 0.05 * custom.scale);
+    //color *= vec3(distanceToClosestRoad * 0.02 * custom.scale);
+
+    if(distanceToClosestRoad * custom.scale < 2.0){
+        color = ROAD_COLOUR;
+    }
     
-    if(distance(f_st, pointInCell) < weight * 0.3){
+    if(weight > custom.town_node_size && distance(f_st, pointInCell) < 0.3){
         color = vec3(1.0, 0.0, 0.0);
     }
     

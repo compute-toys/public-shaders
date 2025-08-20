@@ -7,7 +7,7 @@
     "uniforms": [
       {
         "name": "Radius",
-        "value": 0.379,
+        "value": 0.421,
         "minRange": 0,
         "maxRange": 1
       },
