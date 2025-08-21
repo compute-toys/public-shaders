@@ -13,7 +13,8 @@
         "img": "/textures/blank.png"
       }
     ],
-    "float32Enabled": true
+    "float32Enabled": true,
+    "language": "wgsl"
   },
   "visibility": "public",
   "profile": {

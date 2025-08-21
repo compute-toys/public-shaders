@@ -2,11 +2,11 @@
 
 const CLOTH_R = vec2u(64, 32);
 const GAP_SIZE = 6.0;
-const DRAG = 0.99;
-const DT = 0.5;
+const DRAG = 0.997;
+const DT = 0.25;
 
 struct MouseLast {
-    pos: uint2,
+    pos: int2,
     click: int,
     time: float,
 }
@@ -18,6 +18,7 @@ fn connected(a: vec2i, b: vec2i) -> bool {
     return hash44(v).x * hash44(v.zwxy).x > 0.05;
 }
 
+#dispatch_count sim 4
 #workgroup_count sim 4 2 1
 @compute @workgroup_size(16, 16)
 fn sim(@builtin(global_invocation_id) id: uint3) {
@@ -60,9 +61,7 @@ fn sim(@builtin(global_invocation_id) id: uint3) {
         let d: vec2f = n_pos - pos;
         let d_len: f32 = length(d);
 
-        if d_len > GAP_SIZE {
-            acc += (d_len - GAP_SIZE) * normalize(d);
-        }
+        acc += (d_len - GAP_SIZE) * normalize(d);
     }
 
     if (mouse.click | mouse_last.click) != 0 {
@@ -76,7 +75,7 @@ fn sim(@builtin(global_invocation_id) id: uint3) {
     acc.y += gravity;
 
     let t_vel = (DRAG * vel) + acc * DT; 
-    let t_pos = pos + clamp(t_vel * DT, vec2f(-2), vec2f(2));
+    let t_pos = pos + t_vel * DT;
     passStore(0, vec2i(id.xy), vec4f(t_pos, t_vel));
 }
 
@@ -96,7 +95,7 @@ fn draw_point(a: vec2f) {
 }
 
 fn draw_line(a: vec2f, b: vec2f) {
-    let iter = 2 * u32(length(a + b));
+    let iter = 2 * u32(length(a - b));
 
     for (var k = 0u; k <= iter; k++) {
         let p = mix(a.xy, b.xy, f32(k) / f32(iter));

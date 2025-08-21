@@ -1,0 +1,23 @@
+{
+  "id": 2405,
+  "created_at": "2025-08-19T20:49:06.621681+00:00",
+  "name": "BH geodesic tracer",
+  "description": "x is phi and y is 1/r coordinates",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}
