@@ -14,7 +14,7 @@ static const uint WG_COUNT_IMAGE_Y = (CANVAS_H + IMG_WG_SIZE - 1) / IMG_WG_SIZE;
 static const uint CURVE_WG_SIZE   = 128;
 static const uint CURVE_WG_COUNT  = 256;
 static const uint TOTAL_CURVES    = CURVE_WG_SIZE * CURVE_WG_COUNT;
-static const uint SAMPLES_PER_CURVE = 2048;
+static const uint SAMPLES_PER_CURVE = 1024;
 static const int  STAMP_RADIUS    = 1;
 static const int  FLOAT_TO_INT_SCALE = 1024;
 static const float PHI_RANGE = 2.0;
@@ -131,7 +131,7 @@ void draw_one_curve(float2 uv0, float step)
 
 void draw_bidir(float2 uv0)
 {
-    draw_one_curve(uv0, 0.005);
+    draw_one_curve(uv0, 0.01);
     //draw_one_curve(uv0, -0.005);
 }
 
