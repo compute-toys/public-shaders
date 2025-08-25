@@ -39,18 +39,20 @@ float3 compute_LIC(float2 p_start, float dist, int steps, Kernel k = UniformKern
     float2 pos = p_start;
     for (float step = 0; step <= dist; step += dist / steps) {
         float w = k.eval(step);
-        float4 sample = channel0.SampleLevel(bilinear_repeat, pos, 0, int2(0,0));
+        float2 dir = flow_map(pos) * step_size;
+        float4 sample = channel0.SampleGrad(bilinear_repeat, pos, dir, 0);
         col += float4(sample.rgb * w, w);
-        pos += flow_map(pos) * step_size;
+        pos += dir;
     }
 
     // Backwards
     pos = p_start;
     for (float step = 0; step <= dist; step += dist / steps) {
         float w = k.eval(step);
-        float4 sample = channel0.SampleLevel(bilinear_repeat, pos, 0, int2(0,0));
+        float2 dir = -flow_map(pos) * step_size;
+        float4 sample = channel0.SampleGrad(bilinear_repeat, pos, dir, 0);
         col += float4(sample.rgb * w, w);
-        pos -= flow_map(pos) * step_size;
+        pos += dir;
     }
     return col.rgb / col.w;
 }
