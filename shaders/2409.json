@@ -7,7 +7,8 @@
     "uniforms": [],
     "textures": [
       {
-        "img": "/textures/noise0.png"
+        "img": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rocks_ground_01/rocks_ground_01_disp_1k.jpg",
+        "url": "https://polyhaven.com/a/rocks_ground_01"
       },
       {
         "img": "/textures/blank.png"
