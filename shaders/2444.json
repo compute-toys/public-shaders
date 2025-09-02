@@ -1,0 +1,23 @@
+{
+  "id": 2444,
+  "created_at": "2025-09-01T13:38:16.472537+00:00",
+  "name": "Exterior 2D - Line/Parabola",
+  "description": "Intersection of horizontal line and parabola, computed using exterior algebra.\n\nBased on: https://geometricalgebratutorial.com/ga-design-1",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "ixenv"
+  }
+}
