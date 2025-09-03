@@ -1,0 +1,23 @@
+{
+  "id": 2450,
+  "created_at": "2025-09-02T10:26:00.201562+00:00",
+  "name": "Exterior 2D - Points/Line/Circle",
+  "description": "The exterior part of conformal geometric algebra in 2D.",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "ixenv"
+  }
+}

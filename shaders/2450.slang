@@ -258,7 +258,7 @@ static let BLUR: float = 0.001;
 
 ext4f up(vec2f x) {
     // a + b*x + c*x^2 + d*y
-    return ext4f.rdual(ext4f.fromGrade1(vec4f(1., x[0], x[0]*x[0], x[1])));
+    return ext4f.rdual(ext4f.fromGrade1(vec4f(1., x[0], x[1], x[0]*x[0]+x[1]*x[1])));
 }
 
 float dist(vec2f p, ext4f o) {
@@ -286,16 +286,20 @@ void main_image(uint3 id : SV_DispatchThreadID)
     
     let t = time.elapsed;
 
-    let a = up(vec2f(-1.3, 0));
+    let a = up(vec2f(-0.6, 0));
     let b = up(vec2f(0, 0.5));
     let c = up(vec2f(0.6, sin(t)));
     
-    let curve = a & b & c;
+    let circle = a & b & c;
 
-    plot(color, p, curve, .01, vec3f(0.,0.,1.));
+    let line = ext4f.fromGrade1(vec4f(sin(t), 0., 1., 0.));
+
+    plot(color, p, circle, .01, vec3f(1.,0.,0.));
+    plot(color, p, line, .01, vec3f(0.,0.,1.));
+    plot(color, p, line | circle, .02, vec3f(1.,1.,0.));
     plot(color, p, a, .02, vec3f(0.,1.,0.));
     plot(color, p, b, .02, vec3f(0.,1.,0.));
     plot(color, p, c, .02, vec3f(0.,1.,0.));
-
+    
     screen[id.xy] = vec4f(color, 1.);
 }
