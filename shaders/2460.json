@@ -1,8 +1,8 @@
 {
-  "id": 2447,
-  "created_at": "2025-09-01T19:56:50.214206+00:00",
-  "name": "Exterior 2D - Points/Quadratic",
-  "description": "Quadratic through 3 points using exterior algebra.\n\nBased on: https://geometricalgebratutorial.com/ga-design-interpolating-points",
+  "id": 2460,
+  "created_at": "2025-09-03T20:41:00.351788+00:00",
+  "name": "Exterior 2D - Points/Conic",
+  "description": "Conic through 5 points using exterior algebra.",
   "body": {
     "uniforms": [],
     "textures": [
