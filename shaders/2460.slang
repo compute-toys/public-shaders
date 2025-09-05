@@ -152,7 +152,7 @@ namespace _impl {
 
   [ForceInline]
   internal void exterior6_join(in vec64f x, in vec64f y, out vec64f z) {
-      z[ 0] = x[ 0] + y[ 0];
+      z[ 0] = x[ 0]*y[ 0];
       z[ 1] = x[ 0]*y[ 1] + x[ 1]*y[ 0];
       z[ 2] = x[ 0]*y[ 2] + x[ 2]*y[ 0];
       z[ 3] = x[ 0]*y[ 3] + x[ 1]*y[ 2] - x[ 2]*y[ 1] + x[ 3]*y[ 0];
@@ -351,7 +351,7 @@ namespace _impl {
       z[60] = x[60]*y[63] + x[61]*y[62] - x[62]*y[61] + x[63]*y[60];
       z[61] = x[61]*y[63] + x[63]*y[61];
       z[62] = x[62]*y[63] + x[63]*y[62];
-      z[63] = x[63] + y[63];
+      z[63] = x[63]*y[63];
   }
 
   [ForceInline]

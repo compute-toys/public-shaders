@@ -62,7 +62,7 @@ internal void exterior4_bottom(out vec16f z) {
 
 [ForceInline]
 internal void exterior4_join(in vec16f x, in vec16f y, out vec16f z) {
-    z[ 0] = x[ 0] + y[ 0];
+    z[ 0] = x[ 0]*y[ 0];
     z[ 1] = x[ 0]*y[ 1] + x[ 1]*y[ 0];
     z[ 2] = x[ 0]*y[ 2] + x[ 2]*y[ 0];
     z[ 3] = x[ 0]*y[ 3] + x[ 1]*y[ 2] - x[ 2]*y[ 1] + x[ 3]*y[ 0];
@@ -117,7 +117,7 @@ internal void exterior4_meet(in vec16f x, in vec16f y, out vec16f z) {
     z[12] = x[12]*y[15] + x[13]*y[14] - x[14]*y[13] + x[15]*y[12];
     z[13] = x[13]*y[15] + x[15]*y[13];
     z[14] = x[14]*y[15] + x[15]*y[14];
-    z[15] = x[15] + y[15];
+    z[15] = x[15]*y[15];
 }
 
 [ForceInline]

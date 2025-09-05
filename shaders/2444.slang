@@ -50,7 +50,7 @@ internal void exterior3_bottom(out vec8f z) {
 
 [ForceInline]
 internal void exterior3_join(in vec8f x, in vec8f y, out vec8f z) {
-    z[0] = x[0] + y[0];
+    z[0] = x[0]*y[0];
     z[1] = x[0]*y[1] + x[1]*y[0];
     z[2] = x[0]*y[2] + x[2]*y[0];
     z[3] = x[0]*y[3] + x[1]*y[2] - x[2]*y[1] + x[3]*y[0];
@@ -81,7 +81,7 @@ internal void exterior3_meet(in vec8f x, in vec8f y, out vec8f z) {
     z[4] = x[4]*y[7] + x[5]*y[6] - x[6]*y[5] + x[7]*y[4];
     z[5] = x[5]*y[7] + x[7]*y[5];
     z[6] = x[6]*y[7] + x[7]*y[6];
-    z[7] = x[7] + y[7];
+    z[7] = x[7]*y[7];
 }
 
 [ForceInline]
