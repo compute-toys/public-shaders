@@ -12,9 +12,10 @@ typealias vec6f = float[6];
 typealias vec8f = float[8];
 typealias vec16f = float[16];
 
-interface IDot<T, S> { static S dot(T, T); }
+interface IDot<V, S> { static S dot(V, V); }
 
 T operator+=<T: IArithmetic>(out T x, T y) { x = x + y; return x; }
+T operator*=<T: IArithmetic>(out T x, T y) { x = x * y; return x; }
 
 extension<T: IArithmetic, let N: int> T[N]: IDot<T[N], T> {
     static T dot(T[N] x, T[N] y) {
@@ -37,8 +38,8 @@ interface IMeet {
 
 interface ILattice: IJoin, IMeet {}
 
-T operator|<T>(T x, T y) where T : IJoin { return T.join(x, y); }
-T operator&<T>(T x, T y) where T : IMeet { return T.meet(x, y); }
+T operator|<T: IJoin>(T x, T y) { return T.join(x, y); }
+T operator&<T: IMeet>(T x, T y) { return T.meet(x, y); }
 
 [ForceInline]
 internal void exterior4_bottom(out vec16f z) {
@@ -257,7 +258,7 @@ static let EPSILON: float = 0.001;
 static let BLUR: float = 0.001;
 
 ext4f up(vec2f x) {
-    // a + b*x + c*x^2 + d*y
+    // a + b*x + c*y + d*(x^2 + y^2)
     return ext4f.rdual(ext4f.fromGrade1(vec4f(1., x[0], x[1], x[0]*x[0]+x[1]*x[1])));
 }
 
