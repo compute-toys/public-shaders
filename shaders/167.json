@@ -7,15 +7,21 @@
     "uniforms": [
       {
         "name": "blur",
-        "value": 0.888
+        "value": 0.888,
+        "minRange": 0,
+        "maxRange": 1
       },
       {
         "name": "divmin",
-        "value": 0.88
+        "value": 0.88,
+        "minRange": 0,
+        "maxRange": 1
       },
       {
         "name": "noise",
-        "value": 0
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
       }
     ],
     "textures": [
@@ -26,7 +32,8 @@
         "img": "/textures/blank.png"
       }
     ],
-    "float32Enabled": true
+    "float32Enabled": true,
+    "language": "wgsl"
   },
   "visibility": "public",
   "profile": {
