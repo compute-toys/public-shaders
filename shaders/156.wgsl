@@ -3,7 +3,7 @@
 #include "Dave_Hoskins/hash"
 
 struct MouseHistory {
-    mouse_prev: uint2,
+    mouse_prev: int2,
     mouse_delta: float2
 }
 // two screen size * 4 atomic buffers
