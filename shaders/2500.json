@@ -1,0 +1,23 @@
+{
+  "id": 2500,
+  "created_at": "2025-09-09T05:08:49.529309+00:00",
+  "name": "S1 state on 3-Torus ",
+  "description": "Forked from https://compute.toys/view/2499",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}

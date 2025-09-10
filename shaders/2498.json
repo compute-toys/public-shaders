@@ -1,0 +1,23 @@
+{
+  "id": 2498,
+  "created_at": "2025-09-09T04:41:19.389929+00:00",
+  "name": "S3 state on Torus ",
+  "description": "Forked from https://compute.toys/view/2497",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}
