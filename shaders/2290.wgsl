@@ -23,7 +23,7 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
     var col = vec3f(u);
 
     // Convert from gamma-encoded to linear colour space
-    col = pow(col, vec3f(2.2));
+    // col = pow(col, vec3f(2.2));
 
     // Output to screen (linear colour space)
     textureStore(screen, id.xy, vec4f(col, 1.));
@@ -40,18 +40,18 @@ fn blur_circle(p: vec2f, r: f32, sigma: f32) -> f32 {
 
 fn erf(x: f32) -> f32 {
     // return  x / sqrt(1. + x * x);
-    // return tanh(x);
+    return tanh(x);
 
-    const C0: f32 = 2. / sqrt(PI);
-    const C1: f32 = 0.24295;
-    const C2: f32 = 0.03395;
-    const C3: f32 = 0.01040;
+    // const C0: f32 = 2. / sqrt(PI);
+    // const C1: f32 = 0.24295;
+    // const C2: f32 = 0.03395;
+    // const C3: f32 = 0.01040;
 
-    let x1 = x * C0;
-    let x2 = x1 * x1;
-    let x3 = x1 + (C1 + (C2 + C3 * x2) * x2) * (x1 * x2);
+    // let x1 = x * C0;
+    // let x2 = x1 * x1;
+    // let x3 = x1 + (C1 + (C2 + C3 * x2) * x2) * (x1 * x2);
 
-    return x3 / sqrt(1. + x3 * x3);
+    // return x3 / sqrt(1. + x3 * x3);
 }
 
 // The convolution between __step function__ and __gaussian distribution function__

@@ -159,7 +159,7 @@ fn render(ic: float3, p: float2, angles: float2, muv: float2) -> float3 {
 
 fn gidx() -> vec2<u32> {
 
-    return mouse.pos;
+    return vec2<u32>(mouse.pos);
 }
 
 fn wrap_angle(angle: f32) -> f32 {

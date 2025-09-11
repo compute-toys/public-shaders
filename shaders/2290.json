@@ -7,7 +7,7 @@
     "uniforms": [
       {
         "name": "sigma",
-        "value": 67.781,
+        "value": 29.464,
         "minRange": 0,
         "maxRange": 128
       }
