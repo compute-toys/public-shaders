@@ -3,7 +3,7 @@
 #define TD 16       //gpu threads divisor
 #define ZS 512      //size simulation space
 #define ZT 4        //size simulation time
-#define ZF 22        //size simulation steps per frame
+#define ZF 20        //size simulation steps per frame
 #define ZC 4f       //size convolution
 #define PI 3.14159265358979f
 #storage D array<f32,ZS*ZS*ZT>;
@@ -52,18 +52,18 @@ fn comb1(@builtin(global_invocation_id) id3: vec3u)
         var l  = sqrt(l2);
         var e1 = cos(l*custom.a)/exp(l2*custom.b);    et1+=abs(e1);
         var e2 = cos(l*custom.a)/exp(l2*custom.c);    et2+=abs(e2);
-        v1 += d2*min(pow(abs(d2),.2f),1f)*e1;
+        v1 += d2*min(pow(abs(d2),.15f),.55f)*e1;
         v2 += d3*e2;
     }}
     if(et1!=0f){et1 = 1f/et1;}
     if(et2!=0f){et2 = 1f/et2;}
     var d = 1f*v1*et1 - d12;
-        d = 1.8f*v1*et1 - 1f*v2*et2;
+        d = 1.125f*v1*et1 - 1f*v2*et2;
     if(time.frame==0u)  //reset simulation        
     {
         var u = id2/f32(ZS)-.5f;
-        d = rnd2(u32(id1))/exp(111f*dot(u,u))
-                       +1f/exp(111f*dot(u,u));
+        d = 0f*rnd2(u32(id1))/exp(111f*dot(u,u))
+                          +.5f/exp(111f*dot(u,u));
     }
     //mouse
     {
@@ -97,6 +97,7 @@ fn main_image(@builtin(global_invocation_id) id3: vec3u)
     var d2  = D[id1+fr2];
     var d3  = D[id1+fr3];
     var c  = vec4f(d1+.5f);
-        c  = vec4f(4f*sqrt(d1*d1 + d2*d2));
+        c  = vec4f(sqrt(d1*d1 + d2*d2));
+        c  = (vec4f(0,d1,d2,0)*5f+.5f)*sqrt(sqrt(d1*d1 + d2*d2));
     textureStore(screen, id3.xy, c);
 }

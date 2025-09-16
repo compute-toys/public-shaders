@@ -78,7 +78,7 @@ fn comb1(@builtin(global_invocation_id) id3: vec3u)
         var d2 = D2[r1];
         var l  = sqrt(l2);
         var e1 = cos(l*custom.a)/exp(l2*custom.b);    et1+=abs(e1);
-        v1 += (f32(d2>=0f)*2f-1f)*pow(abs(d2),1.2f)*e1;
+        v1 += d2*min(pow(abs(d2),.2f),1f)*e1;
     }}}
     if(et1!=0f){et1 = 1f/et1;}
     var d = 1f*v1*et1 - d12;
@@ -145,7 +145,7 @@ fn main_image(@builtin(global_invocation_id) id: vec3u)
         var l = min(min(g.x,g.y),g.z);                      //length to transverse one voxel
         var r = dot(vec3i(p),vec3i(1,ZS,ZS*ZS));
         var t1 = D[r+fr1];
-        var t2 = D[r+fr2]-t1;
+        var t2 = D[r+fr2];
         var tl = sqrt(t1*t1 + t2*t2);
         var n = lig*max(1f-tl*l,0f);                       //light after some energy absorved by voxel                          
         rif += (lig-n)*tl;    //light emited by voxel

@@ -36,7 +36,7 @@ fn comb1(@builtin(global_invocation_id) id3: vec3u)
         var d2 = D[r1+fr2];
         var l  = sqrt(l2);
         var e1 = cos(l*custom.a)/exp(l2*custom.b);    et1+=abs(e1);
-        v1 += (f32(d2>=0f)*2f-1f)*pow(abs(d2),1.1f)*e1;
+        v1 += d2*min(pow(abs(d2),.1f),1f)*e1;
     }}
     if(et1!=0f){et1 = 1f/et1;}
     var d = 1f*v1*et1 - d12;
