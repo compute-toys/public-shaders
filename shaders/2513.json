@@ -1,0 +1,42 @@
+{
+  "id": 2513,
+  "created_at": "2025-09-11T12:15:34.807458+00:00",
+  "name": "distance constraint chain",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "easing",
+        "value": 0.313,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "radius",
+        "value": 10.425,
+        "minRange": 0,
+        "maxRange": 64
+      },
+      {
+        "name": "dist",
+        "value": 64,
+        "minRange": 0,
+        "maxRange": 64
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}
