@@ -1,0 +1,90 @@
+{
+  "id": 2549,
+  "created_at": "2025-09-21T04:32:07.58515+00:00",
+  "name": "MLS-MPM APIC fluid EoS",
+  "description": "MLS-MPM/APIC fluid solver using Tait EoS",
+  "body": {
+    "uniforms": [
+      {
+        "name": "gravity",
+        "value": 0.318,
+        "minRange": 0,
+        "maxRange": 4
+      },
+      {
+        "name": "timestep",
+        "value": 0.493,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "pressure_density",
+        "value": 0.029,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "mass_smooth",
+        "value": 0.496,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "viscosity",
+        "value": 0.1,
+        "minRange": 0,
+        "maxRange": 0.5
+      },
+      {
+        "name": "apic_scale",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "pressure_jacobi",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "rest_density",
+        "value": 16.241,
+        "minRange": 0,
+        "maxRange": 20
+      },
+      {
+        "name": "eos_stiffness",
+        "value": 0.264,
+        "minRange": 0,
+        "maxRange": 9
+      },
+      {
+        "name": "eos_power",
+        "value": 4.709,
+        "minRange": 0,
+        "maxRange": 10
+      },
+      {
+        "name": "stress_visc",
+        "value": 0.185,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Regent_Street_Clay_Gregory.jpg/1920px-Regent_Street_Clay_Gregory.jpg"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "cornusammonis"
+  }
+}
