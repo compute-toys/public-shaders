@@ -1,0 +1,48 @@
+{
+  "id": 2552,
+  "created_at": "2025-09-22T02:17:36.303124+00:00",
+  "name": "distance constraint based xpbd",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "easing",
+        "value": 0.272,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "radius",
+        "value": 3.742,
+        "minRange": 0,
+        "maxRange": 64
+      },
+      {
+        "name": "dist",
+        "value": 9.385,
+        "minRange": 0,
+        "maxRange": 64
+      },
+      {
+        "name": "aalpha",
+        "value": 4.414,
+        "minRange": 0.0001,
+        "maxRange": 10
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}
