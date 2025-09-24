@@ -1,0 +1,54 @@
+{
+  "id": 2559,
+  "created_at": "2025-09-23T11:53:45.168633+00:00",
+  "name": "angle constraint based pbd(1)",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "easing",
+        "value": 0.313,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "radius",
+        "value": 5.078,
+        "minRange": 0,
+        "maxRange": 64
+      },
+      {
+        "name": "dist",
+        "value": 17.405,
+        "minRange": 0,
+        "maxRange": 64
+      },
+      {
+        "name": "alpha",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "itime",
+        "value": 10.092,
+        "minRange": 1,
+        "maxRange": 16
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}

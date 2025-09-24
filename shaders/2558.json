@@ -1,0 +1,66 @@
+{
+  "id": 2558,
+  "created_at": "2025-09-23T02:57:51.89429+00:00",
+  "name": "jiggle bones",
+  "description": "The principal of https://github.com/Bauxitedev/godot-jigglebones/tree/master",
+  "body": {
+    "uniforms": [
+      {
+        "name": "easing",
+        "value": 0.313,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "radius",
+        "value": 28.746,
+        "minRange": 0,
+        "maxRange": 512
+      },
+      {
+        "name": "alpha",
+        "value": 0.163,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "itime",
+        "value": 2.817,
+        "minRange": 1,
+        "maxRange": 16
+      },
+      {
+        "name": "stiffness",
+        "value": 2.836,
+        "minRange": 0,
+        "maxRange": 10
+      },
+      {
+        "name": "k",
+        "value": 17.586,
+        "minRange": 1,
+        "maxRange": 100
+      },
+      {
+        "name": "dist",
+        "value": 22.805,
+        "minRange": 0,
+        "maxRange": 512
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "alph13"
+  }
+}
