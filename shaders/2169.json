@@ -1,0 +1,42 @@
+{
+  "id": 2169,
+  "created_at": "2025-07-05T11:20:49.79538+00:00",
+  "name": "flstudio button (not really)",
+  "description": "it just simple shader",
+  "body": {
+    "uniforms": [
+      {
+        "name": "length",
+        "value": 6.029,
+        "minRange": 0,
+        "maxRange": 10
+      },
+      {
+        "name": "step",
+        "value": 0.171,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "fract",
+        "value": 0.222,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "heloonihao"
+  }
+}
