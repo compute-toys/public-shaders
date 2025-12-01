@@ -1,0 +1,23 @@
+{
+  "id": 2699,
+  "created_at": "2025-11-29T15:00:53.783954+00:00",
+  "name": "Parallel Pi",
+  "description": "Trying to find the value of pi through Monte Carlo. testing out PCG & XQO hash which seems to get more bits, but we still seem to ultimately be limited by 32 bit float math. Sadly there are no 64 bit types in WGPU yet. And no subgroups in Safari.",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "https://raw.githubusercontent.com/otaviogood/shader_fontgen/master/codepage12.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "Antonalog"
+  }
+}
