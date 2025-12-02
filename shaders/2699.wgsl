@@ -77,14 +77,14 @@ fn rand_xqo(rng_state : ptr<function,u32>) -> uint
 fn unsignedFloat(r : u32) -> f32    //[0,+1]
 {
     let mantissa = r & ((1u<<23)-1);
-    let frand_plus_one = mantissa | (127<<23);
+    let frand_plus_one = mantissa | (127<<23);  //127 exponent of 2^0 = 1 and some fractional bits....
     return bitcast<f32>(frand_plus_one)-1.;
 }
 
 fn signedFloat(r : u32) -> f32      //[-1,+1]
 {
     let frand  = unsignedFloat(r);
-    let signed = bitcast<u32>(frand) | ((r << 8) & (1u<<31));
+    let signed = bitcast<u32>(frand) | ((r << 8) & (1u<<31));   //use an extra bit of randomness for sign
     return bitcast<f32>(signed);
 }
 
@@ -111,11 +111,11 @@ fn pcg4d(vin : vec4u) -> vec4u
 
 #storage noise array<vec2f>
 
-var<workgroup> cache : atomic<u32>;
+var<workgroup> sharedmem : atomic<u32>;
 
 const w = 1000u;
 
-//one beelion samples mwuahahahaha
+//one beellion samples mwuahahahaha
 #workgroup_count monte 250 250 250
 
 @compute @workgroup_size(4, 4, 4)
@@ -125,7 +125,7 @@ fn monte(@builtin(global_invocation_id) id:vec3u,
 {
     if (flat == 0u)
     {
-        atomicStore(&cache, 0);
+        atomicStore(&sharedmem, 0);
     }
     workgroupBarrier();
 
@@ -135,7 +135,7 @@ fn monte(@builtin(global_invocation_id) id:vec3u,
 
     var rand = flatid + (time.frame*739)%7919;                
 
-    //four beelion samples mwuahahahaha
+    //four beellion samples mwuahahahahahahaha
     for (var i=0; i<4; i++)
     {
         let randx = rand_xqo(&rand);
@@ -166,7 +166,7 @@ fn monte(@builtin(global_invocation_id) id:vec3u,
     //sum the subgroups to shared memory
     if (subgroupElect())
     {
-        atomicAdd(&cache, sum);
+        atomicAdd(&sharedmem, sum);
     }
 
     //accumulate final result in global memory
@@ -174,7 +174,7 @@ fn monte(@builtin(global_invocation_id) id:vec3u,
 
     if (flat == 0u)
     {
-        let tot = atomicLoad(&cache);
+        let tot = atomicLoad(&sharedmem);
         if (tot > 0)
         {
             atomicAdd(&atomic_storage[slot()], tot);
