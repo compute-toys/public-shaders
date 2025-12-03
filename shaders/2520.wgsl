@@ -5,8 +5,8 @@
 #define ZF 4        //size simulation steps per frame
 #define ZC 4f       //size convolution
 #define PI 3.141592653589793f
-#storage D array<f32,ZS*ZS*ZS*ZT>;
-var<workgroup> D2: array<f32,ZS*ZT>;
+#storage D array<f32, ZS*ZS*ZS*ZT>;
+var<workgroup> D2: array<f32, ZS*ZT>;
 fn hash(x2: u32) -> u32
 {
     var x = x2;
@@ -112,7 +112,7 @@ fn main_image(@builtin(global_invocation_id) id: vec3u)
     var m = (2f*vec2f(mouse.pos)-iResolution)/iResolution.y*2f;
     var camPos = cos(time.elapsed*vec3f(-23,-9,27)*.02f+vec3f(11,2,22));
     //if(mouse.click!=0){camPos = vec3f(cos(m.x),m.y,sin(m.x));}
-        camPos = normalize(camPos)*3f;
+        camPos = normalize(camPos)*2.5f;
     var camDir = -normalize(camPos);
     var sd = normalize(vec3f(camDir.z,0f,-camDir.x));
     var up = cross(camDir,sd);

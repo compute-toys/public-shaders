@@ -2,11 +2,11 @@
 #define srf .01f        //distance considered surface
 #define nrd (srf*.1f)   //normal calcualtion
 #define ote 88.f        //outside fractal space
-#define rml 66u         //raymarch loop
+#define rml 32u         //raymarch loop
 #define G 64f           //size of fractal
-#define ryT  64u        //threads
-#define ryT2 4096u        //threads
-#define ryL 16u          //rays loop size
+#define ryT  32u        //threads
+#define ryT2 32768u        //threads
+#define ryL 1u          //rays loop size
 #define sWH (SCREEN_WIDTH*SCREEN_HEIGHT)
 #define fti (1<<10)     //float to int, int to float, resolution
 
@@ -16,12 +16,9 @@ struct rayST
     d: vec2f,       //ray direction
     cf: f32,        //ray color frequency
     ci: f32,        //ray color intensity
-    l: f32,         //ray in SDF
-    l2: f32,        //ray in SDF side
-    t: f32,         //ray collision
 };
 #storage D array<atomic<i32>,SCREEN_WIDTH*SCREEN_HEIGHT*3>
-#storage R array<rayST,ryT*ryT2+1u>
+#storage R array<rayST,ryT*ryT2>
 
 fn hash(a: u32) -> u32
 {
@@ -50,7 +47,7 @@ fn toru(p2:vec2f, a:f32, ra:f32, rb:f32) -> f32
 }
 fn getSDF(p2: vec2f) -> f32
 {
-    var n = cos(time.elapsed*.05f-vec2f(0,.5)*PI);
+    var n = cos(time.elapsed*.0f+1.1f-vec2f(0,.5)*PI);
     var m = mat2x2f(n,vec2f(-1,1)*n.yx)*2f;
     var a = 99999f;
     var s = 1f;
@@ -89,46 +86,25 @@ fn getNrm(pos: vec2f) -> vec2f
     return normalize(vec2f(getSDF(pos+nrd*vec2f(1,0)) - getSDF(pos-nrd*vec2f(1,0)),
                            getSDF(pos+nrd*vec2f(0,1)) - getSDF(pos-nrd*vec2f(0,1))));
 }
-fn rayNew(seed:u32) -> rayST
-{
-    var r0 = rnd(seed+0u);
-    var r1 = rnd(seed+1u);
-    var r2 = rnd(seed+2u);
-    var r3 = rnd(seed+3u);
-    var sf = vec2f(SCREEN_WIDTH,SCREEN_HEIGHT);
-    var lp = G*.5f*cos(vec2f(.77,.55)*time.elapsed+vec2f(0,2.22));
-    if(mouse.click!=0){lp = G*(2f*vec2f(mouse.pos)-sf)/sf.y;}
-    var p  = cos(r0*PI*2f-vec2f(0,.5)*PI)*sqrt(r1)*2f + lp;
-    var d  = cos(r2*PI*2f-vec2f(0,.5)*PI);
-    var l  = getSDF(p);
-    return rayST(
-        p,                  //ray start position
-        d,                  //ray direction
-        r3,                 //ray color frequency
-        1f,                 //ray color intensity
-        l,                  //ray in SDF
-        f32(l>=0f)*2f-1f,   //ray in SDF side
-        0f,                 //ray collision
-    );
-}
-fn rayMarch(rayIn:rayST) -> rayST
+fn rayMarch(rayIn:rayST, seed:u32) -> rayST
 {
     var ray = rayIn;
-    var p1 = ray.p;
-    
-    for(var i=0u; i<rml && ray.t==0f && ray.l<ote; i++)//raymarch
-    {
-        ray.p += abs(ray.l)*ray.d;
-        var l = getSDF(ray.p)*ray.l2;
-        ray.t = f32(l<srf && l<ray.l);
-        ray.l = l;
-    }
-    if(ray.l<srf*.5f)//jump sdf edge
+    var p1  = ray.p;
+    var rl  = abs(getSDF(p1));
+    for(var i=0u; i<rml && rl<srf; i++)//jump sdf edge
     {
         ray.p += ray.d*srf;
-        var l = getSDF(ray.p)*ray.l2;
-        ray.t = f32(l<srf && l<ray.l);
-        ray.l = l;
+        rl = abs(getSDF(ray.p));
+    }
+    var lstl  = 0f;
+    var bonce = false;
+    for(var i=0u; i<rml && rl>=srf && rl<ote; i++)//raymarch
+    {
+        ray.p += rl*ray.d;
+        lstl  = getSDF(ray.p);
+        var l = abs(lstl);
+        bonce = l<srf && l<rl;
+        rl = l;
     }
     //draw ray
     {
@@ -142,20 +118,20 @@ fn rayMarch(rayIn:rayST) -> rayST
         var d2 = abs(d1);
         var d3 = step(vec2f(0),d)*2f-1f;
         var sf = vec2f(SCREEN_WIDTH,SCREEN_HEIGHT);
-        var sm = G*(2f*sf-sf)/sf.y;    sm*=.99f;
+        var sm = G*(2f*sf-sf)/sf.y;
+            sm*= .999f;
         var m1 = min(( sm-p1)* d1,
-                    (-sm-p1)* d1);
+                     (-sm-p1)* d1);
         var m2 = min(( sm-p2)*-d1,
-                    (-sm-p2)*-d1);
+                     (-sm-p2)*-d1);
         p1 +=  d*max(0f,max(m1.x,m1.y));
         p2 += -d*max(0f,max(m2.x,m2.y));
-        if(dot(p2-p1,d)<0f){d=-d;}
-        var p  = (p1 *sf.y/G + sf)/2f;    //world coordinates to pixel coordinates
-        var l0 = length(p2-p1)*sf.y/G/2f; //world size        to pixel size
-            l0 = min(l0,length(sf)*.9f);
+        var pl = dot(p2-p1,d);
+        var p  = (p1*sf.y/G + sf)/2f;       //world coordinates to pixel coordinates
+        var l0 =  pl*sf.y/G      /2f;       //world size        to pixel size
         var lt = 0f;
-        if(all(abs(p1)<sm*1.001f) &&
-        all(abs(p2)<sm*1.001f)){lt=l0;}
+        if(all(abs(p1)<sm*1.0001f) &&
+           all(abs(p2)<sm*1.0001f)){lt=l0;}
         while(lt > 0f)
         {
             var g = (1f-fract(p*d3))*d2;
@@ -170,40 +146,42 @@ fn rayMarch(rayIn:rayST) -> rayST
             lt -= l;
         }
     }
-    return ray;
-}
-fn rayBounce(rayIn:rayST, seed:u32) -> rayST
-{
-    var r0 = rnd(seed+0u)-.1f;
-    var r1 = rnd(seed+1u)-.5f;
-    var ray = rayIn;
-    var nrm = getNrm(ray.p)*ray.l2;
-    var col = getCol(ray.p);
-    var rfl = reflect(ray.d, nrm);
-              var idx = .5f+ray.cf*.5f;
-    if(ray.l2<0f){idx = 1f/idx;}
-    var k  = 1f - idx * idx * (1f - dot(nrm, ray.d) * dot(nrm, ray.d));
-    var ra = idx * ray.d - (idx * dot(nrm, ray.d) + sqrt(k)) * nrm;
-    r0 = f32(r0 >= 0f && k >= 0f);
-    if(r0!=0f){rfl = ra;}
-    if(r0!=0f){ray.l  *= -1f;}
-    if(r0!=0f){ray.l2 *= -1f;}
-    if(r0!=0f){nrm    *= -1f;}
-    var a1 = cos(col.w*r1-vec2f(0,.5)*PI);
-    rfl = rfl*a1.x + rfl.yx*vec2f(-1,1)*a1.y;
-    rfl -= 2f*nrm*min(dot(rfl,nrm),0f);
-    //var dd = dot(rfl,rfl);
-    //if(dd==0f){rfl=vec2f(1,0);}
-    //if(dd!=dd){rfl=vec2f(1,0);}
-    ray.d  = rfl;
-    ray.ci*= .9f;
-    ray.t  = 0f;
-    if(ray.l<srf*.5f)//jump sdf edge
+    if(rl>=ote || ray.ci<.002f)//ray new
     {
-        ray.p += ray.d*srf;
-        var l = getSDF(ray.p)*ray.l2;
-        ray.t = f32(l<srf && l<ray.l);
-        ray.l = l;
+        var r0 = rnd(seed+0u);
+        var r1 = rnd(seed+1u);
+        var r2 = rnd(seed+2u);
+        var r3 = rnd(seed+3u);
+        var sf = vec2f(SCREEN_WIDTH,SCREEN_HEIGHT);
+        var lp = G*.5f*cos(vec2f(.77,.55)*.2f*time.elapsed+vec2f(0,2.22));
+        if(mouse.click!=0){lp = G*(2f*vec2f(mouse.pos)-sf)/sf.y;}
+        var p  = cos(r0*PI*2f-vec2f(0,.5)*PI)*sqrt(r1)*2f + lp;
+        var d  = cos(r2*PI*2f-vec2f(0,.5)*PI);
+        ray.p  = p;
+        ray.d  = d;
+        ray.cf = r3;
+        ray.ci = 1f;
+    }
+    if(bonce)//ray bounce
+    {
+        var r0 = rnd(seed+4u)-.1f;
+        var r1 = rnd(seed+5u)-.5f;
+        var nrm = getNrm(ray.p); if(lstl<0f){nrm = -nrm;}
+        var col = getCol(ray.p);
+        var rfl = reflect(ray.d, nrm);
+                var idx = .5f+ray.cf*.5f;
+        if(lstl<0f){idx = 1f/idx;}
+        var k  = 1f - idx * idx * (1f - dot(nrm, ray.d) * dot(nrm, ray.d));
+        var ra = idx * ray.d - (idx * dot(nrm, ray.d) + sqrt(k)) * nrm;
+        r0 = f32(r0 >= 0f && k >= 0f);
+        if(r0!=0f){rfl = ra;}
+        if(r0!=0f){nrm    *= -1f;}
+        var a1 = cos(col.w*r1-vec2f(0,.5)*PI);
+        rfl = rfl*a1.x + rfl.yx*vec2f(-1,1)*a1.y;
+        rfl -= 2f*nrm*min(dot(rfl,nrm),0f);
+        ray.d  = rfl;
+        ray.ci*= .9f;
+        return ray;
     }
     return ray;
 }
@@ -212,9 +190,7 @@ fn rayBounce(rayIn:rayST, seed:u32) -> rayST
 @compute @workgroup_size(ryT,1,1)
 fn rayIni(@builtin(global_invocation_id) id3: vec3u)
 {
-    var id1  = id3.x;
-    var seed = (time.frame*ryT*ryT2 + id1)*6u*ryL+756352967u;
-    R[id1] = rayNew(seed);
+    R[id3.x] = rayST();
 }
 #workgroup_count rayDo ryT2 1 1
 @compute @workgroup_size(ryT,1,1)
@@ -222,13 +198,11 @@ fn rayDo(@builtin(global_invocation_id) id3: vec3u)
 {
     var sc = textureDimensions(screen);
     var id1  = id3.x;
-    var seed = (time.frame*ryT*ryT2 + id1)*6u*ryL;
+    var seed = (time.frame*ryT*ryT2 + id1)*6u*ryL+756352967u;
     var ray  = R[id1];
     for(var k = 0u; k < ryL; k++)
     {
-        if(ray.l>=ote){ray = rayNew(seed);}       seed +=4u;
-        if(ray.t!=0f){ray = rayBounce(ray,seed);} seed +=2u;
-        ray = rayMarch(ray);
+        ray = rayMarch(ray,seed + k*6u);
     }
     R[id1] = ray;
 }
@@ -245,7 +219,7 @@ fn main_image(@builtin(global_invocation_id) id3: vec3u)
     atomicStore(&D[r+0u*sWH], c.x*1/2);
     atomicStore(&D[r+1u*sWH], c.y*1/2);
     atomicStore(&D[r+2u*sWH], c.z*1/2);
-    var d = vec4f(c)/f32(fti)*custom.C*.001f;
+    var d = vec4f(c)/f32(fti)*custom.a*.002f;
 
     var sf = vec2f(SCREEN_WIDTH,SCREEN_HEIGHT);
     var p  = G*(2f*vec2f(id3.xy)-sf)/sf.y;

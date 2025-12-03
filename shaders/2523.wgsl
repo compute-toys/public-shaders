@@ -6,7 +6,7 @@
 #define ZF 20        //size simulation steps per frame
 #define ZC 4f       //size convolution
 #define PI 3.14159265358979f
-#storage D array<f32,ZS*ZS*ZT>;
+#storage D array<f32, ZS*ZS*ZT>;
 fn hash(a: u32) -> u32
 {
     var x = a;

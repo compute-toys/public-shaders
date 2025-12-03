@@ -10,7 +10,7 @@
 #define ZF 16        //size simulation steps per frame
 #define ZC 6f       //size convolution
 #define PI 3.14159265358979f
-#storage D array<f32  ,ZS*ZS*ZT>;
+#storage D array<f32, ZS*ZS*ZT>;
 #dispatch_count comb1 ZF
 #workgroup_count comb1 TD ZS 1
 @compute @workgroup_size(ZS/TD,1,1)

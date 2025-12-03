@@ -17,7 +17,7 @@ fn terminal_render(pos: uint2) -> float4 {
     var uv = float2(pos) * float2(aspect, 1.) * texel;
 
     var number = atomicLoad(&atomic_storage[u32(uv.y)]);
-
+    
     let digits = 10;
     let col = digits-1 - i32(uv.x);
     if (col < 0 || col > digits-1)
@@ -88,27 +88,6 @@ fn signedFloat(r : u32) -> f32      //[-1,+1]
     return bitcast<f32>(signed);
 }
 
-// http://www.jcgt.org/published/0009/03/02/
-fn pcg4d(vin : vec4u) -> vec4u
-{
-    var v = vin;
-    v = v * 1664525u + 1013904223u;
-    
-    v.x += v.y*v.w;
-    v.y += v.z*v.x;
-    v.z += v.x*v.y;
-    v.w += v.y*v.z;
-    
-    v ^= v >> vec4u(16u);
-    
-    v.x += v.y*v.w;
-    v.y += v.z*v.x;
-    v.z += v.x*v.y;
-    v.w += v.y*v.z;
-    
-    return v;
-}
-
 #storage noise array<vec2f>
 
 var<workgroup> sharedmem : atomic<u32>;
@@ -141,16 +120,9 @@ fn monte(@builtin(global_invocation_id) id:vec3u,
         let randx = rand_xqo(&rand);
         let randy = rand_xqo(&rand);
 
-#if 1
         let uv = vec2f(unsignedFloat(randx),unsignedFloat(randy));
-#else 
-        let range = (1u<<28) - 1;
-        let r = vec2u(randx,randy);
-        let uv = vec2f(r & vec2u(range))/f32(range);
-#endif
-//      let inside = dot(uv,uv) < 1.;
-//      let inside = dot(uv,uv) < 1 + 2.327e-6;    //yeah there's some error :(
-        let inside = fma(uv.x,uv.x,fma(uv.y,uv.y,0.)) < 1. + 2.327e-6;
+
+        let inside = dot(uv,uv) < 1 + 2.327e-6;    //yeah there's some error :(
 
         //just avoids hitting the atomic so much
         let sgcount = countOneBits(subgroupBallot(inside));        

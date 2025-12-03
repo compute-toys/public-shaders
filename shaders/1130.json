@@ -6,8 +6,8 @@
   "body": {
     "uniforms": [
       {
-        "name": "C",
-        "value": 0.504,
+        "name": "a",
+        "value": 1,
         "minRange": 0,
         "maxRange": 1
       }
@@ -20,7 +20,8 @@
         "img": "/textures/blank.png"
       }
     ],
-    "float32Enabled": false
+    "float32Enabled": false,
+    "language": "wgsl"
   },
   "visibility": "public",
   "profile": {
