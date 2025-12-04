@@ -161,13 +161,14 @@ fn rayMarch(rayIn:rayST, seed:u32) -> rayST
         ray.d  = d;
         ray.cf = r3;
         ray.ci = 1f;
+        bonce = false;
     }
     if(bonce)//ray bounce
     {
         var r0 = rnd(seed+4u)-.1f;
         var r1 = rnd(seed+5u)-.5f;
         var nrm = getNrm(ray.p); if(lstl<0f){nrm = -nrm;}
-        var col = getCol(ray.p);
+        var col = vec4f(.0);//getCol(ray.p);
         var rfl = reflect(ray.d, nrm);
                 var idx = .5f+ray.cf*.5f;
         if(lstl<0f){idx = 1f/idx;}
@@ -181,7 +182,6 @@ fn rayMarch(rayIn:rayST, seed:u32) -> rayST
         rfl -= 2f*nrm*min(dot(rfl,nrm),0f);
         ray.d  = rfl;
         ray.ci*= .9f;
-        return ray;
     }
     return ray;
 }
