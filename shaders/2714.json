@@ -6,16 +6,22 @@
   "body": {
     "uniforms": [
       {
-        "name": "a",
-        "value": 1,
+        "name": "bright",
+        "value": 2.411,
         "minRange": 0,
-        "maxRange": 1
+        "maxRange": 5
       },
       {
-        "name": "b",
+        "name": "ballcols",
         "value": 0.402,
         "minRange": 0,
         "maxRange": 3
+      },
+      {
+        "name": "accumul",
+        "value": 10.233,
+        "minRange": 0,
+        "maxRange": 33
       }
     ],
     "textures": [

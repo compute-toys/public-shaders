@@ -52,7 +52,7 @@ fn getBallSize(id: i32) -> f32
 }
 fn getBallCol(id: i32) -> vec3f
 {
-    return cos(f32(id)*custom.b+1f+vec3(2,1,3))*.3f+.7f;
+    return cos(f32(id)*custom.ballcols+1f+vec3(2,1,3))*.3f+.7f;
 }
 #dispatch_once ini
 #workgroup_count ini 1 1 1 
@@ -104,13 +104,13 @@ fn physc(@builtin(global_invocation_id) id3: vec3u)
     vs = b1.v + vs*dt;
     D.balls[id1].p = vs+b1.p;
     D.balls[id1].v = vs;
-    if(false)//draw
-    {
-        var m    = (2f*vec2f(mouse.pos)-res)/res.y;
-        var zoom = custom.a*.5f;
-        var b = vec2i(b1.p*res.y*zoom+.5f*res);
-        textureStore(screen, b, vec4f(1));
-    }
+    //if(false)//draw
+    //{
+    //    var m    = (2f*vec2f(mouse.pos)-res)/res.y;
+    //    var zoom = custom.a*.5f;
+    //    var b = vec2i(b1.p*res.y*zoom+.5f*res);
+    //    textureStore(screen, b, vec4f(1));
+    //}
 }
 fn rayMarch(rayIn:Ray, seed:u32) -> Ray
 {
@@ -247,10 +247,11 @@ fn main_image(@builtin(global_invocation_id) id3: vec3u)
     var c = vec4i(atomicLoad(&C[r+0u*sWH]),
                   atomicLoad(&C[r+1u*sWH]),
                   atomicLoad(&C[r+2u*sWH]),0);
-    atomicStore(&C[r+0u*sWH], c.x*0/2);
-    atomicStore(&C[r+1u*sWH], c.y*0/2);
-    atomicStore(&C[r+2u*sWH], c.z*0/2);
-    var d = vec4f(c)/f32(fti)*custom.a*4f/f32(ryT2);
+    var cc = i32(custom.accumul);
+    atomicStore(&C[r+0u*sWH], c.x*cc/33);
+    atomicStore(&C[r+1u*sWH], c.y*cc/33);
+    atomicStore(&C[r+2u*sWH], c.z*cc/33);
+    var d = vec4f(c)/f32(fti)*custom.bright/f32(ryT2);
 
     var sf = vec2f(SCREEN_WIDTH,SCREEN_HEIGHT);
     var p  = G*(2f*vec2f(id3.xy)-sf)/sf.y;
