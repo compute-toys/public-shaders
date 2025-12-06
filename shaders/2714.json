@@ -7,7 +7,7 @@
     "uniforms": [
       {
         "name": "bright",
-        "value": 2.411,
+        "value": 3.899,
         "minRange": 0,
         "maxRange": 5
       },

@@ -6,7 +6,7 @@
 //rays
 #define G 2f            //camera zoom
 #define ryT  64u        //threads
-#define ryT2 1024u       //try 512u 1024u 2048u 4096u 32768u
+#define ryT2 1024u       //try 512u 1024u 2048u 4096u 8888u 32768u
 #define ryL 4u          //rays loop size
 #define sWH (SCREEN_WIDTH*SCREEN_HEIGHT)
 #define fti (1<<10)     //float to int, int to float, resolution
@@ -118,8 +118,6 @@ fn rayMarch(rayIn:Ray, seed:u32) -> Ray
     var p1  = ray.p;
     var lot = 99f;//ignored length
     var bsh = lot;//shortest intersection to ball
-    var in1 = false; //ray start inside any ball
-    var in2 = false; //ray end   inside any ball
     var ibl = 0;//ball id intersected
     for(var i=0; i<BZ; i++)//ray ball intersect
     {
@@ -135,16 +133,9 @@ fn rayMarch(rayIn:Ray, seed:u32) -> Ray
             l1 = min(l1,l2);    if(h2<.001f){l1=lot;}
         if(l1 < bsh){ibl = i;}
         bsh = min(bsh,l1);
-        in1 = in1 || length(db)<br;
     }
     ray.p += ray.d*bsh*1.001f;
-    for(var i=0; i<BZ; i++)//ray inside any ball
-    {
-        var br = getBallSize(i);
-        var db = B2[i].p-ray.p;
-        in2 = in2 || length(db)<br;
-    }
-    var bonce = bsh != lot && in1 != in2;
+    var bonce = bsh != lot;
     //draw ray
     {
         var p2 = ray.p;
