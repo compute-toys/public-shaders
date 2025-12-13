@@ -1,0 +1,36 @@
+{
+  "id": 2738,
+  "created_at": "2025-12-12T11:52:22.776282+00:00",
+  "name": "Spaced",
+  "description": "Run a local hand-coded shader through a WGSL minifier I have vibecoded. \n\nThis is a variation on the previously published \"Jitter Starfield\".\n\nPlay with the sliders to adjust the length and angles.",
+  "body": {
+    "uniforms": [
+      {
+        "name": "viz",
+        "value": 0.275,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "twist",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 10
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/noise1.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "saruga"
+  }
+}
