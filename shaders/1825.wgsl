@@ -93,7 +93,7 @@ fn physics(@builtin(global_invocation_id) id: vec3u) {
     var vel = t.zw;
 
     // Pos
-    ps += vel*.1;
+    //ps += vel*.1;
 
     // Forces
     var dir = -t.xy;
@@ -104,6 +104,7 @@ fn physics(@builtin(global_invocation_id) id: vec3u) {
 
     // Vel
     vel += f1 + f2;
+    ps += vel*.1;
 
     t = vec4(
         ps,
