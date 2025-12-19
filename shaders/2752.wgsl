@@ -1,4 +1,4 @@
-// 色（RGB）を格納するstorage buffer
+// 色（RGB）を格納するStorage Buffer
 #storage computeTex array<array<array<atomic<i32>, 3>, SCREEN_HEIGHT>, SCREEN_WIDTH>
 
 //----GPUの処理能力に余裕がある場合は、値を大きくする----
@@ -53,7 +53,7 @@ fn hash_disc() -> vec2f {
     return vec2f(cos(a), sin(a)) * r;
 }
 
-// storage bufferに色（RGB）を加算する
+// Storage Bufferに色（RGB）を加算する
 fn add(p: vec2u, v: vec3f) {
     let q = vec3i(v * 2048.);
     atomicAdd(&computeTex[p.x][p.y][0], q.x);
@@ -61,7 +61,7 @@ fn add(p: vec2u, v: vec3f) {
     atomicAdd(&computeTex[p.x][p.y][2], q.z);
 }
 
-// storage bufferから色（RGB）を読み出す
+// Storage Bufferから色（RGB）を読み出す
 fn load(p: vec2u) -> vec3f {
     return vec3f(f32(atomicLoad(&computeTex[p.x][p.y][0])),
                  f32(atomicLoad(&computeTex[p.x][p.y][1])),
@@ -182,11 +182,11 @@ fn add_image(@builtin(global_invocation_id) id: vec3u) {
     
     var T = time.elapsed * BPM / 60. * 0.5; // BPMに合わせて速さを変更した時間
 
-    // モーションブラー
-    let sampleSeed = dot(fragCoord.xy, vec2(1.3723, 1.8329)) + time.elapsed;
+    let ft = fract(time.elapsed * 0.1) * 500.;
+    let sampleSeed = dot(fragCoord.xy, vec2(1.3723, 1.8329)) + ft;
     //let sampleSeed = f32(id.y * screen_size.x + id.x) + time.elapsed * .1;
     seed = sampleSeed;
-    // T += random() * 0.03;
+    // T += random() * 0.03; // モーションブラー
 
     // Cyclic Noiseのパラメーター
     const pers = 0.5;
@@ -194,7 +194,7 @@ fn add_image(@builtin(global_invocation_id) id: vec3u) {
 
     // カメラ関係の変数を計算
     var ro = vec3f(0, 0.001, 0.5); // カメラの座標（レイの原点）
-    let temp = ro.xz * rotate2D(T * 0.5);
+    let temp = ro.xz * rotate2D(fmod(T * 0.5, PI2));
     ro = vec3f(temp.x, ro.y, temp.y); // カメラの座標をy軸まわりに回転させる
     const sp = 0.2; // 蝶が飛ぶスピード
     var ta = vec3f(0.); // カメラのターゲット座標
@@ -218,13 +218,16 @@ fn add_image(@builtin(global_invocation_id) id: vec3u) {
     let rotXZ = rotate2D(sign(bDir.x) * acos(dot(vec3(0, 0, 1), bXZ))); // xz平面内（y軸まわり）の回転行列
     let bCol = hsv(random(), 0.9, 1.); // 蝶の色
 
+    // トレイル上の点の座標を計算
     const tL = 0.5; // トレイル（飛跡）の長さ
-    const rate = 0.5; // Storage Bufferにおけるトレイルの使用割合（1.0にすると蝶が消える）
+    const rate = 0.3; // Storage Bufferにおけるトレイルの使用割合（1.0にすると蝶が消える）
     let x = fragCoord.x / resolution.x / rate;
     let tPos = cyclic(init + T * sp - x * tL, pers, lacu); // トレイル上の点の座標
+    let delta = 1. / resolution.x / rate;
+    let tDelta = (tPos - cyclic(init + T * sp - (x + delta) * tL, pers, lacu)) / f32(numSamples); // トレイル上の隣り合う点を補間する
 
     for(var i = 0u; i < numSamples; i++) {
-        seed = fragCoord.x * 1.6116 + f32(i) + T;
+        seed = fragCoord.x * 1.6116 + f32(i) + ft;
         var pp = butterfly(bPhase); // 蝶に含まれる点の座標
 
         // 点の座標を蝶の方向に合わせて回転させる
@@ -235,7 +238,7 @@ fn add_image(@builtin(global_invocation_id) id: vec3u) {
 
         seed = sampleSeed + f32(i);
         //vec3 pos = x < 1. ? tPos : bPos + pp;
-        let pos = select(bPos + pp, tPos, x < 1.); // Storage Bufferの左側でトレイル、右側で蝶を描画する
+        let pos = select(bPos + pp, tPos + tDelta * f32(i), x < 1.); // Storage Bufferの左側でトレイル、右側で蝶を描画する
         let u = proj(pos, ro, cam, fov, dofFocus, 0.05);
         if(u.x < 0 || SCREEN_WIDTH <= u.x || u.y < 0 || SCREEN_HEIGHT <= u.y ) {
             continue; // 画面外は描画しない
@@ -258,18 +261,18 @@ fn read_image(@builtin(global_invocation_id) id: vec3u) {
 
     var T = time.elapsed * BPM / 60. * 0.5; // BPMに合わせて速さを変更した時間
 
-    // モーションブラー
-    let sampleSeed = dot(fragCoord, vec2(1.3723, 1.8329)) + time.elapsed;
+    let ft = fract(time.elapsed * 0.1) * 500.;
+    let sampleSeed = dot(fragCoord, vec2(1.3723, 1.8329)) + ft;
     //let sampleSeed = f32(id.y * screen_size.x + id.x) + time.elapsed * .1;
     seed = sampleSeed;
-    // T += random() * 0.03;
+    // T += random() * 0.03; // モーションブラー
 
     // 色収差
     var dis = uv * resolution.x * 0.04;
-    let amp = pow(sin(T * 8.) * 0.5 + 0.5, 4.);
+    let amp = pow(sin(fmod(T * 8., PI2)) * 0.5 + 0.5, 4.);
     dis *= amp;
     let u = abs(fragCoord / resolution - 0.5);
-    dis *= smoothstep(0.5, 0.44, max(u.x, u.y));
+    dis *= smoothstep(0.5, 0.425, max(u.x, u.y));
     // Storage Bufferから色を読み取る
     col.r += load(vec2u(fragCoord + dis)).r;
     col.g += load(vec2u(fragCoord)).g;
