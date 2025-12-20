@@ -268,11 +268,11 @@ fn read_image(@builtin(global_invocation_id) id: vec3u) {
     // T += random() * 0.03; // モーションブラー
 
     // 色収差
-    var dis = uv * resolution.x * 0.04;
+    var dis = uv * resolution.x * 0.02;
     let amp = pow(sin(fmod(T * 8., PI2)) * 0.5 + 0.5, 4.);
     dis *= amp;
     let u = abs(fragCoord / resolution - 0.5);
-    dis *= smoothstep(0.5, 0.425, max(u.x, u.y));
+    dis *= smoothstep(0.5, 0.46, max(u.x, u.y));
     // Storage Bufferから色を読み取る
     col.r += load(vec2u(fragCoord + dis)).r;
     col.g += load(vec2u(fragCoord)).g;
