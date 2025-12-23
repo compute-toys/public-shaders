@@ -172,7 +172,8 @@ fn clear_image(@builtin(global_invocation_id) id: vec3u) {
 @compute @workgroup_size(16, 16)
 fn add_image(@builtin(global_invocation_id) id: vec3u) {
     let screen_size = textureDimensions(screen);
-    if(id.x >= screen_size.x || id.y >= screen_size.y) { return; }
+    //if(id.x >= screen_size.x || id.y >= screen_size.y) { return; }
+    if(id.x >= screen_size.x || id.y >= min(screen_size.y, 1080u)) { return; } // 蝶の数を1080匹以下に制限する
 
     let resolution = vec2f(screen_size);
     let fragCoord = vec2f(f32(id.x) + 0.5, f32(screen_size.y - id.y) - 0.5);
@@ -186,6 +187,7 @@ fn add_image(@builtin(global_invocation_id) id: vec3u) {
     let sampleSeed = dot(fragCoord.xy, vec2(1.3723, 1.8329)) + ft;
     //let sampleSeed = f32(id.y * screen_size.x + id.x) + time.elapsed * .1;
     seed = sampleSeed;
+    //sampleSeed = random() * 500.;
     // T += random() * 0.03; // モーションブラー
 
     // Cyclic Noiseのパラメーター
