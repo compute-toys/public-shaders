@@ -1,3 +1,10 @@
+// Conway's Game of Life
+
+// TODO:
+// The game state could be stored more efficiently by having each bit of the u32 represent a cell state,
+// instead of the entire u32 itself being the cell state. Each thread would be responsible for updating
+// an entire u32 (32 cells) to avoid using atomics and prevent race conditions.
+
 #storage statePing array<u32>
 #storage statePong array<u32>
 
@@ -23,6 +30,9 @@ fn setCellState(position: vec2u, value: bool) {
     statePing[index] = u32(value);
 }
 
+// Branchless state calculation. Each neighboring cell state (1 = alive, 0 = dead) is multiplied
+// by a "weight" (1 = in bounds, 0 = out of bounds) and summed together, effectively counting
+// all of the alive neighbors within the boundaries of the simulation.
 fn isCellAlive(position: vec2u) -> bool {
     let simulationSize = textureDimensions(screen).xy;
 
@@ -71,7 +81,7 @@ fn initState(@builtin(global_invocation_id) id: vec3u) {
     // Pixel coordinates (centre of pixel, origin at bottom left)
     let fragCoord = vec2f(f32(id.x) + .5, f32(screenSize.y - id.y) - .5);
 
-    // Normalised pixel coordinates (from 0 to 1)
+    // Normalized pixel coordinates (from 0 to 1)
     let uv = fragCoord / vec2f(screenSize);
 
     let index = id.y * screenSize.x + id.x;
@@ -101,18 +111,13 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
     // Prevent overdraw for workgroups on the edge of the viewport
     if (id.x >= screen_size.x || id.y >= screen_size.y) { return; }
 
-    // Pixel coordinates (centre of pixel, origin at bottom left)
+    // Pixel coordinates (center of pixel, origin at bottom left)
     let fragCoord = vec2f(f32(id.x) + .5, f32(screen_size.y - id.y) - .5);
 
-    // Normalised pixel coordinates (from 0 to 1)
+    // Normalized pixel coordinates (from 0 to 1)
     let uv = fragCoord / vec2f(screen_size);
 
-    // Time varying pixel colour
     var col = select(vec3(0.0), vec3(1.0), getCellState(id.xy));
 
-    // Convert from gamma-encoded to linear colour space
-    col = pow(col, vec3f(2.2));
-
-    // Output to screen (linear colour space)
     textureStore(screen, id.xy, vec4f(col, 1.));
 }
