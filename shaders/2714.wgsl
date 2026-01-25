@@ -12,12 +12,7 @@
 #define fti (1<<10)     //float to int, int to float, resolution
 //balls
 #define dt .1f      // time step
-#define BZ 64       // total balls, must ryT=BZ
-struct Ball
-{
-    p: vec2f,       //position
-    v: vec2f,       //velocity
-};
+#define BZ 64       // total balls
 struct Ray
 {
     p: vec2f,       //ray start position
@@ -26,12 +21,14 @@ struct Ray
 };
 struct Data
 {
-    balls: array<Ball,BZ>,
-    rays:  array<Ray,ryT*ryT2>,
+    ballsPos: array<vec2f,BZ>,
+    ballsVel: array<vec2f,BZ>,
+    rays:     array<Ray,ryT*ryT2>,
 }
 #storage C array<atomic<i32>,SCREEN_WIDTH*SCREEN_HEIGHT*3>
 #storage D Data;
-var<workgroup> B2: array<Ball,BZ>;
+var<workgroup> Bp: array<vec2f,BZ>;
+var<workgroup> Bv: array<vec2f,BZ>;
 fn hash(a: u32) -> u32
 {
     var x = a;
@@ -63,8 +60,8 @@ fn ini(@builtin(global_invocation_id) id3: vec3u)
     var p = vec2f(rnd(id1+u32(BZ)*0u + 2124135346u),
                   rnd(id1+u32(BZ)*1u + 2124135346u))*2f-1f;
     var v = vec2f(0);
-    D.balls[id1].p = p*G;
-    D.balls[id1].v = v;
+    D.ballsPos[id1] = p*G;
+    D.ballsVel[id1] = v;
 }
 #workgroup_count physc 1 1 1 
 @compute @workgroup_size(BZ,1,1)
@@ -77,16 +74,17 @@ fn physc(@builtin(global_invocation_id) id3: vec3u)
     var r   = id1;
     var vs  = vec2f(0);
     var bl1 = getBallSize(id1);
+    Bp[id1] = D.ballsPos[id1];
+    Bv[id1] = D.ballsVel[id1];
     workgroupBarrier();
-    B2[id1] = D.balls[id1];
-    workgroupBarrier();
-    var b1 = B2[id1];
+    var b1p = Bp[id1];
+    var b1v = Bv[id1];
     for(var j=0; j<BZ; j++)
     {
         var bl2 = getBallSize(j);
         var bl3 = bl1+bl2;
-        var p3 = B2[j].p-b1.p;
-        var v3 = B2[j].v-b1.v;
+        var p3 = Bp[j]-b1p;
+        var v3 = Bv[j]-b1v;
         var l  = length(p3);
         var f  = max(0f,bl3-l);
         var ld = 0f; if(l!=0f){ld=1f/l;}
@@ -95,20 +93,20 @@ fn physc(@builtin(global_invocation_id) id3: vec3u)
         vs += d*dot(d,v3)*f32(f!=0f)*.1f;
     }
     var wf = -.01f;
-    var w1 = max(vec2f(0),b1.p-res2);
-    var w2 = min(vec2f(0),b1.p+res2);
+    var w1 = max(vec2f(0),b1p-res2);
+    var w2 = min(vec2f(0),b1p+res2);
     vs += (w1+w2)*wf;
-    //vs += -b1.p*.001f;
-    var msv = mus-b1.p;
-    vs += f32(mouse.click!=0)*f32(length(msv)<bl1)*(msv-b1.v);
-    vs = b1.v + vs*dt;
-    D.balls[id1].p = vs+b1.p;
-    D.balls[id1].v = vs;
+    //vs += -b1p*.001f;
+    var msv = mus-b1p;
+    vs += f32(mouse.click!=0)*f32(length(msv)<bl1)*(msv-b1v);
+    vs = b1v + vs*dt;
+    D.ballsPos[id1] = vs+b1p;
+    D.ballsVel[id1] = vs;
     //if(false)//draw
     //{
     //    var m    = (2f*vec2f(mouse.pos)-res)/res.y;
     //    var zoom = custom.a*.5f;
-    //    var b = vec2i(b1.p*res.y*zoom+.5f*res);
+    //    var b = vec2i(b1p*res.y*zoom+.5f*res);
     //    textureStore(screen, b, vec4f(1));
     //}
 }
@@ -121,7 +119,7 @@ fn rayMarch(rayIn:Ray, seed:u32) -> Ray
     var ibl = 0;//ball id intersected
     for(var i=0; i<BZ; i++)//ray ball intersect
     {
-        var bp = B2[i].p;
+        var bp = Bp[i];
         var br = getBallSize(i);
         var db = bp-ray.p;
         var l  = dot(ray.d, db);
@@ -184,7 +182,7 @@ fn rayMarch(rayIn:Ray, seed:u32) -> Ray
         var lp = G*.5f*cos(vec2f(.77,.55)*.2f*time.elapsed+vec2f(0,2.22));
         if(mouse.click!=0){lp = G*(2f*vec2f(mouse.pos)-sf)/sf.y;}
         var p  = cos(r0*PI*2f-vec2f(0,.5)*PI)*sqrt(r1)*.1f + lp;
-            //p  = cos(r0*PI*2f-vec2f(0,.5)*PI)*sqrt(r1)*getBallSize(0) + B2[0].p;
+            //p  = cos(r0*PI*2f-vec2f(0,.5)*PI)*sqrt(r1)*getBallSize(0) + Bp[0];
         var d  = cos(r2*PI*2f-vec2f(0,.5)*PI);
         ray.p  = p;
         ray.d  = d;
@@ -194,7 +192,7 @@ fn rayMarch(rayIn:Ray, seed:u32) -> Ray
     if(bonce)//ray bounce
     {
         var r0  = rnd(seed+0u)-.5f;
-        //var nrm = ray.p-B2[ibl].p;
+        //var nrm = ray.p-Bp[ibl];
         //var nrl = length(nrm);
         //if(nrl!=0f){nrl=1f/nrl;}
         //nrm *= nrl;
@@ -219,8 +217,10 @@ fn rayDo(@builtin(global_invocation_id) id3: vec3u)
     var id1  = id3.x;
     var seed = (time.frame*ryT*ryT2 + id1)*4u*ryL+756352967u;
     var ray  = D.rays[id1];
-    workgroupBarrier();
-    B2[id1%BZ] = D.balls[id1%BZ];
+    for(var w = id1 % ryT; w < BZ; w += ryT)
+    {
+        Bp[w] = D.ballsPos[w];
+    }
     workgroupBarrier();
     for(var k = 0u; k < ryL; k++)
     {

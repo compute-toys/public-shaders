@@ -1,0 +1,25 @@
+{
+  "id": 2813,
+  "created_at": "2026-01-24T13:32:47.571927+00:00",
+  "name": "2d navier stokes",
+  "description": "too lazy to implement viscosity term",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/spruit_sunrise_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/spruit_sunrise.jpg",
+        "url": "https://polyhaven.com/a/spruit_sunrise"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "omu"
+  }
+}
