@@ -156,8 +156,8 @@ fn rayMarch(rayIn:Ray, seed:u32) -> Ray
         var p  = (p1*sf.y/G + sf)/2f;       //world coordinates to pixel coordinates
         var l0 =  pl*sf.y/G      /2f;       //world size        to pixel size
         var lt = 0f;
-        if(all(abs(p1)<sm*1.0001f) &&
-           all(abs(p2)<sm*1.0001f)){lt=l0;}
+        if(all(abs(p1)<sm*1.001f) &&
+           all(abs(p2)<sm*1.001f)){lt=l0;}
         while(lt > 0f)
         {
             var g = (1f-fract(p*d3))*d2;
