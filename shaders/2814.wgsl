@@ -3,6 +3,7 @@
 //because it needs more training data
 //to let the nn learn better the shape of this high dimensional space
 //but generating the training data is very expensive
+//wait no after testing with bigger NN the deformity goes away
 
 #define PI 3.1415926535897932384f
 #define G custom.zoom //4f            //camera zoom

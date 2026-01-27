@@ -118,8 +118,8 @@ fn fun(@builtin(global_invocation_id) id3: vec3u)
     var a = p.xyz - (dot(p.xyz-camPos,camDir)*camDir + camPos);
     var b = vec2f(dot(a,sd)*res.y*.35f+.5f*res.x,
                   dot(a,up)*res.y*.35f+.5f*res.y);
-    var col = pow(cos(f32(id1)/f32(Z)*PI+2.f+vec4f(1,2,3,4))*.3f,vec4f(2))*f32(Z);
-    
+    var col = cos(f32(id1)/f32(Z)*PI+2.f+vec4f(1,2,3,4))*.3f;
+        col = (col*col)*f32(Z);
     var z = 1.f;
     for(var y=-z; y<=z; y+=1.f){
     for(var x=-z; x<=z; x+=1.f){
