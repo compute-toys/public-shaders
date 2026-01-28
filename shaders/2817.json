@@ -1,0 +1,25 @@
+{
+  "id": 2817,
+  "created_at": "2026-01-27T03:48:29.051725+00:00",
+  "name": "Shader Rally",
+  "description": "Based on https://www.shadertoy.com/view/XdcGWS",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_rocks_02/aerial_rocks_02_diff_1k.jpg",
+        "url": "https://polyhaven.com/a/aerial_rocks_02"
+      },
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/book_pattern/book_pattern_col2_1k.jpg",
+        "url": "https://polyhaven.com/a/book_pattern"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "AICDG"
+  }
+}
