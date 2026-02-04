@@ -7,7 +7,7 @@
     "uniforms": [
       {
         "name": "bright",
-        "value": 0.496,
+        "value": 0.672,
         "minRange": 0,
         "maxRange": 1
       },
@@ -16,6 +16,12 @@
         "value": 4,
         "minRange": 0,
         "maxRange": 6
+      },
+      {
+        "name": "friction",
+        "value": 0.942,
+        "minRange": 0,
+        "maxRange": 1
       }
     ],
     "textures": [
