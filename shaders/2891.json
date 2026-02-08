@@ -1,0 +1,48 @@
+{
+  "id": 2891,
+  "created_at": "2026-02-05T16:00:40.031609+00:00",
+  "name": "Chaos Plot",
+  "description": "Edge of Chaos",
+  "body": {
+    "uniforms": [
+      {
+        "name": "min_x",
+        "value": -100,
+        "minRange": -100,
+        "maxRange": 100
+      },
+      {
+        "name": "max_x",
+        "value": 100,
+        "minRange": -100,
+        "maxRange": 100
+      },
+      {
+        "name": "min_y",
+        "value": -100,
+        "minRange": -100,
+        "maxRange": 100
+      },
+      {
+        "name": "max_y",
+        "value": 100,
+        "minRange": -100,
+        "maxRange": 100
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "ApeSander"
+  }
+}
