@@ -1,0 +1,24 @@
+{
+  "id": 2909,
+  "created_at": "2026-02-08T23:34:53.069941+00:00",
+  "name": "I Don't Know How to Use HDR",
+  "description": "hm",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "scRGB",
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "oneshade"
+  }
+}
