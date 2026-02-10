@@ -51,10 +51,10 @@ fn getBallCol(id: i32) -> vec3f
 {
     return cos(f32(id)*custom.ballcols+1f+vec3(2,1,3))*.3f+.7f;
 }
-#dispatch_once ini
-#workgroup_count ini 1 1 1 
+#dispatch_once physcIni
+#workgroup_count physcIni 1 1 1 
 @compute @workgroup_size(BZ,1,1)
-fn ini(@builtin(global_invocation_id) id3: vec3u)
+fn physcIni(@builtin(global_invocation_id) id3: vec3u)
 {
     var id1 = id3.x;
     var p = vec2f(rnd(id1+u32(BZ)*0u + 2124135346u),
@@ -100,6 +100,7 @@ fn physc(@builtin(global_invocation_id) id3: vec3u)
     var msv = mus-b1p;
     vs += f32(mouse.click!=0)*f32(length(msv)<bl1)*(msv-b1v);
     vs = b1v + vs*dt;
+    vs *= custom.friction;
     D.ballsPos[id1] = vs+b1p;
     D.ballsVel[id1] = vs;
     //if(false)//draw
@@ -179,7 +180,7 @@ fn rayMarch(rayIn:Ray, seed:u32) -> Ray
         var r2 = rnd(seed+2u);
         var r3 = rnd(seed+3u);
         var sf = vec2f(SCREEN_WIDTH,SCREEN_HEIGHT);
-        var lp = G*.5f*cos(vec2f(.77,.55)*.2f*time.elapsed+vec2f(0,2.22));
+        var lp = G*.5f*cos(vec2f(.77,.55)*time.elapsed+vec2f(0,2.22));
         if(mouse.click!=0){lp = G*(2f*vec2f(mouse.pos)-sf)/sf.y;}
         var p  = cos(r0*PI*2f-vec2f(0,.5)*PI)*sqrt(r1)*.1f + lp;
             //p  = cos(r0*PI*2f-vec2f(0,.5)*PI)*sqrt(r1)*getBallSize(0) + Bp[0];

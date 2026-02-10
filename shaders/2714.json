@@ -19,9 +19,15 @@
       },
       {
         "name": "accumul",
-        "value": 10.233,
+        "value": 0,
         "minRange": 0,
         "maxRange": 33
+      },
+      {
+        "name": "friction",
+        "value": 0.978,
+        "minRange": 0,
+        "maxRange": 1
       }
     ],
     "textures": [
@@ -33,6 +39,7 @@
       }
     ],
     "float32Enabled": false,
+    "screenHDRFormat": "scRGB",
     "language": "wgsl"
   },
   "visibility": "public",
