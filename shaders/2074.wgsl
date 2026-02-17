@@ -6,29 +6,16 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
     // Prevent overdraw for workgroups on the edge of the viewport
     if (id.x >= screen_size.x || id.y >= screen_size.y) { return; }
     
-    let size = vec2u(screen_size.x / 2, screen_size.y);
-
-    let cell_id = id.xy / size;
-    let cell_nm = cell_id.y * 2 + cell_id.x;
+    let size = vec2u(screen_size.x, screen_size.y);
 
     let S = u32(custom.scale);
 
-    let idxy = id.xy % size;
-    let ssize = size / S;
+    let frag_coord = vec2f(id.xy / S) + vec2f(0.5) - vec2f(size / 2 / S);
+    let frag_coord2 = vec2f(id.x) + vec2f(0.5) - vec2f(size / 2);
 
-    let frag_coord = vec2f(idxy / S) + vec2f(0.5) - vec2f(size / 2 / S);
+    let d = func(frag_coord, S);
+    let d2 = func(frag_coord2, 1);
 
-    let alpha = 3.14 * fract(0.1 * time.elapsed);
-    let a = sin(alpha);
-    let b = cos(alpha);
-
-    var d = 0.0;
-    if cell_nm == 0 {
-        d = cov_line(frag_coord, a, b, 0.);
-    } else {
-        d = sdf_line(frag_coord, a, b, 0.);
-        d = linearstep(-0.5, 0.5, d);
-    }
 
     var col = vec3f(d);
 
@@ -64,4 +51,17 @@ fn cov_line(p: vec2f, a: f32, b: f32, c: f32) -> f32 {
 
 fn linearstep(edge0: f32, edge1: f32, x: f32) -> f32 {
     return clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+}
+
+fn func(coord: vec2f, s: u32) -> f32 {
+    
+    let alpha = 3.1415926 * custom.rotate;
+    let a = sin(alpha);
+    let b = cos(alpha);
+
+    var d = 0.0;
+    d = sdf_line(coord, a, b, custom.offset);
+    d = select(0.0, 1.0, d <= 0 && d > -1.0);
+
+    return d;
 }

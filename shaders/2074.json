@@ -7,9 +7,21 @@
     "uniforms": [
       {
         "name": "scale",
-        "value": 22.924,
+        "value": 32,
         "minRange": 0,
         "maxRange": 32
+      },
+      {
+        "name": "rotate",
+        "value": 0.129,
+        "minRange": 0,
+        "maxRange": 1.1
+      },
+      {
+        "name": "offset",
+        "value": 0,
+        "minRange": 0,
+        "maxRange": 1
       }
     ],
     "textures": [
@@ -21,6 +33,7 @@
       }
     ],
     "float32Enabled": false,
+    "screenHDRFormat": false,
     "language": "wgsl"
   },
   "visibility": "public",

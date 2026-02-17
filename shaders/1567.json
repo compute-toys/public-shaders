@@ -68,7 +68,9 @@
         "img": "/textures/blank.png"
       }
     ],
-    "float32Enabled": false
+    "float32Enabled": false,
+    "screenHDRFormat": false,
+    "language": "wgsl"
   },
   "visibility": "public",
   "profile": {
