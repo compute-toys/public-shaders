@@ -1,0 +1,24 @@
+{
+  "id": 2943,
+  "created_at": "2026-02-17T17:26:59.080344+00:00",
+  "name": "Void And Cluster Blue Noise",
+  "description": "",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "a random guy"
+  }
+}
