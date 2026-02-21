@@ -191,65 +191,66 @@ void findPixel()
             }
         }
     }
-    
-    if (phase[0] == 1 && all(energyExtrema[0] == prevEnergyExtrema[1])
-                      && all(energyExtrema[1] == prevEnergyExtrema[0]))
+}
+
+[shader("compute")]
+[numthreads(16, 16, 1)]
+[WorkgroupCount((width + 15) / 16, (height + 15) / 16, 1)]
+void update(uint3 id : SV_DispatchThreadID)
+{
+    if (currentRank[0] == width * height) return;
+    if (id.x >= width || id.y >= height) return;
+
+    if (phase[0] == 1 && all(id.xy == uint2(0)) &&
+        all(energyExtrema[0] == prevEnergyExtrema[1]) &&
+        all(energyExtrema[1] == prevEnergyExtrema[0]))
     {
         phase[0] = 2;
         currentRank[0] = initPixelCount;
     }
-}
 
-[shader("compute")]
-[numthreads(16, 16, 1)]
-[WorkgroupCount((width + 15) / 16, (height + 15) / 16, 1)]
-void addLowEnergy(uint3 id : SV_DispatchThreadID)
-{
-    if (currentRank[0] == width * height) return;
-    
-    if (id.x >= width || id.y >= height) return;
-    
-    uint2 pos = energyExtrema[0];
-    
-    if (all(id.xy == pos))
+    uint2 pos = id.xy;
+    uint  idx = getIdx(pos);
+
+    uint2 lowPos  = energyExtrema[0];
+    uint2 highPos = energyExtrema[1];
+
+    bool isLow  = all(pos == lowPos);
+    bool isHigh = all(pos == highPos);
+
+    if (isLow)
     {
-        if (phase[0] == 1) tempMask[getIdx(id.xy)] = 1;
+        if (phase[0] == 1)
+            tempMask[idx] = 1;
+
         if (phase[0] == 3)
         {
             currentRank[0]++;
-            rank[getIdx(id.xy)] = currentRank[0];
+            rank[idx] = currentRank[0];
         }
     }
-    
-    if (phase[0] != 2) energy[getIdx(id.xy)] += kernel(id.xy, pos);
-}
 
-[shader("compute")]
-[numthreads(16, 16, 1)]
-[WorkgroupCount((width + 15) / 16, (height + 15) / 16, 1)]
-void removeHighEnergy(uint3 id : SV_DispatchThreadID)
-{
-    if (id.x >= width || id.y >= height) return;
-    
-    uint2 pos = energyExtrema[1];
+    if (phase[0] != 2)
+        energy[idx] += kernel(pos, lowPos);
 
-    if (phase[0] < 3 && all(id.xy == pos)) tempMask[getIdx(id.xy)] = 0;
+    if (phase[0] < 3 && isHigh)
+        tempMask[idx] = 0;
 
     if (phase[0] == 1)
     {
-        energy[getIdx(id.xy)] -= kernel(id.xy, pos);
-        tempEnergy[getIdx(id.xy)] = energy[getIdx(id.xy)];
+        energy[idx] -= kernel(pos, highPos);
+        tempEnergy[idx] = energy[idx];
     }
-    
+
     if (phase[0] == 2)
     {
-        if (all(id.xy == pos))
+        if (isHigh)
         {
-            rank[getIdx(id.xy)] = currentRank[0];
+            rank[idx] = currentRank[0];
             currentRank[0]--;
         }
 
-        tempEnergy[getIdx(id.xy)] -= kernel(id.xy, pos);
+        tempEnergy[idx] -= kernel(pos, highPos);
 
         if (currentRank[0] == 0)
         {
