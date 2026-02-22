@@ -4,6 +4,7 @@
 //the space is made of 1 float per voxel 
 //but previous frame is used to compute change between frames
 //better persepective, space is made of 1 complexNumber per voxel = 2 floats
+
 #define TD 16       //gpu threads divisor
 #define ZS 512      //size simulation space
 #define ZT 4        //size simulation time

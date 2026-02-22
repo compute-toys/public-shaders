@@ -4,7 +4,7 @@
 //try bigger value in line 9 for ryT2
 #define PI 3.1415926535897932384f
 //rays
-#define G 2f            //camera zoom
+#define G 8f            //camera zoom
 #define ryT  64u        //threads
 #define ryT2 1024u       //try 512u 1024u 2048u 4096u 8888u 32768u
 #define ryL 4u          //rays loop size
@@ -45,7 +45,7 @@ fn rnd(a: u32) -> f32
 }
 fn getBallSize(id: i32) -> f32
 {
-    return .04f*pow(2f,f32(id)/f32(BZ)*3f);
+    return .2f*pow(2f,f32(id)/f32(BZ)*3f);
 }
 fn getBallCol(id: i32) -> vec3f
 {
@@ -68,7 +68,7 @@ fn physcIni(@builtin(global_invocation_id) id3: vec3u)
 fn physc(@builtin(global_invocation_id) id3: vec3u)
 {
     var res  = vec2f(SCREEN_WIDTH,SCREEN_HEIGHT);
-    var res2 = res/res.y;
+    var res2 = res/res.y*G*.75f;
     var mus  = G*(2f*vec2f(mouse.pos)-res)/res.y;
     var id1 = i32(id3.x);
     var r   = id1;
