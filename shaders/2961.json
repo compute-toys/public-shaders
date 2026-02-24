@@ -1,0 +1,24 @@
+{
+  "id": 2961,
+  "created_at": "2026-02-23T18:54:49.978828+00:00",
+  "name": "noise fire with wind",
+  "description": "",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": null
+  }
+}
