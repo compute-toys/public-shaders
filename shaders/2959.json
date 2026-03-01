@@ -2,7 +2,7 @@
   "id": 2959,
   "created_at": "2026-02-23T16:17:44.117843+00:00",
   "name": "Double Pendulums",
-  "description": "",
+  "description": "it writes to another pass before rendering the pendulums because I was gonna do some extra processing but then realized what I wanted to do wouldn't work and was too lazy to revert my changes",
   "body": {
     "uniforms": [],
     "textures": [

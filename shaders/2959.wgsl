@@ -1,10 +1,7 @@
-#workgroup_count compute_pendulms 1 1 1
-#workgroup_count init_pendulums 1 1 1
-#workgroup_count main_image 1 1 1
-#dispatch_once init_pendulums
-
 const width = 16;
 const height = 16;
+#define COUNT_X 1
+#define COUNT_Y 3
 const pi = 3.141592653;
 
 // #storage pend1_angles array<atomic<i32>>
@@ -20,10 +17,11 @@ const L2: f32 = 1.0;
 // const DT: f32 = 0.01;
 #define DT time.delta
 
-
+#workgroup_count init_pendulums COUNT_X COUNT_Y 1
+#dispatch_once init_pendulums
 @compute @workgroup_size(width, height)
 fn init_pendulums(@builtin(global_invocation_id) id: vec3u) {
-    if (id.x >= width || id.y >= height) { return; }
+    if (id.x >= width * COUNT_X || id.y >= height * COUNT_Y) { return; }
     passStore(0, vec2<i32>(id.xy), vec4(pi_to_normal(map_range(f32(id.x), 0, width, pi/2-0.01, pi/2)), 0.5, pi_to_normal(map_range(f32(id.y), 0, height, pi/2-0.01, pi/2)), 0.5));
     // let c = id.x + (screen_size.y * id.y);
 }
@@ -70,9 +68,10 @@ fn get_derivs(s: vec4<f32>) -> vec4<f32> {
         return vec4<f32>(w1, w2, a1, a2);
 };
 
+#workgroup_count compute_pendulums COUNT_X COUNT_Y 1
 @compute @workgroup_size(width, height)
-fn compute_pendulms(@builtin(global_invocation_id) id: vec3u) {
-    if (id.x >= width || id.y >= height) { return; }
+fn compute_pendulums(@builtin(global_invocation_id) id: vec3u) {
+    if (id.x >= width * COUNT_X || id.y >= height * COUNT_Y) { return; }
     let state = passLoad(0, vec2<i32>(id.xy), 0);
         // 1. Read current state
     var t1 = normal_to_pi(state.x);
@@ -102,16 +101,18 @@ fn clear_screen(@builtin(global_invocation_id) id: vec3u) {
 
     // Prevent overdraw for workgroups on the edge of the viewport
     if (id.x >= screen_size.x || id.y >= screen_size.y) { return; }
+    passStore(1, vec2<i32>(id.xy), vec4f(0, 0, 0, 1));
     textureStore(screen, id.xy, vec4f(0, 0, 0, 1));
 }
 
+#workgroup_count first_pass COUNT_X COUNT_Y 1
 @compute @workgroup_size(width, height)
-fn main_image(@builtin(global_invocation_id) id: vec3u) {
+fn first_pass(@builtin(global_invocation_id) id: vec3u) {
     // Viewport resolution (in pixels)
     let screen_size = textureDimensions(screen);
 
     // Prevent overdraw for workgroups on the edge of the viewport
-    if (id.x >= width || id.y >= height) { return; }
+    if (id.x >= width * COUNT_X || id.y >= height * COUNT_Y) { return; }
     let v = passLoad(0, vec2<i32>(id.xy), 0);
     let a1 = normal_to_pi(v.x);
     let a2 = normal_to_pi(v.z);
@@ -126,32 +127,19 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
     let col = hsl_to_rgb(map_range(f32(id.x), 0, width, 0, 1), map_range(f32(id.x), 0, width, 0, 1), 0.5);
     drawLine(i32(sx), i32(sy), i32(x1), i32(y1), col);
     drawLine(i32(x1), i32(y1), i32(x2), i32(y2), col);
+}
 
-    // let x = sx + u32(cos(a1)*f32(sy/2 - 10));
-    // let y = sy + u32(sin(a1)*f32(sy/2 - 10));
-    
-    // drawLine(i32(sx), i32(sy), i32(x), i32(y));
-    // let x1 = x + u32(cos(a2)*f32(sy/2 - 10));
-    // let y1 = y + u32(sin(a2)*f32(sy/2 - 10));
-    // drawLine(i32(x), i32(y), i32(x1), i32(y1));
-    // let c = id.x + (screen_size.y * id.y);
-    // let v = bitcast<f32>(atomicLoad(&atomic_storage[c]));
-    // textureStore(screen, id.xy, vec4f(v.x, v.z, 1, 1.));
-    // drawLine(0, 0, i32(id.x), i32(id.y));
+@compute @workgroup_size(16, 16)
+fn main_image(@builtin(global_invocation_id) id: vec3u) {
+    // Viewport resolution (in pixels)
+    let screen_size = textureDimensions(screen);
 
-    // // Pixel coordinates (centre of pixel, origin at bottom left)
-    // let fragCoord = vec2f(f32(id.x) + .5, f32(screen_size.y - id.y) - .5);
+    // Prevent overdraw for workgroups on the edge of the viewport
+    if (id.x >= screen_size.x || id.y >= screen_size.y) { return; }
+    let v = passLoad(1, vec2<i32>(id.xy), 0);
+    textureStore(screen, id.xy, vec4f(v.xyz, 1.0));
 
-    // // Normalised pixel coordinates (from 0 to 1)
-    // let uv = fragCoord / vec2f(screen_size);
-
-    // // Time varying pixel colour
-    // var col = .5 + .5 * cos(time.elapsed + uv.xyx + vec3f(0.,2.,4.));
-
-    // // Convert from gamma-encoded to linear colour space
-    // col = pow(col, vec3f(2.2));
-
-    // Output to screen (linear colour space)
+    // drawLine(i32(x1), i32(y1), i32(x2), i32(y2), col);
 }
 
 fn drawLine(x0: i32, y0: i32, x1: i32, y1: i32, c: vec3f) {
@@ -164,8 +152,8 @@ fn drawLine(x0: i32, y0: i32, x1: i32, y1: i32, c: vec3f) {
     var x = x0;
     var y = y0;
     
-    loop {
-        textureStore(screen, vec2(x, y), vec4f(c.xyz, 1)); // Placeholder for plotting, e.g., writing to a storage buffer
+        for (var i: i32 = 0; i < 1000; i++) {
+        passStore(1, vec2(x, y), vec4f(c.xyz, 1));
         
         if (x == x1 && y == y1) { break; }
         

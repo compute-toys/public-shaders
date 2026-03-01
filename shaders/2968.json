@@ -1,0 +1,24 @@
+{
+  "id": 2968,
+  "created_at": "2026-02-25T02:23:05.314698+00:00",
+  "name": "Voronoi Noise - biomes",
+  "description": "Voronoi noise representing biomes",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "Rextens"
+  }
+}
