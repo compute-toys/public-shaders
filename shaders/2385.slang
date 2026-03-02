@@ -82,18 +82,15 @@ struct Board {
         return Board(set_mask & is_player_1, set_mask & ~is_player_1);
     }
 
-    float4 render(float2 px) {
-        uint2 dim;
-        screen.GetDimensions(dim.x, dim.y);
-
-        // uv in [-1, 1] range
-        float2 uv = (2*px - dim.xy) / min(dim.x, dim.y);
-        uv *= 4;
-
-        // Cell id
+    struct BoardField {
         int field;
-        float field_dist = 1.#INF;
+        float field_dist;
         float2 field_uv;
+    };
+
+    BoardField getClosestField(float2 uv) {
+        BoardField field;
+        field.field_dist = 1.#INF;
         for (int ring = 1; ring <= 3; ring ++) {
             float2 l_uv = uv / ring;
             int2 cell = int2(clamp(round(l_uv), -1, 1));
@@ -105,15 +102,28 @@ struct Board {
             c_uv *= ring;
 
             float d = sdf_sphere(c_uv, CELL_RADIUS);
-            if (d < field_dist) {
-                field_dist = d;
-                field_uv = c_uv;
+            if (d < field.field_dist) {
+                field.field_dist = d;
+                field.field_uv = c_uv;
                 //field = (cell.x*cell.y + 1) + (1-cell.y)*2 + (cell.x < 0 && cell.y == 0) * 4;
-                field = int(round(atan2(-cell.y, cell.x) / 3.1415926 * 4 + 3));
-                field += 8 * (ring-1);
+                field.field = int(round(atan2(-cell.y, cell.x) / 3.1415926 * 4 + 3));
+                field.field += 8 * (ring-1);
             }
         }
+        return field;
+    }
 
+    float2 px2uv(float2 px) {
+        // uv in [-1, 1] range
+        uint2 dim;
+        screen.GetDimensions(dim.x, dim.y);
+        return (2*px - dim.xy) / min(dim.x, dim.y);
+    }
+
+    float4 render(float2 px) {
+        float2 uv = 4 * px2uv(px);
+
+        BoardField closest = getClosestField(uv);
         float4 col = float4(1);
 
         // Connections
@@ -125,17 +135,17 @@ struct Board {
         col = alpha_over(col, float4(float3(0.2), line_mask));
 
         // Field colors
-        if (field_dist < 0) {
-            State field_state = getState(field);
+        if (closest.field_dist < 0) {
+            State field_state = getState(closest.field);
             uint mills = ~in_mill_mask(true) & ~in_mill_mask(false) & ~free_fields_mask();
             uint movable = movable_mask(true) | movable_mask(false);
             float4 field_col = stateColor(field_state);
-            field_col.rgb *= 1 + ((mills >> field) & 1) * .4;
+            field_col.rgb *= 1 + ((mills >> closest.field) & 1) * .4;
             col = alpha_over(col, field_col);
         }
         
         // Field border color
-        float field_border_mask = 1 - smoothstep(0, .01, abs(field_dist) - LINE_WIDTH);
+        float field_border_mask = 1 - smoothstep(0, .01, abs(closest.field_dist) - LINE_WIDTH);
         col = alpha_over(col, float4(float3(0.2), field_border_mask));
 
         return col;
@@ -299,6 +309,10 @@ struct Move {
     }
 }
 
+bool operator==(Move a, Move b) {
+    return a.packed == b.packed;
+}
+
 // RNG helpers
 struct RNG {
     uint state = 0xDEADBEEF;
@@ -372,6 +386,8 @@ interface IAgent {
     property bool is_player_1 {get;}
     [mutating]
     Move get_move(Board board, uint turn);
+
+    float4 render(Board board, float2 px) {return float4(0);}
 }
 
 struct RandomAgent : IAgent {
@@ -416,7 +432,29 @@ struct TreeSearchAgent : IAgent {
     }
 
     Move get_move(Board board, uint turn) {
+        return Move.empty();
+    }
+}
 
+struct HumanAgent : IAgent {
+    bool is_player_1;
+    __init(bool is_player_1) {
+        this.is_player_1 = is_player_1;
+    }
+
+    Move get_move(Board board, uint turn) {
+        let closest = board.getClosestField(board.px2uv(mouse.pos));
+        if (turn < 2*9) {
+
+        }
+        return Move.empty();
+    }
+
+    override float4 render(Board board, float2 px) {
+        //let closest = board.getClosestField(board.px2uv(px) * 4);
+        //let closest_mouse = board.getClosestField(board.px2uv(mouse.pos) * 4);
+        //return float4(closest.field_uv, closest_mouse.field_dist, 0.5);
+        return float4(0);
     }
 }
 
@@ -444,6 +482,9 @@ struct TestRunner {
             player = player_2;
         }
         Move move = player.get_move(board_state, turn);
+        if (move == Move.empty()) {
+            return;
+        }
         this.turn += 1;
         this.board_state = board_state.apply_move(is_player_1, move);
     }
@@ -479,7 +520,8 @@ void step_run(uint3 id : SV_DispatchThreadID) {
         do_reset = time.frame % (STEPS_UNTIL_RESET * FRAMES_PER_UPDATE / STEPS_PER_UPDATE + 100) == 0;
     }
     if (do_reset) {
-        runner = TestRunner(RandomAgent(true, time.frame), RandomAgent(false, time.frame + 456));
+        // runner = TestRunner(RandomAgent(true, time.frame), RandomAgent(false, time.frame + 456));
+        runner = TestRunner(RandomAgent(true, time.frame), HumanAgent(false));
     }
     if (time.frame % FRAMES_PER_UPDATE == 0) {
         for (int i = 0; i < STEPS_PER_UPDATE && !runner.is_gameover(); i++)
@@ -511,6 +553,8 @@ void main_image(uint3 id : SV_DispatchThreadID)
     // Board board = {1+14*0x010101, 20};
     // board = Board.randomState(int(time.elapsed));
     col = alpha_over(col, board.render(fragCoord));
+    col = alpha_over(col, runner.player_1.render(board, fragCoord));
+    col = alpha_over(col, runner.player_2.render(board, fragCoord));
 
     // Convert from gamma-encoded to linear colour space
     float3 res = pow(col.rgb, 2.2);
