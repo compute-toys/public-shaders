@@ -24,7 +24,7 @@ float sdf_box(float2 p, float2 b) {
 
 float4 alpha_over(float4 behind, float4 above) {
     if (behind.a == 0)
-        above.a = 1;
+        return above;
     float4 r = lerp(float4(behind.rgb, 1) * behind.a, float4(above.rgb, 1), above.a);
     r.rgb /= r.a;
     return r;
@@ -111,6 +111,13 @@ struct Board {
             }
         }
         return field;
+    }
+
+    BoardField getMouseField() {
+        uint2 size;
+        screen.GetDimensions(size.x, size.y);
+        float2 m = float2(mouse.pos.x, size.y - mouse.pos.y);
+        return getClosestField(px2uv(m) * 4);
     }
 
     float2 px2uv(float2 px) {
@@ -387,7 +394,7 @@ interface IAgent {
     [mutating]
     Move get_move(Board board, uint turn);
 
-    float4 render(Board board, float2 px) {return float4(0);}
+    float4 render(Board board, float2 px);
 }
 
 struct RandomAgent : IAgent {
@@ -423,6 +430,8 @@ struct RandomAgent : IAgent {
         }
         return m;
     }
+
+    float4 render(Board board, float2 px) {return 0;}
 }
 
 struct TreeSearchAgent : IAgent {
@@ -434,26 +443,134 @@ struct TreeSearchAgent : IAgent {
     Move get_move(Board board, uint turn) {
         return Move.empty();
     }
+
+    float4 render(Board board, float2 px) {return 0;}
+}
+
+
+enum InteractionState {
+    NONE,
+    WAIT_FOR_SELECT_OWN,
+    WAIT_FOR_SELECT_MOVE_TARGET,
+    WAIT_FOR_SELECT_JUMP_TARGET,
+    WAIT_FOR_SELECT_PLACE_TARGET,
+    MOVED,
+    WAIT_FOR_SELECT_OTHER,
+    FINISHED
 }
 
 struct HumanAgent : IAgent {
     bool is_player_1;
+    InteractionState state;
+    Move proposal_move;
+    uint current_turn;
+
     __init(bool is_player_1) {
         this.is_player_1 = is_player_1;
+        this.state = InteractionState.NONE;
+        this.proposal_move = Move.empty();
+        this.current_turn = 3;
     }
 
+    [mutating]
     Move get_move(Board board, uint turn) {
-        let closest = board.getClosestField(board.px2uv(mouse.pos));
-        if (turn < 2*9) {
+        // FIXME: the state updates do not seem to get reflected in the rendering function and I do not know why
+        // same also for the current_turn variable which was added for debug purposes.
 
+        let closest = board.getMouseField();
+        current_turn = turn;
+        // Move the piece first
+        if (turn < 2*9) {
+            // Place phase
+            if (state == InteractionState.NONE)
+                state = InteractionState.WAIT_FOR_SELECT_PLACE_TARGET;
+            
+            if ((state == InteractionState.WAIT_FOR_SELECT_PLACE_TARGET) && 
+                (mouse.click == 1) &&
+                ((board.free_fields_mask() & (1 << closest.field)) != 0)) {
+                proposal_move.target = closest.field;
+                state = InteractionState.MOVED;
+            }
+        } else {
+            // Rest of game movements
+        }
+
+        // Then check if the new placed field is now in a mill (then that mill was completed -- otherwise not a valid mill)
+        // TODO: What if we enter multiple mills at the same time, do we only get a single take or 2 at once?
+        //       Current assumption is we only take a single one all the time.
+        if (state == InteractionState.MOVED) {
+            Board untaken = board.apply_move(is_player_1, proposal_move);
+            uint32_t own_mills = untaken.in_mill_mask(is_player_1);
+            if (((own_mills & (1 << proposal_move.target)) != 0) && (board.takeable_mask(!is_player_1) != 0)) {
+                state = InteractionState.WAIT_FOR_SELECT_OTHER;
+            } else {
+                state = InteractionState.FINISHED;
+            }
+        }
+        if ((state == InteractionState.WAIT_FOR_SELECT_OTHER) &&
+            (mouse.click == 1) &&
+            ((board.takeable_mask(!is_player_1) & (1 << closest.field)) != 0)) {
+            proposal_move.take = closest.field;
+            state = InteractionState.FINISHED;
+        }
+
+        if (state == InteractionState.FINISHED) {
+            state = InteractionState.NONE;
+            return proposal_move;
         }
         return Move.empty();
     }
 
-    override float4 render(Board board, float2 px) {
-        //let closest = board.getClosestField(board.px2uv(px) * 4);
-        //let closest_mouse = board.getClosestField(board.px2uv(mouse.pos) * 4);
-        //return float4(closest.field_uv, closest_mouse.field_dist, 0.5);
+    float4 render(Board board, float2 px) {
+        float4 col = 0;
+        
+        let closest = board.getClosestField(board.px2uv(px) * 4);
+        let closest_mouse = board.getMouseField();
+        uint mask;
+        switch (state) {
+            default:
+            case InteractionState.NONE:
+            case InteractionState.MOVED:
+            case InteractionState.FINISHED:
+                break;
+                return col;
+            case InteractionState.WAIT_FOR_SELECT_PLACE_TARGET:
+                mask = board.free_fields_mask();
+                break;
+            case InteractionState.WAIT_FOR_SELECT_OWN:
+                mask = board.player_mask(is_player_1);
+                break;
+            case InteractionState.WAIT_FOR_SELECT_OTHER:
+                mask = board.takeable_mask(!is_player_1);
+                break;
+            case InteractionState.WAIT_FOR_SELECT_MOVE_TARGET:
+                mask = board.target_position_mask(proposal_move.target, false);
+                break;
+            case InteractionState.WAIT_FOR_SELECT_JUMP_TARGET:
+                mask = board.target_position_mask(proposal_move.target, true);
+                break;
+        }
+
+        float4 playerColor = stateColor(is_player_1 ? State.PLAYER_1 : State.PLAYER_2);
+        // Highlight regions where we can place stuff
+        float wobble = (sin(time.elapsed) * .25 + .75) * LINE_WIDTH;
+        if ((mask & (1 << closest.field)) != 0) {
+            if (closest.field == closest_mouse.field)
+                wobble = max(wobble, -closest_mouse.field_dist+3*LINE_WIDTH);
+            float radius = closest.field_dist + LINE_WIDTH + wobble;
+            float thick = wobble;
+            float field_border_mask = 1 - smoothstep(0., .01, abs(radius) - thick);
+            col = alpha_over(col, float4(playerColor.rgb * 1.4, field_border_mask));
+        }
+        // Show a bar on the left to debug the state machine
+        if (length(px - float2(8, int(state) * 10 + 8)) < 5)
+            col = float4(0,0,0,1);
+        if (length(px - float2(18, int(current_turn) * 10 + 8)) < 5)
+            col = float4(0,0,0,1);
+
+        //return float4(float3(closest.field == closest_mouse.field), 1);
+        return col;
+        return float4(closest.field_uv, -closest_mouse.field_dist, 0.5);
         return float4(0);
     }
 }
@@ -520,8 +637,8 @@ void step_run(uint3 id : SV_DispatchThreadID) {
         do_reset = time.frame % (STEPS_UNTIL_RESET * FRAMES_PER_UPDATE / STEPS_PER_UPDATE + 100) == 0;
     }
     if (do_reset) {
-        // runner = TestRunner(RandomAgent(true, time.frame), RandomAgent(false, time.frame + 456));
-        runner = TestRunner(RandomAgent(true, time.frame), HumanAgent(false));
+         runner = TestRunner(RandomAgent(true, time.frame), RandomAgent(false, time.frame + 456));
+        //runner = TestRunner(RandomAgent(true, time.frame), HumanAgent(false));
     }
     if (time.frame % FRAMES_PER_UPDATE == 0) {
         for (int i = 0; i < STEPS_PER_UPDATE && !runner.is_gameover(); i++)
