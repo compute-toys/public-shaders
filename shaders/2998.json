@@ -1,0 +1,24 @@
+{
+  "id": 2998,
+  "created_at": "2026-03-04T01:08:47.266891+00:00",
+  "name": "Conway's Game of Life",
+  "description": "",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/noise1.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": null
+  }
+}
