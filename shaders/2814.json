@@ -7,7 +7,7 @@
     "uniforms": [
       {
         "name": "bright",
-        "value": 0.438,
+        "value": 1,
         "minRange": 0,
         "maxRange": 1
       },
@@ -16,6 +16,12 @@
         "value": 4,
         "minRange": 0,
         "maxRange": 6
+      },
+      {
+        "name": "friction",
+        "value": 0.974,
+        "minRange": 0,
+        "maxRange": 1
       }
     ],
     "textures": [
@@ -27,6 +33,7 @@
       }
     ],
     "float32Enabled": false,
+    "screenHDRFormat": "displayP3",
     "language": "wgsl"
   },
   "visibility": "public",
