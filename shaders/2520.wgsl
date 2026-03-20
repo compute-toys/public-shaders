@@ -1,5 +1,6 @@
 //3D version of https://compute.toys/view/2519
 //with smaller convolution and less steps per frame
+
 #define ZS 192      //size simulation space
 #define ZT 3        //size simulation time
 #define ZF 4        //size simulation steps per frame

@@ -244,11 +244,9 @@ fn main_image(@builtin(global_invocation_id) id3: vec3u)
     atomicStore(&C[r+1u*sWH], c.y*cc/33);
     atomicStore(&C[r+2u*sWH], c.z*cc/33);
     var d = vec4f(c)/f32(fti)*custom.bright/f32(ryT2);
-
     var sf = vec2f(SCREEN_WIDTH,SCREEN_HEIGHT);
     var p  = G*(2f*vec2f(id3.xy)-sf)/sf.y;
     //d += getCol(p);
     //d  = vec4f(getNrm(p),0,0);
-
     textureStore(screen, id3.xy, d);
 }

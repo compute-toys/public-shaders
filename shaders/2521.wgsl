@@ -1,5 +1,6 @@
 //based on https://compute.toys/view/2519
 //explanation there
+
 #define TD 16       //gpu threads divisor
 #define ZS 512      //size simulation space
 #define ZT 4        //size simulation time

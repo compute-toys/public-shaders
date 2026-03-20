@@ -98,6 +98,6 @@ fn main_image(@builtin(global_invocation_id) id3: vec3u)
     var d3  = D[id1+fr3];
     var c  = vec4f(d1+.5f);
         c  = vec4f(sqrt(d1*d1 + d2*d2));
-        c  = (vec4f(0,d1,d2,0)*5f+.5f)*sqrt(sqrt(d1*d1 + d2*d2));
+        c  = (vec4f(0,d1,d2,0)*1f+.5f)*sqrt(sqrt(d1*d1 + d2*d2));
     textureStore(screen, id3.xy, c);
 }

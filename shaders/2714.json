@@ -7,9 +7,9 @@
     "uniforms": [
       {
         "name": "bright",
-        "value": 5,
+        "value": 6,
         "minRange": 0,
-        "maxRange": 5
+        "maxRange": 6
       },
       {
         "name": "ballcols",
@@ -39,7 +39,7 @@
       }
     ],
     "float32Enabled": false,
-    "screenHDRFormat": "scRGB",
+    "screenHDRFormat": "displayP3",
     "language": "wgsl"
   },
   "visibility": "public",

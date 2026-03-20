@@ -19,7 +19,7 @@
       },
       {
         "name": "friction",
-        "value": 0.974,
+        "value": 1,
         "minRange": 0,
         "maxRange": 1
       }

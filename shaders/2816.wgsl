@@ -1,7 +1,9 @@
 //you can grab the light and balls
 //trained NN to render the image
 //balls physics are not done by NN
-
+//input  of NN is positions of balls and light
+//output of NN is RGB colors of the pixel
+//each pixel runs one NN
 #define PI 3.1415926535897932384f
 #define G custom.zoom //4f      //camera zoom
 //balls
@@ -47,8 +49,8 @@ fn physcIni(@builtin(global_invocation_id) id3: vec3u)
     var p = vec2f(rnd(id1+u32(BZ)*0u + 2124135346u),
                   rnd(id1+u32(BZ)*1u + 2124135346u))*2f-1f;
     var v = vec2f(0);
-    D.ballsPos[id1] = p*.01f+f32(id1)-sqrt(f32(BZ-1)*.5f);
-    D.ballsVel[id1] = v;
+    D.ballsPos[id1] = p*.01f+(f32(id1)-f32(BZ-1)*.5f)*.8f;
+    D.ballsVel[id1] = v+p*.1f*dt;
 }
 #workgroup_count physc 1 1 1 
 @compute @workgroup_size(BZ,1,1)

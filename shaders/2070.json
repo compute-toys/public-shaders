@@ -21,6 +21,7 @@
       }
     ],
     "float32Enabled": false,
+    "screenHDRFormat": false,
     "language": "slang"
   },
   "visibility": "public",
