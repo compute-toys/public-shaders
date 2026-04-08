@@ -1,0 +1,24 @@
+{
+  "id": 3064,
+  "created_at": "2026-04-07T21:44:56.488627+00:00",
+  "name": "Falling Simple CA liquid",
+  "description": "Forked from https://compute.toys/view/3062",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "Cotterzz"
+  }
+}
