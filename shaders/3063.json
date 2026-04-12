@@ -7,21 +7,33 @@
     "uniforms": [
       {
         "name": "hill_frequency",
-        "value": 0.317,
+        "value": 0.18,
         "minRange": 0,
-        "maxRange": 2
+        "maxRange": 1
       },
       {
         "name": "ridge_frequency",
-        "value": 232.791,
-        "minRange": 1,
-        "maxRange": 1000
+        "value": 1.128,
+        "minRange": 0,
+        "maxRange": 3
       },
       {
         "name": "voronoi_scale",
-        "value": 46.005,
+        "value": 48.525,
         "minRange": 20,
         "maxRange": 100
+      },
+      {
+        "name": "gully_depth",
+        "value": 0.61,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "terrain_height",
+        "value": 0.672,
+        "minRange": 0,
+        "maxRange": 1
       }
     ],
     "textures": [
