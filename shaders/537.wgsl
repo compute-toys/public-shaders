@@ -6,9 +6,8 @@ const COUNT = 256*32;
 #define COUNT_256 32
 #define point_size 1.41421356237 * .7
 
-// change after preprocessor eval feature:
-#calcdefine TILES_X 70
-#calcdefine TILES_Y 50
+#calcdefine TILES_X SCREEN_WIDTH / 16
+#calcdefine TILES_Y SCREEN_HEIGHT / 16
 #define TILE_CAPACITY 2048
 struct Tile {
     amount: atomic<u32>,
@@ -196,7 +195,7 @@ fn rasterizer(
         let r = max(0., aa_rt.x - 2.*custom.thickness);
         let size = point_size * z;
         let sid = f32(id) + aa_rt.y;
-        let t0 = 0.;
+        let t0 = time.elapsed*30.;
         let T = (sid + t0) / COUNT;
         let base_col = (.5 + .5 * sin(vec3f(500. * T) + vec3f(1,2,3))) * (.5 + .5 * sin(50. * T));
         let bloom = 1. - exp(-max(0., pow(.015*size/(r+.003), 1.5) - .003));

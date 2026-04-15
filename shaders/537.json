@@ -69,6 +69,7 @@
       }
     ],
     "float32Enabled": false,
+    "screenHDRFormat": false,
     "language": "wgsl"
   },
   "visibility": "public",
