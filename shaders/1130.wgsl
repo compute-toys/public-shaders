@@ -1,7 +1,7 @@
 #define PI  3.1415926535897932384f
-#define srf .01f        //distance considered surface
-#define nrd (srf*.1f)   //normal calcualtion
-#define ote 88.f        //outside fractal space
+#define srf .02f        //distance considered surface
+#define nrd (srf*.5f)   //normal calcualtion
+#define ote 111f        //outside fractal space
 #define rml 32u         //raymarch loop
 #define G 64f           //size of fractal
 #define ryT  32u        //threads
@@ -16,6 +16,7 @@ struct rayST
     d: vec2f,       //ray direction
     cf: f32,        //ray color frequency
     ci: f32,        //ray color intensity
+    l: f32,         //last mesured SDF
 };
 #storage D array<atomic<i32>,SCREEN_WIDTH*SCREEN_HEIGHT*3>
 #storage R array<rayST,ryT*ryT2>
@@ -60,6 +61,7 @@ fn getSDF(p2: vec2f) -> f32
         a = min(a,to);
     }
     return a;
+    //return length(p2)-11f;
 }
 fn getCol(p2: vec2f) -> vec4f
 {
@@ -90,22 +92,18 @@ fn rayMarch(rayIn:rayST, seed:u32) -> rayST
 {
     var ray = rayIn;
     var p1  = ray.p;
-    var rl  = abs(getSDF(p1));
-    for(var i=0u; i<rml && rl<srf; i++)//jump sdf edge
-    {
-        ray.p += ray.d*srf;
-        rl = abs(getSDF(ray.p));
-    }
-    var lstl  = 0f;
+    var lst = ray.l;
     var bonce = false;
-    for(var i=0u; i<rml && rl>=srf && rl<ote; i++)//raymarch
+    for(var i=0u; i<rml && !bonce && lst<ote; i++)//raymarch
     {
-        ray.p += rl*ray.d;
-        lstl  = getSDF(ray.p);
-        var l = abs(lstl);
-        bonce = l<srf && l<rl;
-        rl = l;
+        var l = getSDF(ray.p);
+        var l2 = abs(l);
+        if(abs(l) < srf){l2 = srf*.5f;}
+        ray.p += l2*ray.d;
+        bonce = abs(lst) >= srf && abs(l) < srf;
+        lst = l;
     }
+    ray.l = lst;
     //draw ray
     {
         var cr= cos(ray.cf*5f+1.7f+vec3f(1,2,3));//frequency to color
@@ -130,11 +128,11 @@ fn rayMarch(rayIn:rayST, seed:u32) -> rayST
         var p  = (p1*sf.y/G + sf)/2f;       //world coordinates to pixel coordinates
         var l0 =  pl*sf.y/G      /2f;       //world size        to pixel size
         var lt = 0f;
-        if(all(abs(p1)<sm*1.0001f) &&
-           all(abs(p2)<sm*1.0001f)){lt=l0;}
+        if(all(abs(p1)<sm*1.001f) &&
+           all(abs(p2)<sm*1.001f)){lt=l0;}
         while(lt > 0f)
         {
-            var g = (1f-fract(p*d3))*d2;
+            var g = (1.001f-fract(p*d3))*d2;
             var l = min(g.x,g.y);  if(l==0f){lt=0f;}
             var pd= vec2f((fract(p)==vec2f(0)) & (d<vec2f(0)));
             var w = dot(vec2u(p-pd),vec2u(1,SCREEN_WIDTH));
@@ -146,7 +144,7 @@ fn rayMarch(rayIn:rayST, seed:u32) -> rayST
             lt -= l;
         }
     }
-    if(rl>=ote || ray.ci<.002f)//ray new
+    if(lst>=ote || ray.ci<.002f)//ray new
     {
         var r0 = rnd(seed+0u);
         var r1 = rnd(seed+1u);
@@ -161,17 +159,18 @@ fn rayMarch(rayIn:rayST, seed:u32) -> rayST
         ray.d  = d;
         ray.cf = r3;
         ray.ci = 1f;
+        ray.l  = getSDF(p);
         bonce = false;
     }
     if(bonce)//ray bounce
     {
         var r0 = rnd(seed+4u)-.1f;
         var r1 = rnd(seed+5u)-.5f;
-        var nrm = getNrm(ray.p); if(lstl<0f){nrm = -nrm;}
+        var nrm = getNrm(ray.p); if(lst<0f){nrm = -nrm;}
         var col = vec4f(.0);//getCol(ray.p);
         var rfl = reflect(ray.d, nrm);
                 var idx = .5f+ray.cf*.5f;
-        if(lstl<0f){idx = 1f/idx;}
+        if(lst<0f){idx = 1f/idx;}
         var k  = 1f - idx * idx * (1f - dot(nrm, ray.d) * dot(nrm, ray.d));
         var ra = idx * ray.d - (idx * dot(nrm, ray.d) + sqrt(k)) * nrm;
         r0 = f32(r0 >= 0f && k >= 0f);
@@ -190,7 +189,9 @@ fn rayMarch(rayIn:rayST, seed:u32) -> rayST
 @compute @workgroup_size(ryT,1,1)
 fn rayIni(@builtin(global_invocation_id) id3: vec3u)
 {
-    R[id3.x] = rayST();
+    var ray = rayST();
+    ray.l = ote;
+    R[id3.x] = ray;
 }
 #workgroup_count rayDo ryT2 1 1
 @compute @workgroup_size(ryT,1,1)
@@ -216,9 +217,9 @@ fn main_image(@builtin(global_invocation_id) id3: vec3u)
     var c = vec4i(atomicLoad(&D[r+0u*sWH]),
                   atomicLoad(&D[r+1u*sWH]),
                   atomicLoad(&D[r+2u*sWH]),0);
-    atomicStore(&D[r+0u*sWH], c.x*1/2);
-    atomicStore(&D[r+1u*sWH], c.y*1/2);
-    atomicStore(&D[r+2u*sWH], c.z*1/2);
+    atomicStore(&D[r+0u*sWH], c.x*i32(custom.b)/11);
+    atomicStore(&D[r+1u*sWH], c.y*i32(custom.b)/11);
+    atomicStore(&D[r+2u*sWH], c.z*i32(custom.b)/11);
     var d = vec4f(c)/f32(fti)*custom.a*.002f;
 
     var sf = vec2f(SCREEN_WIDTH,SCREEN_HEIGHT);

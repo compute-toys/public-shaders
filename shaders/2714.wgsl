@@ -161,7 +161,7 @@ fn rayMarch(rayIn:Ray, seed:u32) -> Ray
            all(abs(p2)<sm*1.001f)){lt=l0;}
         while(lt > 0f)
         {
-            var g = (1f-fract(p*d3))*d2;
+            var g = (1.001f-fract(p*d3))*d2;
             var l = min(g.x,g.y);  if(l==0f){lt=0f;}
             var pd= vec2f((fract(p)==vec2f(0)) & (d<vec2f(0)));
             var w = dot(vec2u(p-pd),vec2u(1,SCREEN_WIDTH));

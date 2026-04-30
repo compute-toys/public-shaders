@@ -10,6 +10,12 @@
         "value": 1,
         "minRange": 0,
         "maxRange": 1
+      },
+      {
+        "name": "b",
+        "value": 6.618,
+        "minRange": 0,
+        "maxRange": 11
       }
     ],
     "textures": [
@@ -21,6 +27,7 @@
       }
     ],
     "float32Enabled": false,
+    "screenHDRFormat": false,
     "language": "wgsl"
   },
   "visibility": "public",
