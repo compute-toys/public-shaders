@@ -2,9 +2,9 @@ import std;
 
 static const float LINE_WIDTH = 0.04;
 static const float CELL_RADIUS = 0.3;
-static const int FRAMES_PER_UPDATE = 40;
+static const int FRAMES_PER_UPDATE = 1;
 static const int STEPS_PER_UPDATE = 1;
-static const int STEPS_UNTIL_RESET = 100;
+static const int STEPS_UNTIL_RESET = 100000;
 
 
 float sdf_sphere(float2 p, float r) {
@@ -89,7 +89,7 @@ struct Board {
     };
 
     BoardField getClosestField(float2 uv) {
-        BoardField field;
+        BoardField field = {};
         field.field_dist = 1.#INF;
         for (int ring = 1; ring <= 3; ring ++) {
             float2 l_uv = uv / ring;
@@ -474,15 +474,12 @@ struct HumanAgent : IAgent {
 
     [mutating]
     Move get_move(Board board, uint turn) {
-        // FIXME: the state updates do not seem to get reflected in the rendering function and I do not know why
-        // same also for the current_turn variable which was added for debug purposes.
-
         let closest = board.getMouseField();
         current_turn = turn;
         // Move the piece first
         if (turn < 2*9) {
             // Place phase
-            if (state == InteractionState.NONE)
+            if ((state == InteractionState.NONE))
                 state = InteractionState.WAIT_FOR_SELECT_PLACE_TARGET;
             
             if ((state == InteractionState.WAIT_FOR_SELECT_PLACE_TARGET) && 
@@ -493,6 +490,23 @@ struct HumanAgent : IAgent {
             }
         } else {
             // Rest of game movements
+            if ((state == InteractionState.NONE))
+                state = InteractionState.WAIT_FOR_SELECT_OWN;
+
+            uint32_t movable = board.movable_mask(is_player_1); 
+            if ((state == InteractionState.WAIT_FOR_SELECT_OWN) && 
+                (mouse.click == 1) &&
+                ((movable & (1 << closest.field)) != 0)) {
+                proposal_move.source = closest.field;
+                state = InteractionState.WAIT_FOR_SELECT_MOVE_TARGET;
+            }
+
+            if ((state == InteractionState.WAIT_FOR_SELECT_MOVE_TARGET) && 
+                (mouse.click == 0) &&
+                ((board.target_position_mask(proposal_move.source, (movable & (1 << 31)) != 0) & (1 << closest.field)) != 0)) {
+                proposal_move.target = closest.field;
+                state = InteractionState.MOVED;
+            }
         }
 
         // Then check if the new placed field is now in a mill (then that mill was completed -- otherwise not a valid mill)
@@ -592,13 +606,16 @@ struct TestRunner {
     [mutating]
     void step() {
         bool is_player_1 = (turn & 1) == 0;
-        IAgent player;
+        // Can't do
+        //   IAgent player = is_player_1 ? player_1 : player_2;
+        //   Move move = player.get_move(board_state, turn);
+        // as that *copies* the player to the local variable, and the get_move will not modify the original player.
+        Move move;
         if (is_player_1) {
-            player = player_1;
+            move = player_1.get_move(board_state, turn);
         } else {
-            player = player_2;
+            move = player_2.get_move(board_state, turn);
         }
-        Move move = player.get_move(board_state, turn);
         if (move == Move.empty()) {
             return;
         }
@@ -637,8 +654,8 @@ void step_run(uint3 id : SV_DispatchThreadID) {
         do_reset = time.frame % (STEPS_UNTIL_RESET * FRAMES_PER_UPDATE / STEPS_PER_UPDATE + 100) == 0;
     }
     if (do_reset) {
-         runner = TestRunner(RandomAgent(true, time.frame), RandomAgent(false, time.frame + 456));
-        //runner = TestRunner(RandomAgent(true, time.frame), HumanAgent(false));
+        runner = TestRunner(RandomAgent(true, time.frame), RandomAgent(false, time.frame + 456));
+        runner = TestRunner(RandomAgent(true, time.frame), HumanAgent(false));
     }
     if (time.frame % FRAMES_PER_UPDATE == 0) {
         for (int i = 0; i < STEPS_PER_UPDATE && !runner.is_gameover(); i++)
