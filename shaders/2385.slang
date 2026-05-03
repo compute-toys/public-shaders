@@ -459,32 +459,52 @@ enum InteractionState {
     FINISHED
 }
 
+enum MouseState {
+    UP,
+    CLICKED,
+    HELD,
+    RELEASED
+}
+
 struct HumanAgent : IAgent {
     bool is_player_1;
     InteractionState state;
     Move proposal_move;
-    uint current_turn;
+    MouseState mstate;
 
     __init(bool is_player_1) {
         this.is_player_1 = is_player_1;
         this.state = InteractionState.NONE;
         this.proposal_move = Move.empty();
-        this.current_turn = 3;
     }
 
     [mutating]
     Move get_move(Board board, uint turn) {
+        // Handle mouse input first for ease of use
+        if (mouse.click != 0) {
+            if (mstate == MouseState.CLICKED)
+                mstate = MouseState.HELD;
+            else if (mstate == MouseState.UP)
+                mstate = MouseState.CLICKED;
+        } else {
+            if (mstate == MouseState.RELEASED)
+                mstate = MouseState.UP;
+            else if (mstate == MouseState.CLICKED || mstate == MouseState.HELD)
+                mstate = MouseState.RELEASED;
+        }
+
+        // Now handle the actual piece interactions
         let closest = board.getMouseField();
-        current_turn = turn;
         // Move the piece first
         if (turn < 2*9) {
             // Place phase
-            if ((state == InteractionState.NONE))
+            if ((state == InteractionState.NONE) && (mstate == MouseState.UP))
                 state = InteractionState.WAIT_FOR_SELECT_PLACE_TARGET;
             
             if ((state == InteractionState.WAIT_FOR_SELECT_PLACE_TARGET) && 
-                (mouse.click == 1) &&
-                ((board.free_fields_mask() & (1 << closest.field)) != 0)) {
+                (mstate == MouseState.RELEASED) &&
+                ((board.free_fields_mask() & (1 << closest.field)) != 0) &&
+                (closest.field_dist < 0)) {
                 proposal_move.target = closest.field;
                 state = InteractionState.MOVED;
             }
@@ -494,16 +514,20 @@ struct HumanAgent : IAgent {
                 state = InteractionState.WAIT_FOR_SELECT_OWN;
 
             uint32_t movable = board.movable_mask(is_player_1); 
+            bool can_fly = (movable & (1 << 31)) != 0;
             if ((state == InteractionState.WAIT_FOR_SELECT_OWN) && 
-                (mouse.click == 1) &&
-                ((movable & (1 << closest.field)) != 0)) {
+                (mstate == MouseState.CLICKED) &&
+                ((movable & (1 << closest.field)) != 0) &&
+                (closest.field_dist < 0)) {
                 proposal_move.source = closest.field;
-                state = InteractionState.WAIT_FOR_SELECT_MOVE_TARGET;
+                state = can_fly ? InteractionState.WAIT_FOR_SELECT_JUMP_TARGET : InteractionState.WAIT_FOR_SELECT_MOVE_TARGET;
             }
 
-            if ((state == InteractionState.WAIT_FOR_SELECT_MOVE_TARGET) && 
-                (mouse.click == 0) &&
-                ((board.target_position_mask(proposal_move.source, (movable & (1 << 31)) != 0) & (1 << closest.field)) != 0)) {
+            uint32_t targets = board.target_position_mask(proposal_move.source, can_fly);
+            if ((state == InteractionState.WAIT_FOR_SELECT_MOVE_TARGET || state == InteractionState.WAIT_FOR_SELECT_JUMP_TARGET) && 
+                (mstate == MouseState.RELEASED) &&
+                ((targets & (1 << closest.field)) != 0) &&
+                (closest.field_dist < 0)) {
                 proposal_move.target = closest.field;
                 state = InteractionState.MOVED;
             }
@@ -530,6 +554,7 @@ struct HumanAgent : IAgent {
 
         if (state == InteractionState.FINISHED) {
             state = InteractionState.NONE;
+            defer proposal_move = Move.empty();
             return proposal_move;
         }
         return Move.empty();
@@ -552,34 +577,37 @@ struct HumanAgent : IAgent {
                 mask = board.free_fields_mask();
                 break;
             case InteractionState.WAIT_FOR_SELECT_OWN:
-                mask = board.player_mask(is_player_1);
+                mask = board.movable_mask(is_player_1);
                 break;
             case InteractionState.WAIT_FOR_SELECT_OTHER:
                 mask = board.takeable_mask(!is_player_1);
                 break;
             case InteractionState.WAIT_FOR_SELECT_MOVE_TARGET:
-                mask = board.target_position_mask(proposal_move.target, false);
+                mask = board.target_position_mask(proposal_move.source, false);
                 break;
             case InteractionState.WAIT_FOR_SELECT_JUMP_TARGET:
-                mask = board.target_position_mask(proposal_move.target, true);
+                mask = board.target_position_mask(proposal_move.source, true);
                 break;
         }
 
-        float4 playerColor = stateColor(is_player_1 ? State.PLAYER_1 : State.PLAYER_2);
         // Highlight regions where we can place stuff
-        float wobble = (sin(time.elapsed) * .25 + .75) * LINE_WIDTH;
         if ((mask & (1 << closest.field)) != 0) {
-            if (closest.field == closest_mouse.field)
+            float4 playerColor = stateColor(is_player_1 ? State.PLAYER_1 : State.PLAYER_2);
+            float wobble = lerp(0.6, 1, sin(time.elapsed) * .5 + .5) * LINE_WIDTH;
+            if (closest.field == closest_mouse.field && mstate != MouseState.UP)
                 wobble = max(wobble, -closest_mouse.field_dist+3*LINE_WIDTH);
             float radius = closest.field_dist + LINE_WIDTH + wobble;
             float thick = wobble;
             float field_border_mask = 1 - smoothstep(0., .01, abs(radius) - thick);
-            col = alpha_over(col, float4(playerColor.rgb * 1.4, field_border_mask));
+            field_border_mask *= lerp(0, 1, sin(time.elapsed * 3) * .5 + .5);
+            uint32_t highlight_mask = board.takeable_mask(is_player_1);
+            float highlight_mult = (((1 << closest.field) & (highlight_mask)) != 0) ? 1.8 : 1.4;
+            col = alpha_over(col, float4(playerColor.rgb * highlight_mult, field_border_mask));
         }
         // Show a bar on the left to debug the state machine
         if (length(px - float2(8, int(state) * 10 + 8)) < 5)
             col = float4(0,0,0,1);
-        if (length(px - float2(18, int(current_turn) * 10 + 8)) < 5)
+        if (length(px - float2(18, int(mstate) * 10 + 8)) < 5)
             col = float4(0,0,0,1);
 
         //return float4(float3(closest.field == closest_mouse.field), 1);
@@ -610,6 +638,7 @@ struct TestRunner {
         //   IAgent player = is_player_1 ? player_1 : player_2;
         //   Move move = player.get_move(board_state, turn);
         // as that *copies* the player to the local variable, and the get_move will not modify the original player.
+        // actually that would not even compile due to ternary type checking for some reason...
         Move move;
         if (is_player_1) {
             move = player_1.get_move(board_state, turn);

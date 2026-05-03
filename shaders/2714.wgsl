@@ -4,7 +4,7 @@
 //try bigger value in line 9 for ryT2
 #define PI 3.1415926535897932384f
 //rays
-#define G 8f            //camera zoom
+#define G 64f            //camera zoom
 #define ryT  64u        //threads
 #define ryT2 1024u       //try 512u 1024u 2048u 4096u 8888u 32768u
 #define ryL 4u          //rays loop size
@@ -45,11 +45,11 @@ fn rnd(a: u32) -> f32
 }
 fn getBallSize(id: i32) -> f32
 {
-    return .2f*pow(2f,f32(id)/f32(BZ)*3f);
+    return custom.balsize*pow(2f,f32(id)/f32(BZ)*3f);
 }
 fn getBallCol(id: i32) -> vec3f
 {
-    return cos(f32(id)*custom.ballcols+1f+vec3(2,1,3))*.3f+.7f;
+    return cos(f32(id)/f32(BZ)*4f*PI+vec3(0,1,2)*2f*PI/3f)*.3f+.7f;
 }
 #dispatch_once physcIni
 #workgroup_count physcIni 1 1 1 
@@ -115,7 +115,7 @@ fn rayMarch(rayIn:Ray, seed:u32) -> Ray
 {
     var ray = rayIn;
     var p1  = ray.p;
-    var lot = 99f;//ignored length
+    var lot = G*4f;//ignored length
     var bsh = lot;//shortest intersection to ball
     var ibl = 0;//ball id intersected
     for(var i=0; i<BZ; i++)//ray ball intersect
@@ -173,7 +173,7 @@ fn rayMarch(rayIn:Ray, seed:u32) -> Ray
             lt -= l;
         }
     }
-    if(length(ray.p)>=lot*.5f || dot(ray.c,ray.c)<pow(.002f,2f))//ray new
+    if(dot(ray.p,ray.p)>=pow(G*2f,2f) || dot(ray.c,ray.c)<pow(.002f,2f))//ray new
     {
         var r0 = rnd(seed+0u);
         var r1 = rnd(seed+1u);
@@ -182,7 +182,7 @@ fn rayMarch(rayIn:Ray, seed:u32) -> Ray
         var sf = vec2f(SCREEN_WIDTH,SCREEN_HEIGHT);
         var lp = G*.5f*cos(vec2f(.77,.55)*time.elapsed+vec2f(0,2.22));
         if(mouse.click!=0){lp = G*(2f*vec2f(mouse.pos)-sf)/sf.y;}
-        var p  = cos(r0*PI*2f-vec2f(0,.5)*PI)*sqrt(r1)*.1f + lp;
+        var p  = cos(r0*PI*2f-vec2f(0,.5)*PI)*sqrt(r1)*.03f*G + lp;
             //p  = cos(r0*PI*2f-vec2f(0,.5)*PI)*sqrt(r1)*getBallSize(0) + Bp[0];
         var d  = cos(r2*PI*2f-vec2f(0,.5)*PI);
         ray.p  = p;
