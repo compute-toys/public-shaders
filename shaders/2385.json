@@ -4,7 +4,14 @@
   "name": "Mills",
   "description": "Implementation of the game of Mills (aka Nine Mens Morris), for now a RandomAgent and player controller (HumanAgent) exist, but maybe I'll add more later on.",
   "body": {
-    "uniforms": [],
+    "uniforms": [
+      {
+        "name": "log10_steps_per_frame",
+        "value": -1,
+        "minRange": -2,
+        "maxRange": 1
+      }
+    ],
     "textures": [
       {
         "img": "/textures/blank.png"

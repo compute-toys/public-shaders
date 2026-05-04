@@ -1,7 +1,7 @@
 //previous try was not assigning a weight to every ray
 //depending on ray cone angle whe it hits the sky
 #define PI  3.1415926535897932384f
-#define ryl 3           //ray loops
+#define ryl 4           //ray loops
 #define srf .01f        //distance considered surface
 #define nrd .001f        //normal calcualtion
 #define ote 111f        //outside fractal space
@@ -149,7 +149,7 @@ fn rayMarch(rayIn:rayST, seed:u32, angmin:f32, id2f:vec2f, camPos:vec3f, camMtx:
         if(abs(l) < srf){l2 = srf*.5f;}
         ray.p += l2*ray.d;
         ray.t += l2;
-        ray.a = min(ray.a, l2/ray.t);
+        if(l >= srf*2f){ray.a = min(ray.a, l2/ray.t);}
         bonce = abs(ray.l) >= srf && abs(l) < srf;
         ray.l = l;
     }
@@ -173,7 +173,7 @@ fn rayMarch(rayIn:rayST, seed:u32, angmin:f32, id2f:vec2f, camPos:vec3f, camMtx:
         ray.c = vec3f(1);
         ray.l = getSDF(ray.p);
         ray.t = 0f;
-        ray.a = 1f/angmin;
+        ray.a = tan(1f/angmin);
         ray.o = ray.a;
         bonce = false;
     }
@@ -198,7 +198,7 @@ fn rayMarch(rayIn:rayST, seed:u32, angmin:f32, id2f:vec2f, camPos:vec3f, camMtx:
         ray.d = a2.x*rfx*rfxl + a2.y*rfy*rfyl + a1.x*rfl;
         ray.c *= col.xyz;
         ray.t = 0f;
-        ray.a = tan(col.w);
+        ray.a = tan(PI*.25f);
         ray.o = ray.a;
     }
     return ray;

@@ -2,8 +2,6 @@ import std;
 
 static const float LINE_WIDTH = 0.04;
 static const float CELL_RADIUS = 0.3;
-static const int FRAMES_PER_UPDATE = 1;
-static const int STEPS_PER_UPDATE = 1;
 static const int STEPS_UNTIL_RESET = 100000;
 
 
@@ -354,6 +352,7 @@ struct RNG {
     [mutating]
     vector<float, N> next<int N>() {
         vector<float, N> result;
+        [unroll]
         for (var i = 0; i < N; i++)
             result[i] = next();
         return result;
@@ -415,8 +414,7 @@ struct RandomAgent : IAgent {
         } else {
             uint movable = board.movable_mask(is_player_1);
             bool can_fly = (movable >> 31) != 0;
-            // Note: We bias the rng with the current turn, otherwise due to the weak rng it easily gets caught in cycles.
-            m.source = wrapping_bit_idx(movable & 0xFFFFFF, turn + rng.next_raw());  
+            m.source = wrapping_bit_idx(movable & 0xFFFFFF, rng.next_raw());  
             targets = board.target_position_mask(m.source, can_fly);
         }
 
@@ -652,6 +650,14 @@ struct TestRunner {
         this.board_state = board_state.apply_move(is_player_1, move);
     }
 
+    bool requires_interaction() {
+        // Returns true if the current player is a HumanAgent (needs to always check for inputs every frame)
+        bool is_player_1 = (turn & 1) == 0;
+        if (is_player_1)
+            return player_1 is HumanAgent;
+        return player_2 is HumanAgent;
+    }
+
     uint2 get_score() {
         return uint2(countbits(board_state.mask_player_1), countbits(board_state.mask_player_2));
     }
@@ -668,7 +674,6 @@ struct TestRunner {
     }
 }
 
-
 [StorageBuffer(1)]
 RWStructuredBuffer<TestRunner> runners;
 
@@ -680,16 +685,20 @@ void step_run(uint3 id : SV_DispatchThreadID) {
     bool do_reset = true;
     if (time.frame > 0) {
         runner = runners[0];
-        do_reset = time.frame % (STEPS_UNTIL_RESET * FRAMES_PER_UPDATE / STEPS_PER_UPDATE + 100) == 0;
+        do_reset = time.frame % uint(STEPS_UNTIL_RESET / pow(10.0, custom.log10_steps_per_frame) + 100) == 0;
+        do_reset |= (time.frame % 200 == 0) && runner.is_gameover();
     }
     if (do_reset) {
         runner = TestRunner(RandomAgent(true, time.frame), RandomAgent(false, time.frame + 456));
-        runner = TestRunner(RandomAgent(true, time.frame), HumanAgent(false));
+        //runner = TestRunner(RandomAgent(true, time.frame), HumanAgent(false));
     }
-    if (time.frame % FRAMES_PER_UPDATE == 0) {
-        for (int i = 0; i < STEPS_PER_UPDATE && !runner.is_gameover(); i++)
-            runner.step();
-    }
+
+    float fsteps = pow(10.0, custom.log10_steps_per_frame);
+    uint steps_this_frame = floor(fsteps * time.frame) - floor(fsteps * (time.frame - 1));
+    if (runner.requires_interaction())
+        steps_this_frame = max(steps_this_frame, 1);
+    for (int i = 0; i < steps_this_frame && !runner.is_gameover(); i++)
+        runner.step();
     runners[0] = runner;
 }
 
