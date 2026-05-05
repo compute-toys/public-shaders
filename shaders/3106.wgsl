@@ -157,7 +157,7 @@ fn rayMarch(rayIn:rayST, seed:u32, angmin:f32, id2f:vec2f, camPos:vec3f, camMtx:
     {
         var an1 = atan(ray.a);
         var an2 = atan(ray.o);
-        var lvl = max(0f,floor(log2(an1*angmin)-1.5f));
+        var lvl = max(0f,floor(log2(an1*angmin)-.5f));
         var col = bkgr(ray.d, lvl);
         var imp = (1f-cos(an1))/(1f-cos(an2));  if(an2==0f){imp = .00001f;}
         ray.x += vec4f(col*ray.c, 1f)*imp;
@@ -198,7 +198,7 @@ fn rayMarch(rayIn:rayST, seed:u32, angmin:f32, id2f:vec2f, camPos:vec3f, camMtx:
         ray.d = a2.x*rfx*rfxl + a2.y*rfy*rfyl + a1.x*rfl;
         ray.c *= col.xyz;
         ray.t = 0f;
-        ray.a = tan(PI*.25f);
+        ray.a = tan(col.w);
         ray.o = ray.a;
     }
     return ray;
