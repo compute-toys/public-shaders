@@ -1,6 +1,6 @@
-//previous try was not smooth path https://compute.toys/view/2070
-//this try does not compute the distance field properly
-//making the path curved where it should be straight
+//previous try got slower as the wave expanded https://compute.toys/view/3115
+//this try does not slow down but does not generate a distance field
+//only the derivative of the distance field
 
 //findind the path of least effor on a 2Dheightmap
 //use slider to see 2Deffortmap or 2Dheightmap
@@ -61,6 +61,16 @@ float terrainHeight(float2 u)
     drawLine(r,u,float2(.5,-.3),float2(.5,.1),a);
     return r;
 }
+float angle(float2 a, float2 b)
+{
+    var al = length(a);   if(al==0.f){return 0.f;}
+    var bl = length(b);   if(bl==0.f){return 0.f;}
+    a /= al;
+    b /= bl;
+    var s = a.x * b.y - a.y * b.x;
+    var c   = dot(a, b);
+    return atan2(s, c);
+}
 float2 mod2(float2 a, float b)
 {
     return fract(a/b)*b;
@@ -81,7 +91,8 @@ void ini(uint3 dtid : SV_DispatchThreadID)
     var fr1 = ((tim-0+frmz) % frmz)*mapz*mapz;
     var fr2 = ((tim-1+frmz) % frmz)*mapz*mapz;
     var fr3 = ((tim-2+frmz) % frmz)*mapz*mapz;
-    var v   = 32.0f*float(j1==i1);
+    //var v   = 2.0f*float(j1==i1);
+    var v   = 2.f/exp(dot(uv-strt,uv-strt)*2222.f);
     leem[fr1+i1] = v;
     leem[fr2+i1] = v;
     leem[fr3+i1] = v;
@@ -148,7 +159,7 @@ void norf(uint3 dtid : SV_DispatchThreadID)
         var j1 = dot(int2(j2),int2(1,mapz));
         var v1 = leem[fr1+j1];
         var v2 = leem[fr2+j1];
-        var e  = 1.f/exp(l2*.6f);  et += e;
+        var e  = 1.f/exp(l2*.5f);  et += e;
         var frq = 1.f;
         var d1 = cos(dot(xy,float2(1,0))*frq-float2(0,.5)*pi);
         var d2 = cos(dot(xy,float2(0,1))*frq-float2(0,.5)*pi);
@@ -158,18 +169,19 @@ void norf(uint3 dtid : SV_DispatchThreadID)
         s22+= cmul(v2,d2)*e;
     }}
     var v = float2(
-        atan2(s1.y,s1.x)-atan2(s12.y,s12.x),
-        atan2(s2.y,s2.x)-atan2(s22.y,s22.x)
+        angle(s1,s12),
+        angle(s2,s22)
     );
     s1  = s1 /et;
     s2  = s2 /et;
     s12 = s12/et;
     s22 = s22/et;
-    v *= float2(
-        length(s1)+length(s12),
-        length(s2)+length(s22)
-    );
-    noor[i1] += -v*float(length(noor[i1])<.001f);
+    //v *= sqrt(dot(s1,s1)+dot(s2,s2));
+    //v *= float2(
+    //    length(s1)+length(s12),
+    //    length(s2)+length(s22)
+    //);
+    noor[i1] += v*float(length(noor[i1])<.5f);
 }
 [shader("compute")]
 [WorkgroupCount(1, 1, 1)]
@@ -185,7 +197,7 @@ void fall(uint3 dtid : SV_DispatchThreadID)
     var i2 = papo[0];
     var uv = i2/float(mapz) *2.f-1.f;
     var i1 = dot(int2(i2),int2(1,mapz));
-    var dd = noor[i1]*1111.f;
+    var dd = noor[i1]*2.f;
     i2 = clamp(i2+dd,float2(.5),float2(mapz)-.5f);
     if(time.frame==0u        ){i2 = ende2;}
     if(length(i2-strt2) < 1.f){i2 = ende2;}
@@ -219,8 +231,8 @@ void main_image(uint3 dtid : SV_DispatchThreadID)
     var fr1 = ((tim-0+frmz) % frmz)*mapz*mapz;
     var fr2 = ((tim-1+frmz) % frmz)*mapz*mapz;
     var fr3 = ((tim-2+frmz) % frmz)*mapz*mapz;
-    var l   = leem[fr1+i1]*4.0f+.5f;
-    var n   = noor[    i1]*111.0f+.5f;
+    var l   = leem[fr1+i1]*1.0f+.5f;
+    var n   = noor[    i1]*.3f+.5f;
     var c   = float4(0);
     //var c   = toLinear(turbo(fract(l)));
     var q   = int(u.x < 0.f);

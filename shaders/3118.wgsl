@@ -1,10 +1,14 @@
-const mx = 1366.483*8;
+const mx = 1366.483*5;
 const mn = 589.15;
+const size: f32 = 5;
+
 
 @compute @workgroup_size(16, 16)
 fn main_image(@builtin(global_invocation_id) id: vec3u) {
     // Viewport resolution (in pixels)
     let screen_size = textureDimensions(screen);
+    let aspect = f32(screen_size.y) / f32(screen_size.x);
+
 
     // Prevent overdraw for workgroups on the edge of the viewport
     if (id.x >= screen_size.x || id.y >= screen_size.y) { return; }
@@ -12,31 +16,41 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
     // Pixel coordinates (centre of pixel, origin at bottom left)
     let fragCoord = vec2f(f32(id.x) + .5, f32(screen_size.y - id.y) - .5);
 
-    var uv = vec2f((fragCoord / vec2f(screen_size)) * vec2f(1, (f32(screen_size.y)/f32(screen_size.x))));
-    uv = vec2f(remap_f32(uv.x, 0, 1, -1, 1), remap_f32(uv.y - pow(uv.y, 2)/2, 0, 1, -1, 1));
+    // var uv_raw = vec2f((fragCoord / vec2f(screen_size)) * vec2f(1, (f32(screen_size.y)/f32(screen_size.x))));
+    var uv_raw = fragCoord / vec2f(screen_size);
+    var uv_a = vec2f((fragCoord / vec2f(screen_size)) * vec2f(1, (f32(screen_size.y)/f32(screen_size.x))));
+    var uv = vec2f(remap_f32(uv_a.x, 0, 1, -1, 1), remap_f32(uv_a.y - pow(uv_a.y, 2)/2, 0, 1, -1, 1));
+    let tri_coord = vec2f(remap_f32(uv_raw.x, 0, 1, -size, size), remap_f32(uv_raw.y, 0, 1, -size * aspect, size * aspect)); 
     // Time varying pixel colour
     // var col = .5 + .5 * cos(time.elapsed + uv.xyx + vec3f(0.,2.,4.));
     // var col = blackbody((uv.x * 39000) + 1000);
     // var col = vec3f(curlNoise2D(vec3f(uv.xy*3, time.elapsed)).xy, 0);
 
-    let rate: f32 = 5;
+    let rate: f32 = 6;
     let coord = vec2f(uv.x, uv.y) * 8 + vec2f(0, -time.elapsed*rate);
     var val = ( snoise(vec3f(coord + curlNoise2D(vec3f(coord, time.elapsed * (rate/2))).xy/5, 0)) + 1 ) / 2;
-    var col = vec3f(val * pow(clamp(remap_f32(distance(uv, vec2f(0, -0.55)), 0, 0.3, 1, 0), 0, 1), 0.8));
+    // var fade =  pow(clamp(remap_f32(distance(uv, vec2f(0, -0.55)), 0, 0.3, 1, 0), 0, 1), 0.8);
+    let fade = remap_f32(clamp(sdf(vec2f(tri_coord.x, tri_coord.y/1.3), 0.75), -0.5, 0.5), -0.5, 0.5, 1, 0);
+    
+    var col = vec3f(val * fade);
     
     col = pow(col, vec3f(2.2))*10;
     col = blackbody(remap_f32(col.x, 0, 10, mn, mx)) * col.x;
     col = pow(col, vec3f(2.2));
+    // col = vec3f(remap_f32(clamp(dist, -0.5, 0.5), -0.5, 0.5, 1, 0));
+    
 
     // Output to screen (linear colour space)
     textureStore(screen, id.xy, vec4f(col, 1.));
 }
 
 fn remap_f32(x: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32 {
-    // return ((x - in_min)/(in_max-in_min)) * (out_max-out_min) + out_min;
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+fn sdf(p: vec2f, test: f32) -> f32 {
+    return sd_equilateral_triangle(p, 1 - test) - test;
+}
 
 
 // --- SECTION 1: Underlying 3D Noise (Simplex/Glow variant) ---
@@ -194,4 +208,16 @@ fn blackbody(kelvin: f32) -> vec3f {
 
     // 5. Clamp values to 0-255 range and normalize to 0.0 - 1.0
     return clamp(vec3f(r, g, b), vec3f(0.0), vec3f(255.0)) / 255.0;
+}
+
+fn sd_equilateral_triangle(point: vec2f, r: f32) -> f32 {
+    let k: f32 = sqrt(3.0);
+    var p = vec2f(point.xy);
+    p.x = abs(p.x) - r;
+    p.y = p.y + r/k;
+    if( p.x+k*p.y>0.0 ) {
+        p = vec2(p.x-k*p.y,-k*p.x-p.y)/2.0;
+    }
+    p.x -= clamp( p.x, -2.0*r, 0.0 );
+    return -length(p)*sign(p.y);
 }
