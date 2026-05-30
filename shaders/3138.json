@@ -1,0 +1,109 @@
+{
+  "id": 3138,
+  "created_at": "2026-05-29T04:13:05.223445+00:00",
+  "name": "Spinning Terrain",
+  "description": "Constructed with SDFs and 3D Perlin Noise",
+  "body": {
+    "uniforms": [
+      {
+        "name": "octaves",
+        "value": 9,
+        "minRange": 1,
+        "maxRange": 9
+      },
+      {
+        "name": "persistence",
+        "value": 0.5,
+        "minRange": 0.5,
+        "maxRange": 1
+      },
+      {
+        "name": "lacunarity",
+        "value": 2,
+        "minRange": 1,
+        "maxRange": 2
+      },
+      {
+        "name": "seed",
+        "value": 2492.179,
+        "minRange": 0,
+        "maxRange": 5000
+      },
+      {
+        "name": "waterLevel",
+        "value": 0.025,
+        "minRange": -0.1,
+        "maxRange": 0.1
+      },
+      {
+        "name": "freq",
+        "value": 6.119,
+        "minRange": 0,
+        "maxRange": 10
+      },
+      {
+        "name": "height",
+        "value": 0.084,
+        "minRange": 0,
+        "maxRange": 0.5
+      },
+      {
+        "name": "colorScale",
+        "value": 0.003,
+        "minRange": 0,
+        "maxRange": 0.01
+      },
+      {
+        "name": "continentFreq",
+        "value": 4.044,
+        "minRange": 0,
+        "maxRange": 8
+      },
+      {
+        "name": "continentHeight",
+        "value": 0.075,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "continentSeed",
+        "value": 562.283,
+        "minRange": 0,
+        "maxRange": 1000
+      },
+      {
+        "name": "kernel",
+        "value": 12.271,
+        "minRange": 0,
+        "maxRange": 50
+      },
+      {
+        "name": "glow",
+        "value": 0.864,
+        "minRange": 0,
+        "maxRange": 3
+      },
+      {
+        "name": "thresh",
+        "value": 0.833,
+        "minRange": 0,
+        "maxRange": 0.99
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": null
+  }
+}
