@@ -84,6 +84,19 @@ fn sdf_segment(p: vec2f, a: vec2f, b: vec2f, r: f32) -> f32 {
     return length(pa - ba * h) - r;
 }
 
+// Regular hexagon SDF
+// r = inradius / apothem
+// 也就是“中心到每条边的距离”，不是中心到顶点的距离。
+fn sdf_hexagon(p_in: vec2f, r: f32) -> f32 {
+    let k = vec3f(-0.8660254, 0.5, 0.57735027); // (-sqrt(3)/2, 1/2, 1/sqrt(3))
+
+    var p = abs(p_in);
+    p = p - 2.0 * min(dot(k.xy, p), 0.0) * k.xy;
+    p = p - vec2f(clamp(p.x, -k.z * r, k.z * r), r);
+
+    return length(p) * sign(p.y);
+}
+
 fn linearstep(e0: f32, e1: f32, x: f32) -> f32 {
     return clamp((x - e0) / (e1 - e0), 0.0, 1.0);
 }
