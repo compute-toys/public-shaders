@@ -1,0 +1,31 @@
+{
+  "id": 3149,
+  "created_at": "2026-06-10T08:24:17.181412+00:00",
+  "name": "Voronoi",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "distort",
+        "value": 0.501,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "vodski"
+  }
+}
