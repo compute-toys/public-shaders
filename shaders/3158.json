@@ -1,0 +1,24 @@
+{
+  "id": 3158,
+  "created_at": "2026-06-14T11:16:04.79773+00:00",
+  "name": "Physarum #01",
+  "description": "Rewrite of my shader from the 2nd round of Revision 2026 shader showdown\nPhysarum made with this video from Sebastian Lague <3 \nhttps://youtu.be/X-iSQQgOd1A?si=FOG8CAm7fAz_mbX4",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "flopine"
+  }
+}

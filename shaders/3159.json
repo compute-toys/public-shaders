@@ -1,0 +1,24 @@
+{
+  "id": 3159,
+  "created_at": "2026-06-14T11:18:49.219132+00:00",
+  "name": "CelstialSim Web demo",
+  "description": "A demo for https://celestialsim.github.io/, a procedural generation toolkit for Godot.\n\nA buffer of trianges renders with ray intersection, checks reduced with a tree struct. leaves = visible tris, node children = subdivided triangles of the node.",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "Calonca"
+  }
+}
