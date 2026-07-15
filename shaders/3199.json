@@ -1,0 +1,24 @@
+{
+  "id": 3199,
+  "created_at": "2026-07-14T01:33:35.897788+00:00",
+  "name": "Mixable Circle",
+  "description": "Features a circle you can drag around that mixes with the background color bars.",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": null
+  }
+}
