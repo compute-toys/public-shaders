@@ -1,0 +1,24 @@
+{
+  "id": 3201,
+  "created_at": "2026-07-18T03:59:01.638737+00:00",
+  "name": "Membrane interaction",
+  "description": "1234",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}

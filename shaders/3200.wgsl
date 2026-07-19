@@ -28,15 +28,13 @@ fn rnd(a: u32) -> f32
     var msk = (1u << 23u) - 1u;
     return f32(h & msk) / f32(1u << 23u);
 }
-fn f(r:f32)->f32 //activation function
+fn f(v:f32)->f32 //activation function
 {
-           var r4 = 1.f;
-    if(r>=0.f){r4 =-1.f;}
-           var r5 = 0.f;
-    if(r>=0.f){r5 = 2.f;}
-    var r6 = exp(r*r4);
-    //var d  = r6*r4 + r5;    //derivative
-    return r6 + r*r5 - 1.f;
+    var a = abs(v);
+    var b = 1.f - 1.f/exp(a);
+    var c = 1.f; if(v<0.f){c = -1.f;}
+    //d = c*b + 1.f;    //derivative
+    return a - b + v;
 }
 fn nn(p1:vec2f, p2:vec2f) -> vec2f
 {
