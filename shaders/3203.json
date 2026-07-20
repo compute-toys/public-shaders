@@ -1,0 +1,24 @@
+{
+  "id": 3203,
+  "created_at": "2026-07-19T16:10:48.940348+00:00",
+  "name": "PBF film",
+  "description": "Forked from https://compute.toys/view/3201",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}
