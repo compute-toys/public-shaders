@@ -3,22 +3,20 @@
 
 import std;
 static const float pi     = 3.1415926535897932384626433832795;
-static const int   thrd   = 1<<5;     //gpu threads
-static const int   pdv    = 3;      //pendulum divisions
-static const float brsf   = 4.0f;    //bar force
-static const float brsr   = 1.0f;    //bar friction
-static const float brsl   = 8.0f;    //bar length
-static const float brsw   = 1.0f;    //bar radius
-static const float phyl   = 2;       //physics loops per frame
-static const float grvt   =-.03;     //physics loops per frame
-static const float dt     = .1f;     //time step
-static const float camdis = 22.f;     //camera distance
+static const int   thrd   = 1<<5;       //gpu threads
+static const int   pdv    = 3;          //pendulum divisions
+static const float brsf   = .4f;        //bar force
+static const float brsr   = .1f;        //bar friction
+static const float brsl   = 8.0f;       //bar length
+static const float brsw   = 1.0f;       //bar radius
+static const float phyl   = 2;          //physics loops per frame
+static const float grvt   =-.003;       //gravity
+static const float camdis = 22.f;       //camera distance
 
 struct Doto
 {
     float2 p[pdv]; //position
     float2 v[pdv]; //velocity
-    float2 f[pdv]; //force
 };
 [StorageBuffer(3*pdv*2*4)] RWStructuredBuffer<Doto> D;    //lines position
 
@@ -72,12 +70,12 @@ void forward(uint3 id3 : SV_DispatchThreadID)
     {
         for(var k=0; k<pdv; k++)
         {
-            D[0].f[k] = float2(0,float(k!=0))*grvt;
+            D[0].v[k] += float2(0,float(k!=0))*grvt;
         }
         if(true){
             var dr = (mus*float2(1,0)-D[0].p[0]) * brsf;
             var v1 = D[0].v[0] * brsr;
-            D[0].f[0] += dr-v1;
+            D[0].v[0] += dr-v1;
         }
         for(var k=0; k<pdv-1; k++)//bar
         {
@@ -86,10 +84,9 @@ void forward(uint3 id3 : SV_DispatchThreadID)
             var p2 = D[0].p[k+1];
             var v2 = D[0].v[k+1];
             var f = barforce(p1,p2, v1,v2, brsl);
-            D[0].f[k+0] += f;
-            D[0].f[k+1] -= f;
+            D[0].v[k+0] += f;
+            D[0].v[k+1] -= f;
         }
-        for(var k=0; k<pdv; k++) D[0].v[k] += D[0].f[k]*dt;
         for(var k=0; k<pdv; k++) D[0].p[k] += D[0].v[k];
     }
 }

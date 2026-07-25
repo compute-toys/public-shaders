@@ -3,6 +3,7 @@
 //Shadertoy: https://www.shadertoy.com/view/4dX3zl
 const Size = 1.; //Adjust this for denser voxels
 const MaxIterations = 128u * u32(ceil(Size));
+const SunDir = normalize(float3(1., 1., 0.5));
 
 struct DDAResult{
     Normal : vec3<f32>,
@@ -14,6 +15,16 @@ struct Ray {
     Pos: vec3<f32>,
     Dir: vec3<f32>
 };
+
+
+var<private> CamPos = float3(0., 0., 0.);
+var<private> CamDir = 0.;
+
+
+fn IGN(p: float3) -> float {
+    var o = p.xy + p.z * 5.588238;
+    return (52.9829189*(0.06711056*o.x+0.00583715*o.y)%1)%1;
+}
 
 // https://compute.toys/view/15
 fn Hash33(p: float3) -> float3 {
@@ -108,11 +119,12 @@ fn GetVoxel(c : vec3<f32>) -> bool{
     if(length(((c.xz + 200.) % 50.) - float2(25.)) < 3.5) {
         return true;
     }
-    if((c.y == 25. || abs(c.z) == 30.) && c.x % 200. > 100.) {
-        return true;
-    }
+    // if((c.y == 10. || abs(c.z) == 15.) && c.x % 400. > 200.) {
+    //     return true;
+    // }
     let p = (c + 0.5) / 20.;
-    return simplex3d(p) < -p.y * 2. - 1.;
+    let noise = simplex3d(p);
+    return noise < -p.y * 2. - 1.1 && noise < 0.;
     //return p.y < -0.2;
 }
 
@@ -141,16 +153,17 @@ fn DDA(RayPosition : vec3<f32>, RayDirection : vec3<f32>) -> DDAResult{
     return DDAResult(vec3<f32>(0.), 0., false);
 }
 
-fn GetCameraPos() -> vec3<f32> {
-    var RayPosition = vec3<f32>(0., 0., -10.);
-    //var RayPosition = float3(0., 10., -16. - 10. * cos(time.elapsed / 6.));
-    //RayPosition.y = 0.;
-    return RayPosition;
-}
+// fn GetCameraPos() -> vec3<f32> {
+//     var RayPosition = vec3<f32>(0., 0., -10.);
+//     //var RayPosition = float3(0., 10., -16. - 10. * cos(time.elapsed / 6.));
+//     //RayPosition.y = 0.;
+//     return RayPosition;
+// }
 
 fn GetPrimaryRay(FragCoord: vec2<f32>) -> Ray {
     let Resolution = float2(textureDimensions(screen).xy);
-    let FragOff = Hash33(float3(FragCoord.x + 100., FragCoord.y - 100., time.elapsed + 20.)).xy - 0.5;
+    //let FragOff = Hash33(float3(FragCoord.x + 100., FragCoord.y - 100., time.elapsed + 20.)).xy - 0.5;
+    let FragOff = float2(0.);
     let UV = 2. * (FragCoord + FragOff * 0.5) / Resolution - 1.;
 
     let CameraDirection = vec3<f32>(0., 0., .8);
@@ -159,34 +172,15 @@ fn GetPrimaryRay(FragCoord: vec2<f32>) -> Ray {
     let CameraPlaneV = vec3<f32>(0., AspectRatio, 0.);
     
     var RayDirection = CameraDirection + UV.x * CameraPlaneU + UV.y * CameraPlaneV;
-    var RayPosition = GetCameraPos();
+    var RayPosition = CamPos;
 
 
-    let DirectionRotation = Rotate2D(RayDirection.xz, time.elapsed / 4.);
-    let PositionRotation = Rotate2D(RayPosition.xz, time.elapsed / 4.);
+    let DirectionRotation = Rotate2D(RayDirection.xz, CamDir);
+    //let PositionRotation = Rotate2D(RayPosition.xz, CamDir);
 
     RayDirection = vec3<f32>(DirectionRotation.x, RayDirection.y, DirectionRotation.y);
-    RayPosition = vec3<f32>(PositionRotation.x, RayPosition.y, PositionRotation.y) * Size;
-    return Ray(RayPosition + float3(time.elapsed * 10., 0., 0.), RayDirection);
-}
-
-fn GetPixel(HitPosition: vec3<f32>) -> vec2<f32> {
-    let Resolution = vec2<f32>(textureDimensions(screen).xy);
-    let AspectRatio = Resolution.y / Resolution.x;
-
-    // 1. Calculate the ray direction from the camera to the hit point
-    let RayDirection = HitPosition - GetCameraPos();
-
-    // 2. Project the direction onto the camera plane at depth Z = 0.8
-    // (This cancels out any distance/length scaling in the ray)
-    let Scale = 0.8 / RayDirection.z;
-    let UV = vec2<f32>(
-        RayDirection.x * Scale,
-        (-RayDirection.y * Scale) / AspectRatio
-    );
-
-    // 3. Map UV [-1, 1] back to FragCoord [0, Resolution]
-    return (UV + 1.0) * 0.5 * Resolution;
+    //RayPosition = vec3<f32>(PositionRotation.x, RayPosition.y, PositionRotation.y) * Size;
+    return Ray(RayPosition, RayDirection);
 }
 
 fn PointIsGlowing(c: float3) -> bool {
@@ -208,26 +202,29 @@ fn GetPointFluence(p: float3) -> float3 {
     }
 }
 
-fn GetPointLight(p: float3, norm: float3, Rng: float3) -> float3 {
+fn GetPointLight(p: float3, norm: float3) -> float3 {
     var Light = float3(0.);
     if(PointIsGlowing(p)) {
         Light += float3(sin(p.x / 25.) * 0.5 + 0.5, cos(p.x / 25.) * 0.5 + 0.5, sin(p.z / 15.));
     }
-    let SunDir = normalize(float3(1., 2., 0.5) + (Rng - 0.5) * 0.1);
-    var SunResult = DDA(p, SunDir);
-    if(!SunResult.HitVoxel) {
-        Light += dot(-norm, SunDir) * float3(1., 0.5, 0.25);
+    
+    if(PointInSun(p)) {
+        Light += dot(-norm, SunDir) * float3(1., 0.75, 0.5);
     }
     return Light;
+}
+
+fn PointInSun(p: float3) -> bool {
+    var SunResult = DDA(p, SunDir);
+    return !SunResult.HitVoxel;
 }
 
 fn CollectLight(Point: float3, RawHash: float3, Normal: float3) -> float3 {
     var Rng = RawHash;
     var Fluence = GetPointFluence(Point);
-    var Light = GetPointLight(Point, Normal, Rng) * Fluence;
-    Rng = Hash33(Rng);
-    var RayPos = Point;
     var RayDir = normalize((Rng - 0.5) - Normal * 0.5);
+    var Light = GetPointLight(Point, Normal) * Fluence;
+    var RayPos = Point;
     for(var i = 0; i < 3; i++) {
         var Result = DDA(RayPos, RayDir);
         if(Result.HitVoxel) {
@@ -235,15 +232,13 @@ fn CollectLight(Point: float3, RawHash: float3, Normal: float3) -> float3 {
             Rng = Hash33(Rng);
             let BounceNormal = Result.Normal * sign(RayDir);
             RayDir = normalize((Rng - 0.5) - BounceNormal * 0.5);
-            Light += Fluence * GetPointLight(RayPos, BounceNormal, Rng);
-            Rng = Hash33(Rng);
+            Light += Fluence * GetPointLight(RayPos, BounceNormal);
             Fluence *= GetPointFluence(RayPos);
         } else {
-            Light += max(0., RayDir.y) * float3(0., 0.5, 0.75) * Fluence;
+            Light += max(0., RayDir.y) * float3(0., 0.25, 0.5) * Fluence;
             break;
         }
     }
-    //return floor(Light + Rng);
     return Light;
 }
 
@@ -253,6 +248,41 @@ fn main_image(@builtin(global_invocation_id) Pixel: uint3) {
     if (Pixel.x >= Resolution.x || Pixel.y >= Resolution.y){
         return;
     }
+    var CamData = textureLoad(pass_in, Pixel.xy, 0, 0);
+    let rot_speed = 3. * time.delta;
+    if(keyDown(37)) {
+        CamData.w += rot_speed;
+    }
+    if(keyDown(39)) {
+        CamData.w -= rot_speed;
+    }
+    let speed = 10. * time.delta;
+    let fwd = Rotate2D(float2(0., 1.), CamData.w) * speed;
+    let rig = Rotate2D(float2(1., 0.), CamData.w) * speed;
+    var hp = CamData.xz;
+    if(keyDown(65)) {
+        hp -= rig;
+    }
+    if(keyDown(68)) {
+        hp += rig;
+    }
+    if(keyDown(87)) {
+        hp += fwd;
+    }
+    if(keyDown(83)) {
+        hp -= fwd;
+    }
+    CamData.x = hp.x;
+    CamData.z = hp.y;
+    if(keyDown(69)) {
+        CamData.y += speed;
+    }
+    if(keyDown(81)) {
+        CamData.y -= speed;
+    }
+    CamPos = CamData.xyz;
+    CamDir = CamData.w;
+    textureStore(pass_out, Pixel.xy, 0, CamData);
     let FragCoord = float2(float(Pixel.x) + .5, float(Resolution.y - Pixel.y) - .5);
     let Ray = GetPrimaryRay(FragCoord);
 
@@ -261,21 +291,44 @@ fn main_image(@builtin(global_invocation_id) Pixel: uint3) {
     let Normal = Primary.Normal * sign(Ray.Dir);
     var Alignment = sqrt(dot(Ray.Dir, Normal));
     let Bias = (pow(textureLoad(channel0, Pixel.xy % 1024, 0).r, 1/2.2) - 0.5) * 1.;
-    let Quant = pow(0.5, ceil(1. * log2(Primary.Distance / Alignment) - Bias * 1.)) * float(Resolution.x) / custom.QuantizationScaling * 1.;
-    let QuantPos = floor(Quant * HitPos) / Quant;
-    let RawHash = Hash33(QuantPos * 100.);
+    var Quant = pow(0.5, ceil(1. * log2(Primary.Distance / Alignment) - Bias * 1.)) * float(Resolution.x) / custom.QuantizationScaling;
+    Quant = clamp(Quant, 0., 256.);
+    let QuantPos = abs(floor(Quant * HitPos)) / Quant * 2.;
+    // let RawHash = Hash33(QuantPos * 100.);
+    let RawHash = float3(
+        simplex3d(QuantPos),
+        simplex3d(QuantPos + float3(0., 10., 0.)),
+        simplex3d(QuantPos + float3(0., 20., 0.)),
+    ) * 0.5 + 0.5;
     var Color = float3(0.);
     if(Primary.HitVoxel){
         var Light = CollectLight(HitPos, RawHash, Normal);
-        var TaxiDist = (abs(Ray.Dir.x) + abs(Ray.Dir.y) + abs(Ray.Dir.z)) * Primary.Distance;
-        var Fog = pow(min(1., TaxiDist / 126.), 4);
-        Color = Light * (1. - Fog) + Fog * float3(0., 0.5, 0.75);
+        Color = Light;
+
+        var absorb = pow(0.995, Primary.Distance);
+        var add = 0.001 * Primary.Distance;
+        for(var j = 4; j >= 0; j--) {
+            var off = (float(j) + Bias + 0.5) / 5.;
+            var SamplePos = Ray.Pos + Ray.Dir * (Primary.Distance * off);
+            Color *= absorb;
+            if(PointInSun(SamplePos)) {
+                Color += add * float3(1., 0.75, 0.5);
+            }
+        }
+
+        var TaxiDist = (abs(Ray.Dir.x) + abs(Ray.Dir.y) + abs(Ray.Dir.z)) * Primary.Distance / 126.;
+        var Fog = min(1., max(0., TaxiDist * 10. - 9.));
+        Color = Color * (1. - Fog) + Fog * float3(0.0, 0.5, 0.75);
     } else {
         Color = float3(0., 0.5, 0.75);
     }
     //Color = vec3(HitPos);
     //var diff = Primary.Distance * length(Ray.Dir) - distance(Ray.Pos, Prev.xyz);
     //Color = float3(sin(diff * 10));
+    var fx = float(Pixel.x);
+    var fy = float(Pixel.y);
+    var v = IGN(float3(fx, fy, 0.));
+    //Color = pow(mortonCurve3D(fx / 928.), float3(2.));
     textureStore(screen, Pixel.xy, vec4<f32>(Color, 1.));
     //var lum = max(Color.r, max(Color.g, Color.b));
     //textureStore(pass_out, Pixel.xy, 0, float4(Prev.x, Prev.y, Prev.z, lum));
