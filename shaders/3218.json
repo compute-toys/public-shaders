@@ -7,7 +7,7 @@
     "uniforms": [
       {
         "name": "QuantizationScaling",
-        "value": 3.997,
+        "value": 4.062,
         "minRange": 0.01,
         "maxRange": 16
       }
@@ -17,7 +17,7 @@
         "img": "/textures/noise4.png"
       },
       {
-        "img": "/textures/blank.png"
+        "img": "/textures/noise3.png"
       }
     ],
     "float32Enabled": true,

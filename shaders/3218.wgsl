@@ -300,6 +300,15 @@ fn main_image(@builtin(global_invocation_id) Pixel: uint3) {
         simplex3d(QuantPos + float3(0., 10., 0.)),
         simplex3d(QuantPos + float3(0., 20., 0.)),
     ) * 0.5 + 0.5;
+    // var Texel = int2(0);
+    // if(Primary.Normal.x == 1.) {
+    //     Texel = int2(QuantPos.yz);
+    // } else if(Primary.Normal.y == 1.) {
+    //     Texel = int2(QuantPos.xz);
+    // } else {
+    //     Texel = int2(QuantPos.xy);
+    // }
+    // let RawHash = pow(textureLoad(channel1, Texel % int2(textureDimensions(channel1)), 0).xyz, float3(1./2.2));
     var Color = float3(0.);
     if(Primary.HitVoxel){
         var Light = CollectLight(HitPos, RawHash, Normal);
