@@ -7,10 +7,10 @@ static const float pi   = 3.1415926535897932384626433832795;
 static const int   thrd = 1<<5;     //gpu threads
 static const int   lnt  = 1<<9;//total lines
 static const int   lnd  = 64;//line sibdivisions
-static const float stpp = .04;//step translation
+static const float stpp = .02;//step translation
 static const float wllf = -.04;//wall force
 static const float prna = .25;//path randomness amount
-static const float erfz = .07;//error force amount 
+static const float erfz = .5;//error force amount 
 [StorageBuffer(lnd*lnt)] RWStructuredBuffer<float2> lnp;    //lines position
 [StorageBuffer(lnd*lnt)] RWStructuredBuffer<float2> lnm;    //lines movement
 [StorageBuffer(lnd*lnt)] RWStructuredBuffer<float2> lnm2;   //lines movement change
@@ -141,12 +141,12 @@ void forward(uint3 id3 : SV_DispatchThreadID)
 {
     var id1 = int(id3.x);
     var w = 0*lnt+id1;
-    var p = lnp[w];
-    for(int i=0; i<lnd; i++)
+    var p = float2(0);
+    for(int i=1; i<lnd; i++)
     {
-        lnp[w] = p;
         p = phyStep(lnp[w], lnm[w]);
         w += lnt;
+        lnp[w] = p;
     }
     if(time.frame==0) lng[id1] = lnp[(lnd-1)*lnt+id1];
     if(time.frame==0) lns[id1] = lnd-2;
@@ -156,60 +156,51 @@ void forward(uint3 id3 : SV_DispatchThreadID)
 [numthreads(thrd, 1, 1)]
 void backward(uint3 id3 : SV_DispatchThreadID)
 {
+    var tim = int(time.frame);
     var id1 = int(id3.x);
     var tg  = lng[id1];
     var ti  = lns[id1];
     var d   = float2(0);
-    var et  = 0.f;
-    var ct  = 0.f;
-    if(length(lnp[(ti+1)*lnt+id1]-tg)<stpp*.4f){ti--;  lns[id1]=ti;}
-    //for(int i=0; i<lnd; i++)
-    //{
-    //    lnm2[i*lnt+id1] = float2(0);
-    //}
-    for(int i=lnd-2; i>ti; i--)
+    var nr  = 0.f;
+    if(length(lnp[ti*lnt+id1]-tg)<stpp*.4f){ti=max(1,ti-1);  lns[id1]=ti;}
+    for(int i=0; i<lnd; i++)
     {
-        var w   = i*lnt+id1;
+        lnm2[i*lnt+id1] = float2(0);
+    }
+    for(int i=lnd-1; (tim&1)==0 && i>ti; i--)
+    {
+        var w   = (i-1)*lnt+id1;
         var d_p = diffPair(lnp[w]);
         var d_m = diffPair(lnm[w]);
-        var p2  = lnp[(i+1)*lnt+id1];
-        var td  = tg-p2;
-        var d2  = float2(0);
-        d2     += tg-p2;
-        et     += dot(d2,d2);
-        d      += d2;
+        var p2  = lnp[i*lnt+id1];
+        d      += tg-p2;
         bwd_diff(phyStep)(d_p, d_m, d);
-        ct += dot(d_m.d,d_m.d);
+        nr     += abs(d_m.d.x)+abs(d_m.d.y);
         lnm2[w] = d_m.d;
         d       = d_p.d;
     }
     d = float2(0);
-    for(int i=ti; i>=0; i--)
+    for(int i=ti; (tim&1)!=0 && i>=0; i--)
     {
-        var w   = i*lnt+id1;
+        var w   = (i-1)*lnt+id1;
         var d_p = diffPair(lnp[w]);
         var d_m = diffPair(lnm[w]);
-        var p0  = lnp[(i+0)*lnt+id1];
-        var p1  = lnp[(i+1)*lnt+id1];
-        var p2  = tg;
-        if(i+2<lnd){p2 = lnp[(i+2)*lnt+id1];}
+        var p0  = lnp[(i-1)*lnt+id1];
+        var p1  = lnp[(i+0)*lnt+id1];
+        var p2  = lnp[(i+1)*lnt+id1];
         var td  = tg-p1;
         var tl  = length(td);  if(tl!=0.f){td /= tl;}
         var d2  = float2(0);
             d2 += td*float(ti==i);
             d2 += (p2+p0)*.5f-p1;
-        et     += dot(d2,d2);
         d      += d2;
         bwd_diff(phyStep)(d_p, d_m, d);
-        ct     += dot(d_m.d,d_m.d);
+        nr     += abs(d_m.d.x)+abs(d_m.d.y);
         lnm2[w] = d_m.d;
         d       = d_p.d;
     }
-    
-
-    //lnm3[id1] = 1.0f;
-    if(ct != 0.f){ct = sqrt(et/ct);}
-    lnm3[id1] = ct;
+    if(nr != 0.f){nr = 1.f/nr;}
+    lnm3[id1] = nr;
 }
 [shader("compute")]
 [WorkgroupCount(lnt/thrd, 1, 1)]
