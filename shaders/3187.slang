@@ -7,7 +7,7 @@ static const float pi   = 3.1415926535897932384626433832795;
 static const int   thrd = 1<<5;     //gpu threads
 static const int   lnt  = 1<<9;//total lines
 static const int   lnd  = 64;//line sibdivisions
-static const float stpp = .02;//step translation
+static const float stpp = .04;//step translation
 static const float wllf = -.04;//wall force
 static const float prna = .25;//path randomness amount
 static const float erfz = .5;//error force amount 
@@ -180,7 +180,7 @@ void backward(uint3 id3 : SV_DispatchThreadID)
         d       = d_p.d;
     }
     d = float2(0);
-    for(int i=ti; (tim&1)!=0 && i>=0; i--)
+    for(int i=ti; (tim&1)!=0 && i>=1; i--)
     {
         var w   = (i-1)*lnt+id1;
         var d_p = diffPair(lnp[w]);

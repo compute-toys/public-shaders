@@ -4,6 +4,7 @@
 //previously backprop computed how to position pendulum end through time
 //but now backprop computes how much force apply to pendulum end through time
 //this algo is better but still cant keep the pendulum up after geting it up
+//ok new update looks like it solves it
 //mouse controls camera
 
 import std;
@@ -19,7 +20,7 @@ static const float  brsw   = 1.0f;   //bar radius
 static const float  grvt   =-.003;   //gravity
 static const float  camdis = 66.f;   //camera distance
 static const float3 campdf = float3(0,0,1);   //camera pos default
-static const float  erfz   = .1f;    //error force amount 
+static const float  erfz   = .05f;    //error force amount 
 
 struct Doto
 {
@@ -131,41 +132,41 @@ void backward(uint3 id3 : SV_DispatchThreadID)
 {
     var tim = int(time.frame);
     var id1 = int(id3.x);
-    var trgl = D[0].trgl;
-    var trgp = 0.f;
-    var trgv = 0.f;
-    for(var k=0; k<pdv; k++){trgp = length(D[0].pt[k]-D[0].p[k+trgl*pdv])*float(k==pdv-1);}
+    //var trgl = D[0].trgl;
+    //var trgp = 0.f;
+    //var trgv = 0.f;
+    //for(var k=0; k<pdv; k++){trgp = length(D[0].pt[k]-D[0].p[k+trgl*pdv])*float(k==pdv-1);}
     //for(var k=0; k<pdv; k++){trgv = length(D[0].vt[k]-D[0].v[k+trgl*pdv])*float(k==pdv-1);}
     //if(trgp<.1f*brsl && trgv<.2f){
-    if(trgp<.1f*brsl){
-        trgl--;
-        D[0].trgl=trgl;
-        //for(var i=0; i<phyt-1; i++) D[0].m[i] = D[0].m[i+1];
-        //var mm = 1111111.f;
-        //for(var i= 0; i<trgl-1; i++) mm = min(mm,D[0].m[i]);
-        //for(var i=mm; i<trgl-1; i++) D[0].m[i] = D[0].m[i+1];
-    }
+    //if(trgp<.1f*brsl){
+    //    trgl--;
+    //    D[0].trgl=trgl;
+    //    //for(var i=0; i<phyt-1; i++) D[0].m[i] = D[0].m[i+1];
+    //    //var mm = 1111111.f;
+    //    //for(var i= 0; i<trgl-1; i++) mm = min(mm,D[0].m[i]);
+    //    //for(var i=mm; i<trgl-1; i++) D[0].m[i] = D[0].m[i+1];
+    //}
     for(var k=0; k<pdv; k++) D[0].p2[k] = float2(0);
     for(var k=0; k<pdv; k++) D[0].v2[k] = float2(0);
     for(var i=0; i<phyt; i++) D[0].m2[i] = 0.f;
     var nrmlz = 0.f;
     for(var i=phyt-1; i>=1; i--)
     {
+        var w = float(i)/float(phyt-1);
+        w = pow(w,4.f);
         var i1 = i-1;
-        if(i>=trgl){ //add error to backpropagate
+        //if(i>=trgl){ //add error to backpropagate
             for(var k=pdv-1; k<pdv; k++){
                 var er = (D[0].pt[k]-D[0].p[k+i*pdv]);//*float2(0,1);
                 //var el = length(er);  if(el>1.f && el!=0.f){er=er/el;}
-                    er*= float(k==pdv-1);
-                D[0].p2[k] += er;
+                D[0].p2[k] += er*w;
             }
             //for(var k=pdv-1; k<pdv; k++){
             //    var er = (D[0].vt[k]-D[0].v[k+i*pdv]);//*float2(0,1);
-            //    var el = length(er);  if(el>1.f && el!=0.f){er=er/el;}
-            //        er*= float(k==pdv-1);
-            //    D[0].v2[k] += er;
+            //    //var el = length(er);  if(el>1.f && el!=0.f){er=er/el;}
+            //    D[0].v2[k] += er*w*.2f;
             //}
-        }
+        //}
         for(var k=0; k<pdv; k++){
             var p1 = D[0].p[k+min(phyt-1,i+1)*pdv];
             var p2 = D[0].p[k+max(     0,i-1)*pdv];
@@ -212,7 +213,7 @@ void apply(uint3 id3 : SV_DispatchThreadID)
     var id1 = int(id3.x);
     var m   = D[0].m3 * erfz;
     for(int i=0; i<phyt; i++) D[0].m[i] += D[0].m2[i]*m;
-    //for(int i=0; i<phyt; i++) D[0].m[i] *= .999f;
+    for(int i=0; i<phyt; i++) D[0].m[i] *= .999f;
 }
 float sdCapsule(float3 p, float3 a, float3 b, float r)
 {
