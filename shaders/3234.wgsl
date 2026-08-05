@@ -1,6 +1,7 @@
 //algorithm that trains a neural network but using
 //new way to normalize the computed change to the weights and biases
 //by backpropagating the value of 1.0 instead of backpropagating the error
+//then using backprop of 1 to normalize backprop of error
 
 //one day when my pull request get accepted #pipeline_once #repeat #pipeline will work
 //#pipeline_once  iniNN iniLinks iniTrainDataCenter iniTrainDataWidth iniTrainDataWidth2
@@ -383,7 +384,7 @@ fn forwBackwProp(@builtin(global_invocation_id) id3: vec3u)
             er2 += d*d;
             D.nf[w1] = r;               w1+=trnB;
             D.nf[w1] = d;               w1+=trnB;
-            D.nf[w1] = 1.f;             w1+=trnB;w1+=trnB;
+            D.nf[w1] = f32(d>=0f)*2f-1f;w1+=trnB;w1+=trnB;
         }
         D.nf[w1] = er2;
     }
@@ -490,7 +491,7 @@ fn reduceNNch(@builtin(global_invocation_id) id3: vec3u)//reduce NN change
     var err2 = D.nn2[nnWB];
     var ergs = sqrt(err2/f32(trnB*nnO))*(1.f/trnRz);
     var nrml = 1f/sum;  if(sum==0f){nrml = 0f;}
-    D.nf[trnB*nnN*trnU] = nrml *8f; //*X because training can handle little more chaos
+    D.nf[trnB*nnN*trnU] = nrml *4f; //*X because training can handle little more chaos
     
     if(dbg)//show error
     {
