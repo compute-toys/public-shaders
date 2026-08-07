@@ -1,0 +1,24 @@
+{
+  "id": 3261,
+  "created_at": "2026-08-06T20:42:45.950182+00:00",
+  "name": "Worley fBm with Curl Domain Warp",
+  "description": "Messing around with using domain warp on Worley noise.\nThe max jitter value is from 4*sqrt(3)-6",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "sapereaude1490"
+  }
+}
