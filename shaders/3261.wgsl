@@ -1,5 +1,6 @@
 // Compute.Toys port of fused 4x4 Worley fBm with octave-local PSRD curl warp.
 // Edit the constants below; Compute.Toys provides `screen` and `time`.
+// Or change the values (for some) in the uniform buffer
 
 // Values are normalised before looking up the palette.
 // For F2-F1 with L1, start with [0, 1] and tune VALUE_MAX as desired.
@@ -11,13 +12,13 @@ const GREEN_COEFFS = array<f32, 5>(2.443e-11, -1.419e-09, 9.979e-06, 0.0007522, 
 const BLUE_COEFFS  = array<f32, 5>(1.445e-09, -4.338e-07, 1.427e-05, 0.002326, 0.294);
 
 const OCTAVES: u32 = 5u;
-const OUTPUT_MODE: u32 = 1u;   // 0=F1, 1=1-F1, 2=F2, 3=F2-F1, 4=F1*F2, 5=F1/F2
+const OUTPUT_MODE: u32 = 0u;   // 0=F1, 1=1-F1, 2=F2, 3=F2-F1, 4=F1*F2, 5=F1/F2
 const DISTANCE_MODE: u32 = 0u; // 0=L2, 1=L1, 2=Linf, 3=Minkowski p=4
 
 const WORLEY_FREQUENCY: f32 = 0.025;
 const PERSISTENCE: f32 = 0.5;
 const LACUNARITY: f32 = 2.0;
-const JITTER: f32 = 0.5;
+const JITTER: f32 = 0.928;
 const CURL_FREQUENCY: f32 = 0.8;
 const WARP_AMPLITUDE: f32 = 0.15;
 const MAX_WARP: f32 = 0.25;
@@ -45,7 +46,8 @@ fn hash_to_float(h: u32) -> f32 {
 
 fn distance_metric(delta: vec2f) -> f32 {
     let d = abs(delta);
-    switch DISTANCE_MODE {
+    let distance_mode = u32(round(custom.distance_mode));
+    switch distance_mode {
         case 1u: { return d.x + d.y; }
         case 2u: { return max(d.x, d.y); }
         case 3u: {
@@ -58,7 +60,7 @@ fn distance_metric(delta: vec2f) -> f32 {
 
 fn worley_f1_f2(pos: vec2f) -> vec2f {
     let base_cell = vec2i(floor(pos + vec2f(0.5))) - vec2i(2);
-    let jitter = clamp(JITTER, 0.0, MAX_JITTER_4X4_F2);
+    let jitter = clamp(custom.jitter, 0.0, MAX_JITTER_4X4_F2);
     var f1 = 1e30;
     var f2 = 1e30;
 
@@ -84,7 +86,8 @@ fn worley_f1_f2(pos: vec2f) -> vec2f {
 fn select_output(f1_f2: vec2f) -> f32 {
     let f1 = f1_f2.x;
     let f2 = f1_f2.y;
-    switch OUTPUT_MODE {
+    let output_mode = u32(round(custom.output_mode));
+    switch output_mode {
         case 1u: { return 1.0 - f1; }
         case 2u: { return f2; }
         case 3u: { return f2 - f1; }
@@ -162,14 +165,14 @@ fn warped_worley_fbm(base_worley_pos: vec2f) -> vec2f {
     var amplitude = 1.0;
     var frequency = 1.0;
     var amplitude_sum = 0.0;
-    let alpha = TAU * fract(time.elapsed / LOOP_SECONDS);
+    let alpha = TAU * select(fract(time.elapsed / max(custom.loop_seconds, 0.00001)), 0.0, custom.loop_seconds == 0.0);
 
-    for (var octave = 0u; octave < OCTAVES; octave++) {
+    for (var octave = 0u; octave < u32(round(custom.octaves)); octave++) {
         let octave_pos = base_worley_pos * frequency;
         let octave_offset = vec2f(19.19, 47.37) * f32(octave);
         let curl_noise = srdnoise2(octave_pos * CURL_FREQUENCY + octave_offset, alpha);
         let curl = vec2f(-curl_noise.gradient.y, curl_noise.gradient.x);
-        let warp = clamp_length(curl * WARP_AMPLITUDE, MAX_WARP);
+        let warp = clamp_length(curl * custom.warp_amplitude, MAX_WARP);
 
         total += worley_f1_f2(octave_pos + warp) * amplitude;
         amplitude_sum += amplitude;

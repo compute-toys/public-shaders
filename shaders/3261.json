@@ -4,7 +4,44 @@
   "name": "Worley fBm with Curl Domain Warp",
   "description": "Messing around with using domain warp on Worley noise.\nThe max jitter value is from 4*sqrt(3)-6",
   "body": {
-    "uniforms": [],
+    "uniforms": [
+      {
+        "name": "octaves",
+        "value": 8,
+        "minRange": 1,
+        "maxRange": 8
+      },
+      {
+        "name": "warp_amplitude",
+        "value": 0.051,
+        "minRange": 0,
+        "maxRange": 0.25
+      },
+      {
+        "name": "jitter",
+        "value": 0.928,
+        "minRange": 0,
+        "maxRange": 0.928
+      },
+      {
+        "name": "loop_seconds",
+        "value": 4.871,
+        "minRange": 1,
+        "maxRange": 10
+      },
+      {
+        "name": "output_mode",
+        "value": 3.058,
+        "minRange": 0,
+        "maxRange": 5
+      },
+      {
+        "name": "distance_mode",
+        "value": 1.011,
+        "minRange": 0,
+        "maxRange": 3
+      }
+    ],
     "textures": [
       {
         "img": "/textures/blank.png"
