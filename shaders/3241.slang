@@ -37,7 +37,7 @@ struct Doto
     float  m3;          //sum
     int trgl;           //target step location
 };
-[StorageBuffer((pdv*(phyt+6)*2+phyt*2+2)*4)] RWStructuredBuffer<Doto> D;    //lines position
+[StorageBuffer(1)] RWStructuredBuffer<Doto> D;    //lines position
 
 float2 mod2(float2 a, float b)
 {
