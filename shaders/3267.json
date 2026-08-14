@@ -1,0 +1,37 @@
+{
+  "id": 3267,
+  "created_at": "2026-08-13T11:58:12.89034+00:00",
+  "name": "Monitor Gamma Tester",
+  "description": "Adjust the Gamma slider until there is no discontinuity between the top and bottom halves.",
+  "body": {
+    "uniforms": [
+      {
+        "name": "Gamma",
+        "value": 2.203,
+        "minRange": 1,
+        "maxRange": 3
+      },
+      {
+        "name": "CheckerSize",
+        "value": 1,
+        "minRange": 1,
+        "maxRange": 8
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "AeroSoap"
+  }
+}
