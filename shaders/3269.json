@@ -1,0 +1,37 @@
+{
+  "id": 3269,
+  "created_at": "2026-08-16T20:30:55.796208+00:00",
+  "name": "pendulum shrts path gen",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "a",
+        "value": 0.375,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "z",
+        "value": 1,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "lomateron"
+  }
+}
