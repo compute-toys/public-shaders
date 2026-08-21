@@ -1,0 +1,24 @@
+{
+  "id": 3279,
+  "created_at": "2026-08-20T23:46:08.62192+00:00",
+  "name": "tringles",
+  "description": "honestly I just wanted to do barycentric coordinates",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "ahs3n"
+  }
+}
