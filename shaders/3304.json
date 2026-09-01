@@ -1,0 +1,33 @@
+{
+  "id": 3304,
+  "created_at": "2026-08-31T17:08:25.915539+00:00",
+  "name": "film grain ?",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "size",
+        "value": 1,
+        "minRange": 1,
+        "maxRange": 10
+      }
+    ],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/leadenhall_market_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/leadenhall_market.jpg",
+        "url": "https://polyhaven.com/a/leadenhall_market"
+      },
+      {
+        "img": "/textures/noise3.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "Audrick Yeu"
+  }
+}
