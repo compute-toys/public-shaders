@@ -38,10 +38,15 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
 
 
     let noise_texture_dim = textureDimensions(channel1);
-    let coord = vec2i(id.xy % noise_texture_dim.xy);
+    let coord = (vec2f(id.xy) + vec2f(rand22(vec2f(time.elapsed))) * 30 ) % vec2f(noise_texture_dim.xy);
 
-    let noise = textureLoad(channel1, coord, 0);
-    let color = textureSampleLevel(channel0, bilinear, uv, 0.0);
+    let noise = textureLoad(channel1, vec2i(coord), 0);
+    var color = textureSampleLevel(channel0, bilinear, uv, 0.0);
+    let bars = vec4f(((uv.y * custom.line_nb) + (time.elapsed * custom.speed_y + sin(uv.x * custom.intensity + time.elapsed * custom.speed_x))) %1 );
+
+    // color = bars;
+
+    color = vec4f(blend_overlay(color.xyz, bars.xyz), 0.0);
 
     // The color determines the density.
     // The noise determines which pixels are selected.
@@ -49,7 +54,9 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
     var green = select(0.0, 1.0, noise.g < color.g);
     var blue  = select(0.0, 1.0, noise.b < color.b);
 
-    let rand = u32(rand22(uv + vec2f(time.elapsed)) * 3);
+
+    if !all(vec3<bool>(bool(red), bool(green), bool(blue))) { 
+    let rand = u32(rand22(uv - vec2f(time.elapsed, 0.0)) * 3);
 
     if rand == 0 {
         green = 0.0;
@@ -60,7 +67,8 @@ fn main_image(@builtin(global_invocation_id) id: vec3u) {
     } else {
         red = 0.;
         green =0.;
-    }
+    }}
+
 
     textureStore(screen, id.xy, vec4f(red, green, blue, 1.0));
 }
