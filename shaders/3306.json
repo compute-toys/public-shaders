@@ -1,0 +1,26 @@
+{
+  "id": 3306,
+  "created_at": "2026-09-03T08:48:18.435239+00:00",
+  "name": "V2 film grain ?",
+  "description": "Forked from https://compute.toys/view/3304",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/dikhololo_night_2k.hdr",
+        "thumb": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/dikhololo_night.jpg",
+        "url": "https://polyhaven.com/a/dikhololo_night"
+      },
+      {
+        "img": "/textures/noise1.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "Audrick Yeu"
+  }
+}
