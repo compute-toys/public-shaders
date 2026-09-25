@@ -1,0 +1,61 @@
+{
+  "id": 3348,
+  "created_at": "2026-09-24T22:06:05.754185+00:00",
+  "name": "Kerr projector",
+  "description": "",
+  "body": {
+    "uniforms": [
+      {
+        "name": "dist",
+        "value": 13,
+        "minRange": 0.5,
+        "maxRange": 13
+      },
+      {
+        "name": "spin",
+        "value": 0.962,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "fov",
+        "value": 0.348,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "speed",
+        "value": 0.459,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "psize",
+        "value": 0.253,
+        "minRange": 0,
+        "maxRange": 1
+      },
+      {
+        "name": "exposure",
+        "value": 0.497,
+        "minRange": 0,
+        "maxRange": 1
+      }
+    ],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": true,
+    "screenHDRFormat": "sRGB",
+    "language": "slang"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "michael0884"
+  }
+}
