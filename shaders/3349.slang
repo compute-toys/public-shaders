@@ -4,6 +4,7 @@
 //   sliders (0..1): dist (>1 = distance in M), spin, fov, speed, psize, exposure
 //   drag = orbit, wheel / W / S = distance, click the buttons (top left) to toggle parts, H hides them
 // Needs "Float32 Textures" on (settings): the per-point images live in the pass textures. Up to 3840 x 2160.
+// Light travel time: every image shows its point where it was when the light left (toggle DELAY).
 import std;
 // ============================================================================ sizes
 // ray table: rays are laid out on a log-polar chart around the critical curve
@@ -16,22 +17,29 @@ static const float STEP_ARC = 0.215;                  // log-polar arclength bet
 static const float INNER_LOG_ROWS = 55.0;             // inside rows up to here are log-spaced ...
 static const float INNER_LOG_END = 0.08;              // ... up to depth e = 0.08, then linear to the centre
 static const float INNER_LIN_STEP = (0.99995 - INNER_LOG_END)/(ELL_COUNT - 1 - INNER_LOG_ROWS);
-static const int CRIT_BINS = 720;                     // resolution of alpha_c(psi)
+static const int CRIT_BINS = 720;                     // resolution of rho_c(psi)
 static const float PSI_WARP = 0.66;                   // psi bins are denser near the x axis
 // inverse grid (section 2): nodes in (log r, cos theta, phi) per swept-angle band, psi half and slot
 static const int BAND_COUNT = 10;                     // swept angle bands of pi/2, up to 5 pi
 static const float BAND_WIDTH = 0.5*3.14159265;
+static const float BAND_OVERLAP = 0.15;
 static const int DIRECT_BANDS = 2;                    // swept angle < pi: the finer grid
 static const int3 GRID_DIRECT = int3(40, 48, 96);
 static const int3 GRID_LOOPS = int3(24, 32, 64);
-static const int SECTOR_COUNT = 2, SLOT_COUNT = 2*SECTOR_COUNT;   // psi halves x (lowest, highest k)
+static const int SECTOR_COUNT = 2;                    // psi halves: images of one band on either side
+static const int SECTOR_OVERLAP = 8;
+static const int SLOT_COUNT = 2*SECTOR_COUNT;         // per half: the containing cells of lowest, highest index
 static const int GRID_SIZE = SLOT_COUNT*(DIRECT_BANDS*40*48*96 + (BAND_COUNT - DIRECT_BANDS)*24*32*64);
 static const float GRID_R_MAX = 160;
-static const int MASK_CELLS = 24*32*64;               // layer occupancy, on the loops grid (40 layers: 2 words)
-static const uint EMPTY_NODE = 0xffffffff;            // while building
-static const int MAX_IMAGES = 8;                      // per point
+static const int CELL_ROWS = 2*(ELL_COUNT - 1);
+static const int CELL_COUNT = PSI_COUNT*CELL_ROWS*(STEP_COUNT - 1);
+static const uint EMPTY_NODE = 0xffffffff;
+static const int DELAY_PASSES = 10;                   // light delay search, see solvePoint
+static const float WORLDLINE_STEP = 16.0;
+static const int MAX_IMAGES = 10;                     // per point
 // scene: particles + small spheres (lat-long meshes)
-static const int PARTICLE_COUNT = 16384, OBJECT_COUNT = 6;   // accretion disk particles, small spheres
+static const int PARTICLE_COUNT = 16384;
+static const int OBJECT_COUNT = 6;
 static const int SPHERE_SEGS = 16, SPHERE_RINGS = 10;
 static const int OBJECT_VERTS = (SPHERE_SEGS + 1)*(SPHERE_RINGS + 1);
 static const int OBJECT_TRIS = 2*SPHERE_SEGS*SPHERE_RINGS;
@@ -44,15 +52,15 @@ static const int SKY_RECORDS = RAY_COUNT;
 // pass texture layers: background cache, image chart points, image screen data, raster colour
 static const int BACKGROUND_LAYER = 0, CHART_LAYER = 1, SCREEN_LAYER = 2, COLOUR_LAYER = 3;
 // ============================================================================ storage
-[StorageBuffer(STEP_COUNT*RAY_COUNT)]        RWStructuredBuffer<float4> rayTable;        // [row][psi][k]: outgoing position, swept angle
+[StorageBuffer(STEP_COUNT*RAY_COUNT)]        RWStructuredBuffer<float4> rayTable;        // [row][psi][k]: outgoing position, delay
+[StorageBuffer(STEP_COUNT*RAY_COUNT/2)]      RWStructuredBuffer<uint> rayAngles;         // swept angles, 2 x f16 per uint
 [StorageBuffer(2*RAY_COUNT)]                 RWStructuredBuffer<float4> rayRecords;      // horizon landing | sky direction
 [StorageBuffer(GRID_SIZE)]                   RWStructuredBuffer<Atomic<uint>> inverseGrid;     // section 2
-[StorageBuffer(2*MASK_CELLS)]                RWStructuredBuffer<Atomic<uint>> layerMask;       // section 2
 [StorageBuffer(SUBTRI_CAPACITY*6)]           RWStructuredBuffer<float4> subTriangles;    // 3 x (pixel, depth, g), 3 x (normal, extra)
 [StorageBuffer(MAX_PIXELS)]                  RWStructuredBuffer<Atomic<uint>> depthBuffer;     // ~depth bits, 0 = empty
-[StorageBuffer(CRIT_BINS)]                   RWStructuredBuffer<float> critRadius;       // critical curve alpha_c(psi)
+[StorageBuffer(CRIT_BINS)]                   RWStructuredBuffer<float> critRadius;       // critical curve rho_c(psi)
 [StorageBuffer(8)]                           RWStructuredBuffer<float4> controlState;    // persistent camera / UI state
-[StorageBuffer(20)]                          RWStructuredBuffer<Atomic<uint>> counters;   // 0: leaves, 4 + l: queue l
+[StorageBuffer(4)]                           RWStructuredBuffer<Atomic<uint>> counters;
 struct Params {
     float spin, horizonRadius;                              // a, r+
     float cameraRadius, cameraTheta, cameraYaw;             // yaw: world -> table frame rotation
@@ -63,9 +71,8 @@ struct Params {
     float2 projection;                                      // screen x, y scale
     float sceneTime, beaming, exposure, pointRadius;
     float pixelScale; int uiScale;                          // screen height / 1080 (at least 1), UI zoom
-    float innerEdge;                                        // disk inner edge: the prograde ISCO
     uint tableDirty, viewDirty, uiHidden;                   // rebuild the table / the background cache
-    uint toggles;          // bits: 0 particles, 1 objects, 2 stars, 3 sky grid, 4 horizon grid, 5-7 image orders
+    uint toggles;          // bits: 0 particles, 1 objects, 2 stars, 3 sky grid, 4 horizon grid, 5-7 orders, 8 delay
     float orbitRadiusMin, orbitRadiusMax;                   // photon orbits seen on the critical curve
 };
 [StorageBuffer(1)] RWStructuredBuffer<Params> params;
@@ -94,17 +101,23 @@ float3 toTableFrame(float3 X) {
 }
 float polarAngle(float3 X, float r) { return atan2(length(X.xz)/sqrt(r*r + spin()*spin()), X.y/r); }   // precise at poles
 // world point -> table frame outgoing position (w = r); points inside the horizon are pushed out
+// table-frame velocity of a target moving with world velocity V (the outgoing shift is a rotation about the
+// spin axis by -h(r); its change with r is left out)
+float3 targetVelocity(float3 worldPos, float3 worldVelocity) {
+    float3 V = toTableFrame(worldVelocity); float shift = -outgoingShift(blRadius(worldPos));
+    return float3(V.x*cos(shift) + V.z*sin(shift), V.y, V.z*cos(shift) - V.x*sin(shift));
+}
 float4 targetOf(float3 worldPos) {
-    float3 X = toTableFrame(worldPos); float r = blRadius(X); float minR = P.horizonRadius + 0.08;
+    float3 X = toTableFrame(worldPos); float r = blRadius(X);
+    float minR = P.horizonRadius + 0.08;
     if (r < minR) { X *= minR/r; r = blRadius(X); }
     float phiOut = atan2(-X.z, X.x) - outgoingShift(r);
     return float4(toCartesian(r, cos(polarAngle(X, r)), phiOut), r);
 }
 // ============================================================================ screen chart
-// Log-polar chart of the camera's sky around the critical curve alpha_c(psi) (alpha: angle from the forward axis,
-// so the curve may lie behind the camera, inside the photon sphere); a chart point is (psi index, row, k, side).
-//   outside (side +1): alpha = alpha_c + span e^ell
-//   inside  (side -1): alpha = alpha_c (1 - e), e log-spaced near the curve, then linear to the centre
+// Log-polar chart around the critical curve rho_c(psi); a chart point is (psi index, row, k, side).
+//   outside (side +1): rho = rho_c + e^ell
+//   inside  (side -1): rho = rho_c (1 - e), e log-spaced near the curve, then linear to the centre
 float psiOf(float psiIndex) {
     float t = -PI + 2*PI*psiIndex/PSI_COUNT;
     return t + 0.5*PSI_WARP*sin(2*t);
@@ -115,8 +128,11 @@ float psiIndexOf(float psi) {
     return (t + PI)/(2*PI)*PSI_COUNT;
 }
 float wrapPsi(float x) { return x - PSI_COUNT*floor(x/PSI_COUNT); }
-float psiDifference(float from, float to) { float d = to - from; return d - PSI_COUNT*floor(d/PSI_COUNT + 0.5); }
-float critAlpha(float psi) {
+float psiDifference(float from, float to) {
+    float d = to - from;
+    return d - PSI_COUNT*floor(d/PSI_COUNT + 0.5);
+}
+float critRho(float psi) {
     float f = (psi + PI)/(2*PI)*CRIT_BINS - 0.5; int i = int(floor(f));
     float r0 = critRadius[(i%CRIT_BINS + CRIT_BINS)%CRIT_BINS];
     float r1 = critRadius[((i + 1)%CRIT_BINS + CRIT_BINS)%CRIT_BINS];
@@ -135,38 +151,32 @@ float ellPerRow(float row, float side) {   // d ell / d row
     return side > 0 ? P.outsideEllStep : row <= INNER_LOG_ROWS ? P.insideLogStep : INNER_LIN_STEP/insideDepth(row);
 }
 int rowOffset(float side) { return side > 0 ? 0 : ELL_COUNT; }
-// outside rows reach the widest view's corner (fov 110 at 16:9), or a bit past the curve when it is off screen
-float outsideSpan(float alphaC) { return max(atan(3.) - alphaC, 0.25); }
-float2 chartToAngles(float4 chartPoint) {   // -> camera sky direction (alpha from the forward axis, psi)
-    float psi = psiOf(chartPoint.x); float alphaC = critAlpha(psi);
-    float alpha = chartPoint.w > 0 ? alphaC + outsideSpan(alphaC)*outsideDistance(chartPoint.y) : alphaC*(1 - insideDepth(chartPoint.y));
-    return float2(min(alpha, PI), psi);
-}
-float4 anglesToChart(float2 angles) {
-    float alpha = angles.x, psi = angles.y; float alphaC = critAlpha(psi);
-    if (alpha > alphaC) return float4(psiIndexOf(psi), outsideRowOf((alpha - alphaC)/outsideSpan(alphaC)), 0, 1);
-    return float4(psiIndexOf(psi), insideRowOf(1 - alpha/alphaC), 0, -1);
-}
-// screen plane (tan alpha): only for display; directions at or behind 90 degrees go far off screen
 float2 chartToScreen(float4 chartPoint) {
-    float2 angles = chartToAngles(chartPoint);
-    return min(tan(angles.x), 1e5)*(angles.x < 0.5*PI ? 1 : 0)*float2(cos(angles.y), sin(angles.y)) + (angles.x < 0.5*PI ? 0 : 1e5);
+    float psi = psiOf(chartPoint.x); float rhoC = critRho(psi);
+    float rho = chartPoint.w > 0 ? rhoC + outsideDistance(chartPoint.y) : rhoC*(1 - insideDepth(chartPoint.y));
+    return rho*float2(cos(psi), sin(psi));
 }
-float4 screenToChart(float2 xy) { return anglesToChart(float2(atan(length(xy)), atan2(xy.y, xy.x))); }
-// signed distance from the curve, sigma = alpha/alpha_c - 1: linear across it (used to cross sides)
+float4 screenToChart(float2 xy) {
+    float psi = atan2(xy.y, xy.x); float rho = length(xy);
+    float rhoC = critRho(psi);
+    if (rho > rhoC) return float4(psiIndexOf(psi), outsideRowOf(rho - rhoC), 0, 1);
+    return float4(psiIndexOf(psi), insideRowOf(1 - rho/rhoC), 0, -1);
+}
+// signed distance from the curve, sigma = rho/rho_c - 1: linear across it (used to cross sides)
 float sigmaOf(float4 chartPoint) {
-    float alphaC = critAlpha(psiOf(chartPoint.x));
-    return chartPoint.w > 0 ? outsideSpan(alphaC)*outsideDistance(chartPoint.y)/alphaC : -insideDepth(chartPoint.y);
+    return chartPoint.w > 0 ? outsideDistance(chartPoint.y)/critRho(psiOf(chartPoint.x)) : -insideDepth(chartPoint.y);
 }
 float2 rowFromSigma(float sigma, float psiIndex) {   // -> (row, side)
-    float alphaC = critAlpha(psiOf(psiIndex));
-    if (sigma >= 0) return float2(clamp(outsideRowOf(sigma*alphaC/outsideSpan(alphaC)), 0., ELL_COUNT - 1.), 1);
+    if (sigma >= 0) return float2(clamp(outsideRowOf(sigma*critRho(psiOf(psiIndex))), 0., ELL_COUNT - 1.), 1);
     return float2(clamp(insideRowOf(-sigma), 0., ELL_COUNT - 1.), -1);
 }
 // The inside chart is polar around the shadow centre, where psi degenerates. Near it (the linear rows) points
-// are also handled in Cartesian form c = (alpha/alpha_c)(cos psi, sin psi).
+// are also handled in Cartesian form c = (rho/rho_c)(cos psi, sin psi).
 bool nearCentre(float4 chartPoint) { return chartPoint.w < 0 && chartPoint.y > INNER_LOG_ROWS; }
-float2 toCentreXY(float4 chartPoint) { float psi = psiOf(chartPoint.x); return (1 - insideDepth(chartPoint.y))*float2(cos(psi), sin(psi)); }
+float2 toCentreXY(float4 chartPoint) {
+    float psi = psiOf(chartPoint.x);
+    return (1 - insideDepth(chartPoint.y))*float2(cos(psi), sin(psi));
+}
 float2 fromCentreXY(float2 c) {   // -> (psi index, row)
     float psiIndex = wrapPsi(psiIndexOf(atan2(c.y, c.x))); float row = insideRowOf(1 - max(length(c), 5e-5));
     return float2(psiIndex, clamp(row, 0., ELL_COUNT - 1.));
@@ -184,65 +194,82 @@ float ksRadius(float3 X) {
 }
 [Differentiable]
 float hamiltonian(float3 p, float3 X) {
-    float a = no_diff spin(); float r = ksRadius(X); float W = r*r + a*a;
+    float a = no_diff spin(); float r = ksRadius(X);
+    float W = r*r + a*a;
     float3 l = float3((r*X.x + a*X.y)/W, (r*X.y - a*X.x)/W, X.z/r);
     float f = 2*r*r*r/(r*r*r*r + a*a*X.z*X.z); float L = 1 + dot(l, p);
     return 0.5*(dot(p, p) - 1 - f*L*L);
 }
 struct Ray { float3 x, p; };
 Ray flow(Ray ray) {
-    var dp = diffPair(ray.p); var dx = diffPair(ray.x); bwd_diff(hamiltonian)(dp, dx, 1.0);
+    var dp = diffPair(ray.p); var dx = diffPair(ray.x);
+    bwd_diff(hamiltonian)(dp, dx, 1.0);
     return { dp.d, -dx.d };
 }
 Ray rayAdd(Ray ray, Ray d, float h) { return { ray.x + h*d.x, ray.p + h*d.p }; }
+// Kerr-Schild time along the ray: dt/dlambda = dH/dp_t with the full H = (g^ab p_a p_b)/2, g^tt = -1 - f and
+// g^ti = -f l^i, which at p_t = -1 is 1 + f (1 + l.p). This is the light travel time (see emissionTime).
+float timeRate(Ray ray) {
+    float a = spin(); float r = ksRadius(ray.x); float3 X = ray.x;
+    float W = r*r + a*a;
+    float3 l = float3((r*X.x + a*X.y)/W, (r*X.y - a*X.x)/W, X.z/r);
+    return 1 + 2*r*r*r/(r*r*r*r + a*a*X.z*X.z)*(1 + dot(l, ray.p));
+}
 // RK4 step of stepArc log-polar arclength (|dx|/|x|): fine near the hole, long far out. Also returns the angle
-// swept around the hole during the step.
-Ray rk4Step(Ray ray, float stepArc, out float sweptAngle) {
+// swept around the hole and the time elapsed during the step.
+Ray rk4Step(Ray ray, float stepArc, out float sweptAngle, out float timeStep) {
     float rho = length(ray.x); Ray k1 = flow(ray);
-    float h = stepArc/max(length(k1.x)/rho, 1e-6); Ray k2 = flow(rayAdd(ray, k1, 0.5*h));
-    Ray k3 = flow(rayAdd(ray, k2, 0.5*h)); Ray k4 = flow(rayAdd(ray, k3, h));
+    float h = stepArc/max(length(k1.x)/rho, 1e-6);
+    Ray s2 = rayAdd(ray, k1, 0.5*h); Ray k2 = flow(s2);
+    Ray s3 = rayAdd(ray, k2, 0.5*h); Ray k3 = flow(s3);
+    Ray s4 = rayAdd(ray, k3, h); Ray k4 = flow(s4);
     float3 dX = h/6*(k1.x + 2*k2.x + 2*k3.x + k4.x); float3 dP = h/6*(k1.p + 2*k2.p + 2*k3.p + k4.p);
     sweptAngle = length(dX - dot(dX, ray.x)*ray.x/(rho*rho))/rho;
+    timeStep = h/6*(timeRate(ray) + 2*timeRate(s2) + 2*timeRate(s3) + timeRate(s4));
     return { ray.x + dX, ray.p + dP };
 }
-// Constants of motion of the light reaching the ZAMO camera from sky direction (alpha, psi): (lambda, eta, BL
-// radial momentum, BL polar momentum / -sin theta), written without 1/sin theta (exact on the axis)
-float4 rayConstants(float2 angles) {
-    float3 n = -float3(cos(angles.x), sin(angles.x)*sin(angles.y), sin(angles.x)*cos(angles.y));
+// Constants of motion of the light reaching screen xy of the ZAMO camera: (lambda, eta, BL radial momentum, BL
+// polar momentum)
+float4 rayConstants(float2 xy) {
+    float3 n = float3(-1, -xy.y, -xy.x)/sqrt(1 + dot(xy, xy));
     float Sigma = P.cameraSigma, Delta = P.cameraDelta, A = P.cameraA, omega = P.cameraOmega;
     float a = spin(), s = sin(P.cameraTheta), c = cos(P.cameraTheta);
-    float lambdaPerSin = n.z*A/(Sigma*sqrt(Delta) + omega*n.z*A*s); float lambda = lambdaPerSin*s;
+    float lambda = n.z/(Sigma*sqrt(Delta)/(A*s) + omega*n.z);
     float energy = (1 - omega*lambda)*sqrt(A/(Sigma*Delta)); float thetaRate = sqrt(Sigma)*n.y*energy;
-    float eta = thetaRate*thetaRate - a*a*c*c + lambdaPerSin*lambdaPerSin*c*c;
-    return float4(lambda, eta, n.x*energy*sqrt(Sigma*Delta), thetaRate);
+    float eta = thetaRate*thetaRate - a*a*c*c + lambda*lambda*c*c/(s*s);
+    float radialMomentum = n.x*energy*sqrt(Sigma*Delta);
+    return float4(lambda, eta, radialMomentum, -s*thetaRate);
 }
 // The ray arriving at pixel (x, y) is traced as the outgoing ray from (-x, y), the (t, phi) -> (-t, -phi)
 // mirror of the arriving one. BL momentum -> Kerr-Schild position + covariant momentum with p_t = -1.
-Ray initialRay(float2 angles) {
-    float4 constants = rayConstants(angles); float lambda = constants.x;
+Ray initialRay(float2 xy) {
+    float4 constants = rayConstants(xy); float lambda = constants.x;
     float a = spin(), r = P.cameraRadius, s = sin(P.cameraTheta), c = cos(P.cameraTheta);
-    float Sigma = r*r + a*a*c*c; float Delta = delta(r); float W = r*r + a*a; float Pr = W - a*lambda; float kr = constants.z/Sigma;
+    float Sigma = r*r + a*a*c*c; float Delta = delta(r);
+    float W = r*r + a*a; float Pr = W - a*lambda;
+    float kr = constants.z/Sigma;
     float ktOut = (W*Pr/Delta + a*(lambda - a*s*s))/Sigma + 2*r/Delta*kr;
-    float kphiSin = ((a*Pr/Delta - a)*s + lambda/max(s, 1e-30))/Sigma + a*s/Delta*kr;   // sin theta dphi/dlambda
+    float kphiOut = (a*Pr/Delta - a + lambda/(s*s))/Sigma + a/Delta*kr;
     float3 X = float3(r*s, a*s, r*c);
-    float3 kx = float3(s, 0, c)*kr + float3(r*c, a*c, -r*s)*constants.w/Sigma + float3(-a, r, 0)*kphiSin;
+    float3 kx = float3(s, 0, c)*kr + float3(r*c, a*c, -r*s)*(-constants.w/s)/Sigma + float3(-a*s, r*s, 0)*kphiOut;
     float3 l = float3((r*X.x + a*X.y)/W, (r*X.y - a*X.x)/W, X.z/r);
     float f = 2*r*r*r/(r*r*r*r + a*a*X.z*X.z); float lk = ktOut + dot(l, kx);
     return { X, (kx + f*l*lk)/(ktOut - f*lk) };
 }
-// Kerr-Schild position -> stored (mirrored, outgoing) table position
-float4 tableEntry(float3 X, float sweptAngle) {
-    float r = ksRadius(X); float phi = atan2(X.y, X.x) - atan2(spin(), r) + outgoingShift(P.cameraRadius);
-    return float4(toCartesian(r, clamp(X.z/r, -1., 1.), -phi), max(sweptAngle, 1e-7));
+// Kerr-Schild position -> stored (mirrored, outgoing) table position, with the delay
+float4 tableEntry(float3 X, float delay) {
+    float r = ksRadius(X);
+    float phi = atan2(X.y, X.x) - atan2(spin(), r) + outgoingShift(P.cameraRadius);
+    return float4(toCartesian(r, clamp(X.z/r, -1., 1.), -phi), delay);
 }
 // table position -> direction in the world (theta, phi_BL) at the horizon shell
 float3 horizonDirection(float3 X, float rShell) {
-    float r = blRadius(X); float theta = polarAngle(X, r); float phi = atan2(-X.z, X.x) + outgoingShift(rShell);
+    float r = blRadius(X); float theta = polarAngle(X, r);
+    float phi = atan2(-X.z, X.x) + outgoingShift(rShell);
     return float3(sin(theta)*cos(phi), cos(theta), -sin(theta)*sin(phi));
 }
 // ============================================================================ 0. camera, params
-// camera sky point (alpha, psi folded to [0, pi], ok) of the spherical photon orbit at radius orbitR: ahead (the
-// light climbs out to the camera) if orbitR < cameraRadius, else behind, alpha > pi/2 (inside the photon sphere)
+// screen point (x, y, ok) of the spherical photon orbit at radius orbitR
 float3 photonOrbitPoint(float orbitR) {
     float a = spin(), theta = P.cameraTheta, omega = P.cameraOmega;
     float orbitDelta = delta(orbitR); float dDelta = 2*(orbitR - 1);
@@ -255,9 +282,8 @@ float3 photonOrbitPoint(float orbitR) {
     if (polarPotential < 0) return 0;
     float nTheta = sqrt(polarPotential)/(sqrt(P.cameraSigma)*energy);
     float nr2 = 1 - nPhi*nPhi - nTheta*nTheta;
-    if (nr2 < -1e-5) return 0;
-    float nr = sqrt(max(nr2, 0.))*(orbitR < P.cameraRadius ? 1 : -1);
-    return float3(atan2(sqrt(nPhi*nPhi + nTheta*nTheta), nr), atan2(nTheta, -nPhi), 1);
+    if (nr2 <= 0) return 0;
+    return float3(-nPhi, -nTheta, sqrt(nr2))/sqrt(nr2);
 }
 bool tableDirty() { return P.tableDirty != 0; }
 // controls -> camera state and the frame's parameters (thread 0 of setup)
@@ -268,21 +294,23 @@ void updateCamera() {
     float4 distanceState = controlState[4];   // distance, wheel zoom, slider distance
     float4 uiState = controlState[5];         // toggles, previous H key, UI hidden
     int uiScale = max(1, (int(screenSize.y) + 270)/1080);
-    for (int c = 0; c < 20; c++) counters[c].store(0);   // sub-triangle counts
+    counters[0].store(0);                     // sub-triangle count
     if (time.frame == 0) {
         orbitState = float4(0.6, 0.12, 0.6, 0.12); clickState = 0;
-        distanceState = 0; uiState = float4(255, 0, 0, 0);
+        distanceState = 0; uiState = float4(511, 0, 0, 0);
     }
     // press: on a button toggles it, elsewhere starts an orbit drag
     uint toggles = uint(uiState.x); float click = float(mouse.click);
     if (click > 0 && clickState.x == 0) {
-        orbitState.zw = orbitState.xy; int button = uiButton(float2(mouse.pos) + 0.5, uiState.z, uiScale);
+        orbitState.zw = orbitState.xy;
+        int button = uiButton(float2(mouse.pos) + 0.5, uiState.z, uiScale);
         clickState.y = button >= 0 ? 1 : 0;
         if (button >= 0) toggles ^= 1u << button;
     }
     if (click > 0 && clickState.y == 0) {
-        float2 drag = float2(mouse.pos - mouse.start)/screenSize.y; orbitState.x = orbitState.z + 3*drag.x;
-        orbitState.y = clamp(orbitState.w + 2*drag.y, -0.5*PI, 0.5*PI);   // up to the poles
+        float2 drag = float2(mouse.pos - mouse.start)/screenSize.y;
+        orbitState.x = orbitState.z + 3*drag.x;
+        orbitState.y = clamp(orbitState.w + 2*drag.y, -1.45, 1.45);
     }
     clickState.x = click; bool hideKey = keyDown(72);
     if (hideKey && uiState.y == 0) uiState.z = 1 - uiState.z;
@@ -298,7 +326,7 @@ void updateCamera() {
     controlState[0] = orbitState; controlState[1] = clickState;
     controlState[4] = distanceState; controlState[5] = uiState;
     float a = max(0.999*clamp(custom.spin, 0., 1.), 1e-3); float r = distanceState.x;
-    float theta = clamp(0.5*PI - orbitState.y, 1e-3, PI - 1e-3);   // 1e-3 off the axis: the ring is exact to 1e-3
+    float theta = 0.5*PI - orbitState.y;
     float fov = lerp(20., 110., clamp(custom.fov, 0., 1.))*PI/180;
     float rPlus = 1 + sqrt(1 - a*a); float focal = 1/tan(0.5*fov);
     // the table depends on (a, r, theta) only; yaw is applied to the targets
@@ -311,57 +339,74 @@ void updateCamera() {
     if (viewChanged) controlState[3] = viewKey;
     float Sigma = r*r + a*a*cos(theta)*cos(theta); float Delta = r*r - 2*r + a*a;
     float A = sqr(r*r + a*a) - a*a*Delta*sin(theta)*sin(theta);
-    P.spin = a; P.horizonRadius = rPlus; P.cameraRadius = r; P.cameraTheta = theta;
-    P.cameraYaw = -orbitState.x; P.cameraSigma = Sigma; P.cameraDelta = Delta; P.cameraA = A;
+    P.spin = a; P.horizonRadius = rPlus;
+    P.cameraRadius = r; P.cameraTheta = theta;
+    P.cameraYaw = -orbitState.x; P.cameraSigma = Sigma;
+    P.cameraDelta = Delta; P.cameraA = A;
     P.cameraOmega = a*(r*r + a*a - Delta)/A; P.lapse = sqrt(Sigma*Delta/A);
-    P.outsideEllStart = -9; P.outsideEllStep = 9./(ELL_COUNT - 1);   // fractions of outsideSpan
-    P.insideLogStart = -9; P.insideLogStep = (log(INNER_LOG_END) + 9)/INNER_LOG_ROWS;
+    P.outsideEllStart = -9; P.outsideEllStep = (log(2.8) + 9)/(ELL_COUNT - 1);
+    P.insideLogStart = -9;
+    P.insideLogStep = (log(INNER_LOG_END) + 9)/INNER_LOG_ROWS;
     P.projection = float2(focal*screenSize.y/screenSize.x, focal);
     P.sceneTime = time.elapsed*40*custom.speed; P.beaming = 1;
     P.exposure = lerp(0.2, 5., sqr(custom.exposure)); P.pixelScale = max(1., screenSize.y/1080);
-    float z1 = 1 + pow(1 - a*a, 1/3.)*(pow(1 + a, 1/3.) + pow(1 - a, 1/3.)), z2 = sqrt(3*a*a + z1*z1);
-    P.innerEdge = 3 + z2 - sqrt((3 - z1)*(3 + z1 + 2*z2));
     P.pointRadius = lerp(0.6, 4., custom.psize)*P.pixelScale; P.uiScale = uiScale;
     P.tableDirty = rebuild ? 1 : 0; P.viewDirty = viewChanged ? 1 : 0;
     P.uiHidden = uiState.z > 0.5 ? 1 : 0; P.toggles = toggles;
 }
-// alpha_c(psi): the curve is symmetric in y and its psi runs monotonically from one x-axis crossing
+// rho_c(psi): the curve is symmetric in y and its polar angle runs monotonically from one x-axis crossing
 // (orbitRadiusMin) to the other (orbitRadiusMax) along the photon orbits: bisect per bin
-float critAlphaOfBin(int bin) {
+float critRhoOfBin(int bin) {
     float targetAngle = abs(-PI + 2*PI*(bin + 0.5)/CRIT_BINS);
     float lo = P.orbitRadiusMin, hi = P.orbitRadiusMax;
-    bool increasing = photonOrbitPoint(hi).y > photonOrbitPoint(lo).y;
+    if (lo <= 0) return sqrt(27.)/P.cameraRadius;
+    float3 pointLo = photonOrbitPoint(lo), pointHi = photonOrbitPoint(hi);
+    bool increasing = atan2(abs(pointHi.y), pointHi.x) > atan2(abs(pointLo.y), pointLo.x);
     for (int i = 0; i < 40; i++) {
         float mid = 0.5*(lo + hi);
-        if ((photonOrbitPoint(mid).y < targetAngle) == increasing) lo = mid; else hi = mid;
+        float3 p = photonOrbitPoint(mid);
+        if ((atan2(abs(p.y), p.x) < targetAngle) == increasing) lo = mid;
+        else hi = mid;
     }
     float3 p = photonOrbitPoint(0.5*(lo + hi));
-    return p.z > 0 ? p.x : atan(sqrt(27.)/P.cameraRadius);
+    return p.z > 0 ? length(p.xy) : sqrt(27.)/P.cameraRadius;
 }
-// One workgroup: thread 0 updates the camera and (after a camera change) finds the range of photon orbits seen
-// on the critical curve: it contains the orbit with lambda = 0 (seen from any polar angle, so the range cannot
-// be missed even on the axis) and the ends are bisected from there. Then all threads bisect alpha_c(psi). The
-// barriers stay outside the branches (WGSL wants them in uniform control flow).
-float bisectOrbit(float good, float bad, bool byLambda) {   // byLambda: find lambda = 0, else the visibility edge
-    for (int i = 0; i < 48; i++) {
-        float mid = 0.5*(good + bad);
-        bool keep = byLambda ? sqr(mid) + sqr(spin()) - 4*mid*delta(mid)/(2*(mid - 1)) > 0 : photonOrbitPoint(mid).z > 0;
-        if (keep) good = mid; else bad = mid;
-    }
-    return good;
-}
+groupshared Atomic<uint> firstVisible;
+groupshared Atomic<uint> lastVisible;
+// One workgroup: thread 0 updates the camera, then (after a camera change) all threads find the radial range
+// of the photon orbits visible on the critical curve and bisect rho_c(psi). The barriers stay outside the
+// branches (WGSL wants them in uniform control flow).
 [shader("compute")]
 [WorkgroupCount(1, 1, 1)] [numthreads(256, 1, 1)]
 void setup(uint thread : SV_GroupIndex) {
-    if (thread == 0) updateCamera();
-    AllMemoryBarrierWithGroupSync();
-    if (thread == 0 && tableDirty()) {
-        float zeroLambda = bisectOrbit(P.horizonRadius + 1e-4, 4.5, true);
-        P.orbitRadiusMin = bisectOrbit(zeroLambda, P.horizonRadius, false);
-        P.orbitRadiusMax = bisectOrbit(zeroLambda, 4.5, false);
+    if (thread == 0) {
+        updateCamera();
+        firstVisible.store(0xffffffff);
+        lastVisible.store(0);
     }
     AllMemoryBarrierWithGroupSync();
-    for (int bin = int(thread); bin < CRIT_BINS && tableDirty(); bin += 256) critRadius[bin] = critAlphaOfBin(bin);
+    bool rebuild = tableDirty();
+    float rPlus = P.horizonRadius;
+    float scanStep = (6 - rPlus)/4000;
+    for (uint i = thread; i <= 4000 && rebuild; i += 256) {
+        if (photonOrbitPoint(rPlus + 1e-4 + scanStep*i).z <= 0) continue;
+        firstVisible.min(i);
+        lastVisible.max(i);
+    }
+    AllMemoryBarrierWithGroupSync();
+    if (thread == 0 && rebuild) {   // refine both ends by halving steps
+        uint first = firstVisible.load(), last = lastVisible.load();
+        float lo = first <= 4000 ? rPlus + 1e-4 + scanStep*first : -1;
+        float hi = first <= 4000 ? rPlus + 1e-4 + scanStep*last : -1;
+        for (int i = 0; i < 40; i++) {
+            float nudge = scanStep*exp2(-i - 1.);
+            if (photonOrbitPoint(lo - nudge).z > 0) lo -= nudge;
+            if (photonOrbitPoint(hi + nudge).z > 0) hi += nudge;
+        }
+        P.orbitRadiusMin = lo; P.orbitRadiusMax = hi;
+    }
+    AllMemoryBarrierWithGroupSync();
+    for (int bin = int(thread); bin < CRIT_BINS && rebuild; bin += 256) critRadius[bin] = critRhoOfBin(bin);
 }
 // ============================================================================ 1. ray table
 // 192 psi x 176 rows (outside / inside the critical curve) x 128 samples of 0.215 log-polar arclength. Each ray
@@ -370,15 +415,15 @@ void setup(uint thread : SV_GroupIndex) {
 [WorkgroupCount(RAY_COUNT/64, 1, 1)] [numthreads(64, 1, 1)]
 void buildTable(uint3 id : SV_DispatchThreadID) {
     if (!tableDirty()) return;
-    int ray = int(id.x); int row = ray/PSI_COUNT; float side = row < ELL_COUNT ? 1 : -1;
-    Ray state = initialRay(chartToAngles(float4(ray%PSI_COUNT, row - rowOffset(side), 0, side)));
-    float sweptAngle = 0; float rShell = P.horizonRadius + 0.02;
+    int ray = int(id.x); int row = ray/PSI_COUNT;
+    float side = row < ELL_COUNT ? 1 : -1;
+    Ray state = initialRay(chartToScreen(float4(ray%PSI_COUNT, row - rowOffset(side), 0, side)));
+    float sweptAngle = 0, delay = 0, previousAngle = 0; float rShell = P.horizonRadius + 0.02;
     float a = spin(); bool frozen = false, hitHorizon = false;
     rayTable[ray*STEP_COUNT] = float4(tableEntry(state.x, 0).xyz, 0);
     rayRecords[HORIZON_RECORDS + ray] = float4(0, 0, 0, -1);
     rayRecords[SKY_RECORDS + ray] = float4(0, 0, 0, -1);
     for (int i = ray; i < GRID_SIZE; i += RAY_COUNT) inverseGrid[i].store(EMPTY_NODE);   // clear (section 2)
-    for (int i = ray; i < 2*MASK_CELLS; i += RAY_COUNT) layerMask[i].store(0);
     for (int k = 1; k < STEP_COUNT; k++) {
         // sub-steps: shorter near the ring singularity and when approaching the horizon shell
         float arcLeft = STEP_ARC;
@@ -387,14 +432,16 @@ void buildTable(uint3 id : SV_DispatchThreadID) {
             float ringDistance = length(float2(length(state.x.xy) - a, state.x.z));
             float stepArc = min(arcLeft, min(STEP_ARC/6, 0.2*ringDistance/length(state.x) + 1e-4));
             if (!hitHorizon) stepArc = min(stepArc, max(0.5*(r0 - rShell)/r0, 0.004));
-            float stepAngle; Ray next = rk4Step(state, stepArc, stepAngle); float r1 = ksRadius(next.x);
+            float stepAngle, stepTime; Ray next = rk4Step(state, stepArc, stepAngle, stepTime);
+            float r1 = ksRadius(next.x);
             if (!hitHorizon && r1 <= rShell) {
                 float f = (r0 - rShell)/max(r0 - r1, 1e-9);
                 float3 landing = tableEntry(lerp(state.x, next.x, f), sweptAngle).xyz;
                 rayRecords[HORIZON_RECORDS + ray] = float4(horizonDirection(landing, rShell), sweptAngle + f*stepAngle);
                 hitHorizon = true;
             }
-            sweptAngle += stepAngle; arcLeft -= stepArc; state = next;
+            sweptAngle += stepAngle; delay += stepTime; arcLeft -= stepArc;
+            state = next;
             if (length(state.x) > 420) {
                 // escaped: the direction of motion is the direction on the sky
                 float3 d = normalize(flow(state).x);
@@ -405,127 +452,144 @@ void buildTable(uint3 id : SV_DispatchThreadID) {
             }
             frozen = frozen || r1 < P.horizonRadius - 0.05;
         }
-        rayTable[ray*STEP_COUNT + k] = tableEntry(state.x, sweptAngle);
+        rayTable[ray*STEP_COUNT + k] = tableEntry(state.x, delay);
+        if (k%2 == 1) rayAngles[(ray*STEP_COUNT + k)/2] = f32tof16(previousAngle) | (f32tof16(sweptAngle) << 16);
+        previousAngle = sweptAngle;
     }
 }
 // samples of one ray are adjacent: the trilinear lookups in section 4 touch 4 short runs instead of 8 planes
 float4 sampleAt(int ray, int k) { return rayTable[ray*STEP_COUNT + k]; }
-float4 tableAt(int psiIndex, int row, int k) { return sampleAt(row*PSI_COUNT + (psiIndex%PSI_COUNT + PSI_COUNT)%PSI_COUNT, k); }
+int rayOf(int psiIndex, int row) { return row*PSI_COUNT + (psiIndex%PSI_COUNT + PSI_COUNT)%PSI_COUNT; }
+float4 tableAt(int psiIndex, int row, int k) { return sampleAt(rayOf(psiIndex, row), k); }
+float angleAt(int psiIndex, int row, int k) {
+    uint index = rayOf(psiIndex, row)*STEP_COUNT + k;
+    return f16tof32((rayAngles[index/2] >> (16*(index%2))) & 0xffff);
+}
 // ============================================================================ 2. inverse grid
-// World position -> chart point for every point, from scratch. Split by swept angle into bands of pi/2 and by psi
-// into halves, rays cover space nearly once, so the inverse is almost a function: sampled on nodes in table-frame
-// (log r, cos theta, phi_out), two slots per node for caustics (lowest and highest k). Rebuilt with the table:
-// table samples are scattered to their nearest nodes (atomicMin of the sample index), empty nodes borrow from their
-// neighbours (dilation), and each filled node is solved by Newton for its exact chart point (refine, section 4).
-// Node = 1 word. While building: a sample key (< 2^23; high slots KEY_LIMIT - key, so both use atomicMin), bit 30
-// if borrowed. Then the chart point: psi (1/10 bin) | row (1/11) | k (1/4) | side | exact.
-static const uint NODE_EMPTY = 0, NODE_EXACT = 1, NODE_APPROX = 2;   // approx: off its sheet, a seed only
-static const uint KEY_LIMIT = 1u << 23, BORROWED = 1u << 30;
+// World position -> chart point, as the Newton start for every point (no history, so points may be anywhere).
+// Split by swept angle into bands of pi/2 and by psi into halves, the rays cover space nearly once, so the
+// inverse is almost a function: sampled on nodes in table-frame (log r, cos theta, phi_out) and interpolated.
+// Near caustics a node can still lie in several sheets, so each keeps two: the containing cells with the lowest
+// and the highest index (different k, as a rule). Built by rasterising every table cell (a curved hexahedron
+// between 2 x 2 rays and 2 samples) into the nodes it contains. Direct images change fastest: finer grid.
 int3 gridSize(int band) { return band < DIRECT_BANDS ? GRID_DIRECT : GRID_LOOPS; }
 int nodeIndex(int band, int slot, int3 node) {
-    int3 n = gridSize(band); int directNodes = GRID_DIRECT.x*GRID_DIRECT.y*GRID_DIRECT.z;
+    int3 n = gridSize(band);
+    int directNodes = GRID_DIRECT.x*GRID_DIRECT.y*GRID_DIRECT.z;
     int base = band < DIRECT_BANDS ? band*directNodes : DIRECT_BANDS*directNodes + (band - DIRECT_BANDS)*n.x*n.y*n.z;
     return SLOT_COUNT*base + ((slot*n.z + (node.z%n.z + n.z)%n.z)*n.y + node.y)*n.x + node.x;
 }
-void nodeOfIndex(int index, out int band, out int slot, out int3 node) {   // the inverse of nodeIndex
-    int directWords = SLOT_COUNT*GRID_DIRECT.x*GRID_DIRECT.y*GRID_DIRECT.z, loopWords = SLOT_COUNT*GRID_LOOPS.x*GRID_LOOPS.y*GRID_LOOPS.z;
-    band = index < DIRECT_BANDS*directWords ? index/directWords : DIRECT_BANDS + (index - DIRECT_BANDS*directWords)/loopWords;
-    int local = band < DIRECT_BANDS ? index - band*directWords : index - DIRECT_BANDS*directWords - (band - DIRECT_BANDS)*loopWords;
-    int3 n = gridSize(band);
-    node = int3(local%n.x, (local/n.x)%n.y, (local/(n.x*n.y))%n.z); slot = local/(n.x*n.y*n.z);
-}
 float gridMinRadius() { return P.horizonRadius + 0.05; }
-// table-frame position -> unit grid coordinates (the same for all bands; phi periodic)
-float3 gridUnit(float3 X) {
+// table-frame position -> grid coordinates of the band's nodes (phi periodic)
+float3 gridCoords(float3 X, int band) {
+    int3 n = gridSize(band);
     float r = blRadius(X);
-    return float3(log(r/gridMinRadius())/log(GRID_R_MAX/gridMinRadius()), 0.5 + 0.5*cos(polarAngle(X, r)), atan2(-X.z, X.x)/(2*PI) + 0.5);
-}
-float3 gridCoords(float3 unit, int band) { int3 n = gridSize(band); return unit*float3(n.x - 1, n.y - 1, n.z); }
-// layer mask: for each cell of the loops grid, the layers (band, slot) with a filled node that a point in the
-// cell would read, so a point only visits the few layers it can have images in
-int maskIndex(float3 unit) {
-    int3 c = int3(floor(gridCoords(unit, BAND_COUNT - 1)));
-    c.xy = clamp(c.xy, 0, GRID_LOOPS.xy - 2); c.z = (c.z%GRID_LOOPS.z + GRID_LOOPS.z)%GRID_LOOPS.z;
-    return 2*((c.z*GRID_LOOPS.y + c.y)*GRID_LOOPS.x + c.x);
-}
-void markLayer(int band, int slot, int3 node) {   // node n is read from grid coordinates in (n - 1, n + 1)
-    float3 spacing = 1/float3(gridSize(band) - int3(1, 1, 0));
-    int3 lo = int3(floor(gridCoords((node - 0.999)*spacing, BAND_COUNT - 1))), hi = int3(floor(gridCoords((node + 0.999)*spacing, BAND_COUNT - 1)));
-    int layer = band*SLOT_COUNT + slot;
-    for (int z = lo.z; z <= hi.z; z++) for (int y = lo.y; y <= hi.y; y++) for (int x = lo.x; x <= hi.x; x++)
-        layerMask[maskIndex((float3(x, y, z) + 0.5)/float3(GRID_LOOPS - int3(1, 1, 0))) + layer/32].or(1u << (layer%32));
+    float3 unit = float3(log(r/gridMinRadius())/log(GRID_R_MAX/gridMinRadius()), 0.5 + 0.5*cos(polarAngle(X, r)), atan2(-X.z, X.x)/(2*PI) + 0.5);
+    return unit*float3(n.x - 1, n.y - 1, n.z);
 }
 float3 nodePosition(int band, int3 node) {
-    int3 n = gridSize(band); float r = gridMinRadius()*pow(GRID_R_MAX/gridMinRadius(), node.x/float(n.x - 1));
+    int3 n = gridSize(band);
+    float r = gridMinRadius()*pow(GRID_R_MAX/gridMinRadius(), node.x/float(n.x - 1));
     return toCartesian(r, -1 + 2*node.y/float(n.y - 1), -PI + 2*PI*node.z/n.z);
 }
-// do the 2 x 2 rays starting at this sample still point alike? (else the interpolant is not a ray bundle)
-bool coherentAt(int psiIndex, int row, int k, float minCos = 0.866) {
-    row = min(row, row < ELL_COUNT ? ELL_COUNT - 2 : ROW_COUNT - 2); k = min(k, STEP_COUNT - 2);
-    float3 d[4]; for (int n = 0; n < 4; n++) d[n] = normalize(tableAt(psiIndex + (n & 1), row + (n >> 1), k).xyz);
-    return min(min(dot(d[0], d[1]), dot(d[0], d[2])), min(dot(d[0], d[3]), dot(d[1], d[2]))) > minCos;
+// table cell index <-> (psi, row, k) of its first corner; rows skip the seam between the two sides
+int4 cellOrigin(int cell) {
+    int cellRow = (cell/PSI_COUNT)%CELL_ROWS;
+    int side = cellRow < ELL_COUNT - 1 ? 1 : -1;
+    return int4(cell%PSI_COUNT, cellRow + (side > 0 ? 0 : 1), cell/(PSI_COUNT*CELL_ROWS), side);
 }
-float4 sampleChartPoint(uint key) {   // key = k*RAY_COUNT + ray + 1: k first, the lowest is the earliest sample
-    int ray = int(key - 1)%RAY_COUNT; int row = ray/PSI_COUNT; float side = row < ELL_COUNT ? 1 : -1;
-    return float4(ray%PSI_COUNT, row - rowOffset(side), int(key - 1)/RAY_COUNT, side);
+float4 decodeNode(uint stored, int slot) {   // -> chart point (psi, row, k, side), side 0 = empty
+    if (stored == EMPTY_NODE) return 0;
+    uint key = slot%2 == 0 ? stored : ~stored;
+    int4 origin = cellOrigin(int(key >> 3) - 1);
+    float3 f = 0.25 + 0.5*float3((key >> 2) & 1, (key >> 1) & 1, key & 1);
+    return float4(origin.x + f.x, origin.y - rowOffset(origin.w) + f.y, origin.z + f.z, origin.w);
 }
-void storeNode(int index, float4 q, uint state) {   // psi < 192 (11 bits), row < 88 (10), k < 128 (9)
-    uint3 v = uint3(round(clamp(q.xyz*float3(10, 11, 4), 0., float3(1919, 1023, 511))));
-    inverseGrid[index].store(state == NODE_EMPTY ? EMPTY_NODE : v.x | (v.y << 11) | (v.z << 21) | (q.w < 0 ? 1u << 30 : 0) | (state == NODE_EXACT ? 1u << 31 : 0));
+void rasteriseCell(int cell) {
+    int4 origin = cellOrigin(cell);
+    float4 c[8];
+    float angles[8];
+    for (int n = 0; n < 8; n++) {
+        int3 corner = origin.xyz + int3(n & 1, (n >> 1) & 1, n >> 2);
+        c[n] = tableAt(corner.x, corner.y, corner.z); angles[n] = angleAt(corner.x, corner.y, corner.z);
+    }
+    // skip incoherent cells (the rays have spread apart, the interpolant is not a ray bundle): Newton would
+    // reject solutions there anyway, and they are large, so they would take over many nodes
+    for (int plane = 0; plane < 8; plane += 4) {
+        float3 d0 = normalize(c[plane].xyz), d1 = normalize(c[plane + 1].xyz), d2 = normalize(c[plane + 2].xyz), d3 = normalize(c[plane + 3].xyz);
+        if (min(min(dot(d0, d1), dot(d0, d2)), min(dot(d0, d3), dot(d1, d2))) < 0.866) return;
+    }
+    int bandMin = 99, bandMax = -1;
+    for (int n = 0; n < 8; n++) {
+        bandMin = min(bandMin, int(max(angles[n] - BAND_OVERLAP, 0.)/BAND_WIDTH));
+        bandMax = max(bandMax, int((angles[n] + BAND_OVERLAP)/BAND_WIDTH));
+    }
+    for (int band = bandMin; band <= min(bandMax, BAND_COUNT - 1); band++) {
+        // bounding box of the corners in node space (phi unwrapped next to corner 0)
+        int3 size = gridSize(band);
+        float3 lo = 1e9, hi = -1e9, g0 = gridCoords(c[0].xyz, band);
+        for (int n = 0; n < 8; n++) {
+            float3 g = gridCoords(c[n].xyz, band);
+            g.z -= size.z*round((g.z - g0.z)/size.z);
+            lo = min(lo, g); hi = max(hi, g);
+        }
+        int3 first = int3(ceil(lo)), last = int3(floor(hi));
+        first.xy = max(first.xy, 0); last.xy = min(last.xy, size.xy - 1);
+        int3 count = last - first + 1;
+        if (any(count <= 0) || count.x*count.y*count.z > 1024) continue;
+        for (int i = 0; i < count.x*count.y*count.z; i++) {
+            int3 node = first + int3(i%count.x, (i/count.x)%count.y, i/(count.x*count.y));
+            float3 X = nodePosition(band, node);
+            // local coordinates of the node inside the cell: Newton on the trilinear interpolant
+            float3 f = 0.5;
+            TableSample s = interpolateCell(c, angles, f);
+            for (int it = 0; it < 6; it++) {
+                f -= solve3(s.dPsi, s.dRow, s.dK, s.position - X);
+                s = interpolateCell(c, angles, clamp(f, -0.5, 1.5));
+            }
+            bool inside = all(f >= -0.01) && all(f <= 1.01) && length(s.position - X) < 1e-3*length(X) + 1e-4;
+            // bands overlap too (by BAND_OVERLAP radians of swept angle)
+            if (!inside || any(isnan(f)) || abs(s.sweptAngle - (band + 0.5)*BAND_WIDTH) > 0.5*BAND_WIDTH + BAND_OVERLAP) continue;
+            // smaller cells (in node units) win; the cell's octant containing the node rides along
+            // key: cell + 1 and the octant the node is in; slot pair: lowest and highest key (via ~key)
+            uint3 half = uint3(f > 0.5);
+            uint key = (uint(cell + 1) << 3) | (half.x << 2) | (half.y << 1) | half.z;
+            // the sectors overlap by SECTOR_OVERLAP psi bins, so sheets crossing a sector edge stay whole in one
+            for (int edge = -1; edge <= 1; edge += 2) {
+                int sector = ((origin.x + edge*SECTOR_OVERLAP + PSI_COUNT)%PSI_COUNT)*SECTOR_COUNT/PSI_COUNT;
+                if (edge == 1 && sector == ((origin.x - SECTOR_OVERLAP + PSI_COUNT)%PSI_COUNT)*SECTOR_COUNT/PSI_COUNT) break;
+                inverseGrid[nodeIndex(band, 2*sector, node)].min(key);
+                inverseGrid[nodeIndex(band, 2*sector + 1, node)].min(~key);
+            }
+        }
+    }
 }
-float4 loadNode(int index, out uint state) {   // -> chart point, side 0 = empty
-    uint v = inverseGrid[index].load(); state = v == EMPTY_NODE ? NODE_EMPTY : (v >> 31) != 0 ? NODE_EXACT : NODE_APPROX;
-    if (state == NODE_EMPTY) return 0;
-    return float4(float3(v & 2047, (v >> 11) & 1023, (v >> 21) & 511)/float3(10, 11, 4), ((v >> 30) & 1) != 0 ? -1 : 1);
-}
-// Newton starts for a position (unit grid coordinates) from a band's grid: the blend of the exact nodes among the 8
-// surrounding ones, and the nearest filled node (for folds and the edge of the band's sheet)
-void gridSeeds(int band, int slot, float3 unit, out float4 blended, out float4 nearest) {
-    int3 size = gridSize(band); float3 g = gridCoords(unit, band);
+// Newton starts for table-frame position X from a band's grid: the blend of the 8 surrounding nodes and the
+// nearest filled node (for where the blend is meaningless: folds, the edge of the band's sheet)
+void gridSeeds(int band, int slot, float3 X, out float4 blended, out float4 nearest) {
+    int3 size = gridSize(band);
+    float3 g = gridCoords(X, band);
     blended = 0; nearest = 0;
     if (g.x < 0 || g.x > size.x - 1) return;
-    int3 g0 = int3(floor(g)); g0.xy = min(g0.xy, size.xy - 2);
-    float3 f = g - g0; float4 q[8]; float w[8]; float best = 0;
+    int3 g0 = int3(floor(g));
+    g0.xy = min(g0.xy, size.xy - 2);
+    float3 f = g - g0;
+    float4 q[8];
+    float w[8];
+    float best = 0;
     for (int n = 0; n < 8; n++) {
-        int3 corner = int3(n & 1, (n >> 1) & 1, n >> 2); uint state;
-        q[n] = loadNode(nodeIndex(band, slot, g0 + corner), state);
+        int3 corner = int3(n & 1, (n >> 1) & 1, n >> 2);
+        q[n] = decodeNode(inverseGrid[nodeIndex(band, slot, g0 + corner)].load(), slot);
         w[n] = (corner.x == 1 ? f.x : 1 - f.x)*(corner.y == 1 ? f.y : 1 - f.y)*(corner.z == 1 ? f.z : 1 - f.z);
         if (q[n].w != 0 && w[n] >= best) { best = w[n]; nearest = q[n]; }
-        if (state != NODE_EXACT) q[n] = 0;
     }
     blended = blendChartPoints(q, w);
 }
-// scatter: each coherent sample to the nearest node of its band, in its psi half's two slots
 [shader("compute")]
 [WorkgroupCount(1024, 1, 1)] [numthreads(64, 1, 1)]
-void scatterSamples(uint3 id : SV_DispatchThreadID) {
-    for (int i = int(id.x); i < RAY_COUNT*STEP_COUNT && tableDirty(); i += 1024*64) {
-        int ray = i/STEP_COUNT, k = i%STEP_COUNT; int psiIndex = ray%PSI_COUNT;
-        float4 entry = sampleAt(ray, k); int band = int(entry.w/BAND_WIDTH);
-        if (band >= BAND_COUNT || !coherentAt(psiIndex, ray/PSI_COUNT, k)) continue;
-        float3 g = gridCoords(gridUnit(entry.xyz), band);
-        if (g.x < -0.5 || g.x > gridSize(band).x - 0.5) continue;
-        uint key = uint(k*RAY_COUNT + ray + 1); int slot = 2*(psiIndex*SECTOR_COUNT/PSI_COUNT);
-        inverseGrid[nodeIndex(band, slot, int3(round(g)))].min(key);
-        inverseGrid[nodeIndex(band, slot + 1, int3(round(g)))].min(KEY_LIMIT - key);
-    }
-}
-// dilation: an empty node borrows the lowest stored key of its neighbours, 2 deep in r (sheets near the photon
-// sphere are thin shells), 1 in theta, phi (in a high slot: the highest). Borrowed keys are not lent on.
-[shader("compute")]
-[WorkgroupCount(1024, 1, 1)] [numthreads(64, 1, 1)]
-void dilateGrid(uint3 id : SV_DispatchThreadID) {
-    for (int i = int(id.x); i < GRID_SIZE && tableDirty(); i += 1024*64) {
-        if (inverseGrid[i].load() != EMPTY_NODE) continue;
-        int band, slot; int3 node; nodeOfIndex(i, band, slot, node);
-        int3 size = gridSize(band); uint borrowed = EMPTY_NODE;
-        for (int n = 0; n < 45; n++) {   // phi wraps in nodeIndex
-            int3 m = node + int3(n%5 - 2, (n/5)%3 - 1, n/15 - 1);
-            uint v = all(m.xy >= 0) && all(m.xy < size.xy) ? inverseGrid[nodeIndex(band, slot, m)].load() : EMPTY_NODE;
-            if ((v & BORROWED) == 0) borrowed = min(borrowed, v);
-        }
-        if (borrowed != EMPTY_NODE) inverseGrid[i].store(borrowed | BORROWED);
-    }
+void buildInverseGrid(uint3 id : SV_DispatchThreadID) {
+    if (!tableDirty()) return;
+    for (int cell = int(id.x); cell < CELL_COUNT; cell += 1024*64) rasteriseCell(cell);
 }
 // barycentric weights of p in triangle (A, B, C)
 float3 barycentric(float2 A, float2 B, float2 C, float2 p) {
@@ -571,10 +635,13 @@ float4 chartInterpolate(float4 chartPoint, int recordBase) {
 static const int KIND_NONE = 0, KIND_SKY = 1, KIND_HORIZON = 2;
 float encodeKind(int kind) { return kind + 1 + exp2(-12.); }
 int decodeKind(float code) { return int(round(code)) - 1; }
-float2 pixelToScreen(float2 pixel) { return float2(pixel.x/SCREEN_SIZE.x*2 - 1, 1 - pixel.y/SCREEN_SIZE.y*2)/P.projection; }
+float2 pixelToScreen(float2 pixel) {
+    return float2(pixel.x/SCREEN_SIZE.x*2 - 1, 1 - pixel.y/SCREEN_SIZE.y*2)/P.projection;
+}
 // one pixel of the cache; run by the solve dispatch (section 6) when the view changed
 void cacheBackground(int2 pixel) {
-    float4 chartPoint = screenToChart(pixelToScreen(pixel + 0.5)); bool outside = chartPoint.w > 0;
+    float4 chartPoint = screenToChart(pixelToScreen(pixel + 0.5));
+    bool outside = chartPoint.w > 0;
     float4 landing = chartInterpolate(chartPoint, outside ? SKY_RECORDS : HORIZON_RECORDS);
     int kind = landing.w < 0 ? KIND_NONE : outside ? KIND_SKY : KIND_HORIZON;
     float theta = atan2(length(landing.xz), landing.y); float phi = atan2(-landing.z, landing.x);
@@ -582,23 +649,46 @@ void cacheBackground(int2 pixel) {
 }
 // ============================================================================ 4. inverting the table
 // Trilinear in (psi, row, k); the derivatives are exact for the interpolant.
-struct TableSample { float3 position, dPsi, dRow, dK; float sweptAngle; };   // dK is also the ray tangent
+struct TableSample {
+    float3 position, dPsi, dRow, dK;   // dK is also the ray tangent
+    float sweptAngle, delay;
+    float3 dDelay;                     // d delay / d (psi, row, k)
+};
 // trilinear interpolation of 8 corners (bit 0 = psi + 1, bit 1 = row + 1, bit 2 = k + 1) at local f
-TableSample interpolateCell(float4 c[8], float3 f) {
+TableSample interpolateCell(float4 c[8], float angles[8], float3 f) {
     float4 c00 = lerp(c[0], c[1], f.x), c10 = lerp(c[2], c[3], f.x);
     float4 c01 = lerp(c[4], c[5], f.x), c11 = lerp(c[6], c[7], f.x);
     float4 c0 = lerp(c00, c10, f.y), c1 = lerp(c01, c11, f.y); float4 value = lerp(c0, c1, f.z);
     float4 dPsi = lerp(lerp(c[1] - c[0], c[3] - c[2], f.y), lerp(c[5] - c[4], c[7] - c[6], f.y), f.z);
-    return { value.xyz, dPsi.xyz, lerp(c10 - c00, c11 - c01, f.z).xyz, (c1 - c0).xyz, value.w };
+    float4 dRow = lerp(c10 - c00, c11 - c01, f.z), dK = c1 - c0;
+    float a0 = lerp(lerp(angles[0], angles[1], f.x), lerp(angles[2], angles[3], f.x), f.y);
+    float a1 = lerp(lerp(angles[4], angles[5], f.x), lerp(angles[6], angles[7], f.x), f.y);
+    return { value.xyz, dPsi.xyz, dRow.xyz, dK.xyz, lerp(a0, a1, f.z), value.w, float3(dPsi.w, dRow.w, dK.w) };
 }
-TableSample evaluateTable(float4 chartPoint) {
+TableSample evaluateTable(float4 chartPoint, bool withAngle = false) {   // the swept angle costs 8 more loads
     float px = wrapPsi(chartPoint.x); float py = clamp(chartPoint.y, 0., ELL_COUNT - 1.);
     float pz = clamp(chartPoint.z, 0., STEP_COUNT - 1.); int i0 = min(int(px), PSI_COUNT - 1);
     int rowLocal = min(int(py), ELL_COUNT - 2); int k0 = min(int(pz), STEP_COUNT - 2);
     float4 c[8];
-    for (int n = 0; n < 8; n++)
-        c[n] = tableAt(i0 + (n & 1), rowLocal + rowOffset(chartPoint.w) + ((n >> 1) & 1), k0 + (n >> 2));
-    return interpolateCell(c, float3(px - i0, py - rowLocal, pz - k0));
+    float angles[8];
+    for (int n = 0; n < 8; n++) {
+        int3 corner = int3(i0 + (n & 1), rowLocal + rowOffset(chartPoint.w) + ((n >> 1) & 1), k0 + (n >> 2));
+        c[n] = tableAt(corner.x, corner.y, corner.z); angles[n] = withAngle ? angleAt(corner.x, corner.y, corner.z) : 0;
+    }
+    return interpolateCell(c, angles, float3(px - i0, py - rowLocal, pz - k0));
+}
+// Light travel time. The table's rays are the time-mirrored arriving rays, so its Kerr-Schild time is the outgoing
+// time t_out = t_BL - hTime(r) of the arriving light, and the light reaching the camera now (BL time sceneTime)
+// left the table position of radius r at t_BL = sceneTime - delay - hTime(r_camera) + hTime(r). hTime diverges at
+// the horizon: light from close to it takes ever longer (objects falling in freeze and fade).
+float hTime(float r) {
+    float rPlus = P.horizonRadius, rMinus = 2 - rPlus;
+    return (2*rPlus*log(abs(r - rPlus)) - 2*rMinus*log(abs(r - rMinus)))/(rPlus - rMinus);
+}
+float lightDelay(float delay, float r) { return toggleOn(8) ? delay + hTime(P.cameraRadius) - hTime(r) : 0; }
+float3 radiusGradient(float3 X) {   // of blRadius: from r^4 - (|X|^2 - a^2) r^2 - a^2 y^2 = 0
+    float a2 = spin()*spin(), r = blRadius(X);
+    return (r*r*X + float3(0, a2*X.y, 0))/(2*r*r*r - (dot(X, X) - a2)*r);
 }
 float3 solve3(float3 a, float3 b, float3 c, float3 F) {   // solves [a b c] x = F
     float3 bc = cross(b, c);
@@ -606,28 +696,45 @@ float3 solve3(float3 a, float3 b, float3 c, float3 F) {   // solves [a b c] x = 
 }
 // scale for tolerances: distance from the camera
 float cameraDistance(float3 X, float r) { return clamp(length(X - rayTable[0].xyz), 0.25, max(r, 2.)); }
-struct NewtonResult { float4 chartPoint; bool ok; float sweptAngle; float3 rayDirection; };
-// Newton in (psi, row, k). Each iteration tries three candidates and keeps the smallest residual:
+struct NewtonResult { float4 chartPoint; bool ok; float sweptAngle; float3 rayDirection; float emitTime; };
+// Residual of chart point q for an emitter: its table position minus where the emitter was when the light left.
+struct Residual { TableSample s; float3 F; float emitTime; float3 velocity; };
+Residual residualAt(float4 q, Emitter e) {
+    TableSample s = evaluateTable(q);
+    float emitTime = P.sceneTime - lightDelay(s.delay, blRadius(s.position));
+    Body b = emitterBody(e, emitTime);
+    return { s, s.position - targetOf(b.position).xyz, emitTime, targetVelocity(b.position, b.velocity) };
+}
+// Newton in (psi, row, k) for the retarded position: F(q) = X(q) - Y(t_emit(q)), so the Jacobian gains the
+// rank-one term dY/dt (x) d delay/dq (the emitter velocity times the delay gradient, incl. hTime). It stays
+// invertible while the emitter is slower than light. Each iteration tries three candidates, keeps the best:
 //   0: the plain step
 //   1: the same step as a linear move in sigma (right near the camera, crosses the critical curve)
 //   2: near the shadow centre, a Cartesian step (passes through the centre)
-// giveUp: stop once the error no longer halves every two iterations (no image near this seed)
-NewtonResult newton(float4 chartPoint, float3 target, float tolerance, int maxIterations, float minCos = 0.866, bool giveUp = false) {
-    float4 q = chartPoint; TableSample current = evaluateTable(q);
-    float3 F = current.position - target; float error2 = dot(F, F);
-    bool converged = false; float2 earlierErrors = 1e30;
+NewtonResult newton(float4 chartPoint, Emitter e, float tolerance, int maxIterations, float minCos = 0.866) {
+    float4 q = chartPoint; Residual current = residualAt(q, e);
+    float error2 = dot(current.F, current.F);
+    bool converged = false;
     for (int it = 0; it < maxIterations; it++) {
         // stop one iteration after reaching the tolerance (or right away well below it)
         if (error2 < tolerance*tolerance) {
             if (converged || error2 < 0.0025*tolerance*tolerance) break;
             converged = true;
         }
-        if (giveUp && it >= 4 && error2 > 0.5*earlierErrors.x) break;
-        earlierErrors = float2(earlierErrors.y, error2);
-        float3 newtonStep = solve3(current.dPsi, current.dRow, current.dK, F);
+        TableSample s = current.s;
+        if (toggleOn(8)) {
+            float3 velocity = current.velocity;
+            float r = blRadius(s.position);
+            float3 gradient = radiusGradient(s.position)*2*r/delta(r);
+            float3 dDelay = s.dDelay - float3(dot(gradient, s.dPsi), dot(gradient, s.dRow), dot(gradient, s.dK));
+            s.dPsi += velocity*dDelay.x; s.dRow += velocity*dDelay.y; s.dK += velocity*dDelay.z;
+        }
+        float3 F = current.F;
+        float3 newtonStep = solve3(s.dPsi, s.dRow, s.dK, F);
         if (any(isnan(newtonStep))) break;
         newtonStep.xz /= max(1, max(abs(newtonStep.x)*0.5, abs(newtonStep.z)*0.25));
-        float maxRowStep = 3/ellPerRow(q.y, q.w); newtonStep.y = clamp(newtonStep.y, -maxRowStep, maxRowStep);
+        float maxRowStep = 3/ellPerRow(q.y, q.w);
+        newtonStep.y = clamp(newtonStep.y, -maxRowStep, maxRowStep);
         float kMin = max(0.25*q.z, 1e-3);
         float4 candidates[3];   // w = 2 marks "no candidate"
         candidates[0] = float4(q.x - newtonStep.x, clamp(q.y - newtonStep.y, 0., ELL_COUNT - 1.), clamp(q.z - newtonStep.z, kMin, STEP_COUNT - 1.), q.w);
@@ -640,52 +747,35 @@ NewtonResult newton(float4 chartPoint, float3 target, float tolerance, int maxIt
         if (nearCentre(q)) {
             // chain rule from (psi index, row) to the Cartesian c = (1 - e)(cos psi, sin psi)
             float t = -PI + 2*PI*q.x/PSI_COUNT; float psi = t + 0.5*PSI_WARP*sin(2*t);
-            float radius = 1 - insideDepth(q.y); float3 dRadius = -current.dRow/INNER_LIN_STEP;
-            float3 dAngle = current.dPsi/(2*PI/PSI_COUNT*(1 + PSI_WARP*cos(2*t)));
+            float radius = 1 - insideDepth(q.y);
+            float3 dRadius = -s.dRow/INNER_LIN_STEP;
+            float3 dAngle = s.dPsi/(2*PI/PSI_COUNT*(1 + PSI_WARP*cos(2*t)));
             float3 dCx = cos(psi)*dRadius - sin(psi)/radius*dAngle;
             float3 dCy = sin(psi)*dRadius + cos(psi)/radius*dAngle;
-            float3 d = solve3(dCx, dCy, current.dK, F); d /= max(1, max(length(d.xy)/0.25, abs(d.z)*0.25));
+            float3 d = solve3(dCx, dCy, s.dK, F); d /= max(1, max(length(d.xy)/0.25, abs(d.z)*0.25));
             float2 psiRow = fromCentreXY(radius*float2(cos(psi), sin(psi)) - d.xy);
             if (!any(isnan(d))) candidates[2] = float4(psiRow, clamp(q.z - d.z, kMin, STEP_COUNT - 1.), -1);
         }
         float bestError = 1e30;
         for (int n = 0; n < 3; n++) {
             if (candidates[n].w > 1) continue;
-            TableSample s = evaluateTable(candidates[n]);
-            float e = dot(s.position - target, s.position - target);
-            if (e >= bestError) continue;
-            bestError = e; q = candidates[n]; current = s;
+            Residual candidate = residualAt(candidates[n], e);
+            float candidateError = dot(candidate.F, candidate.F);
+            if (candidateError >= bestError) continue;
+            bestError = candidateError; q = candidates[n];
+            current = candidate;
         }
-        F = current.position - target; error2 = bestError;
+        error2 = bestError;
     }
-    q.x = wrapPsi(q.x); NewtonResult result = { q, false, current.sweptAngle, current.dK };
+    q.x = wrapPsi(q.x);
+    NewtonResult result = { q, false, evaluateTable(q, true).sweptAngle, current.s.dK, current.emitTime };
     if (error2 >= tolerance*tolerance) return result;
     // reject cells whose rays land far apart (a fold: the interpolated bundle is not a ray)
-    result.ok = coherentAt(int(q.x), min(int(q.y), ELL_COUNT - 2) + rowOffset(q.w), int(q.z), minCos);
+    int i0 = int(q.x); int j0 = min(int(q.y), ELL_COUNT - 2) + rowOffset(q.w);
+    int k0 = min(int(q.z), STEP_COUNT - 2); float3 d[4];
+    for (int n = 0; n < 4; n++) d[n] = normalize(tableAt(i0 + (n & 1), j0 + (n >> 1), k0).xyz);
+    result.ok = min(min(dot(d[0], d[1]), dot(d[0], d[2])), min(dot(d[0], d[3]), dot(d[1], d[2]))) > minCos;
     return result;
-}
-// Refine (section 2): each filled node pair (a psi half's two slots) solved by Newton from its sample. Exact if it
-// converges (maybe just past the band's edge: the same sheet, so it still blends smoothly), else approximate (off
-// the sheet: still a seed for points just inside its edge). A high slot on the low slot's sheet is dropped.
-[shader("compute")]
-[WorkgroupCount(1024, 1, 1)] [numthreads(64, 1, 1)]
-void refineGrid(uint3 id : SV_DispatchThreadID) {
-    for (int i = int(id.x); i < GRID_SIZE && tableDirty(); i += 1024*64) {
-        int band, slot; int3 node; nodeOfIndex(i, band, slot, node); if (slot%2 == 1) continue;
-        float3 X = nodePosition(band, node); float4 low = 0;
-        for (int s = 0; s < 2; s++) {
-            int index = nodeIndex(band, slot + s, node); uint stored = inverseGrid[index].load() & (KEY_LIMIT - 1);
-            float4 q = inverseGrid[index].load() == EMPTY_NODE ? 0 : sampleChartPoint(s == 0 ? stored : KEY_LIMIT - stored); uint state = NODE_EMPTY;
-            if (s == 1 && q.w == low.w && abs(psiDifference(q.x, low.x)) < 4 && abs(q.y - low.y) < 4 && abs(q.z - low.z) < 8) q = 0;
-            if (q.w != 0) {
-                NewtonResult result = newton(q, X, 3e-4*cameraDistance(X, blRadius(X)), 12, 0.866, true);
-                q = result.chartPoint; state = result.ok ? NODE_EXACT : NODE_APPROX;
-                if (s == 1 && sameImage(q, low)) state = NODE_EMPTY;
-            }
-            storeNode(index, q, state); low = s == 0 ? q : low;
-            if (state != NODE_EMPTY) markLayer(band, slot + s, node);
-        }
-    }
 }
 // image order from the swept angle: direct (< pi), 1st loop, 2nd loop, else -1
 int orderOf(float sweptAngle) {
@@ -703,85 +793,109 @@ float hashUint(uint x) {
     return (x >> 8)/16777216.0;
 }
 struct Body { float3 position, velocity, normal, centre; };
-// prograde Keplerian circle in a tilted plane
-Body orbit(float radius, float phase, float tilt, float node) {
-    float angularRate = 1/(pow(radius, 1.5) + spin()); float angle = phase + P.sceneTime*angularRate;
+// Every emitter moves on an analytic path in BL time t, slower than light: the retarded-time solve has one root
+// per ray branch only then (a faster emitter could be seen several times along one ray, or not at all). Speeds
+// count relative to the local ZAMO, which is dragged around at omega: in the ergosphere nothing can stand still.
+float3 equatorFrame(float r) {   // (omega, local speed per unit of (Omega - omega), local speed per coord speed)
+    float a = spin(), D = max(delta(r), 1e-6), A = sqr(r*r + a*a) - a*a*D;
+    float lapse = sqrt(r*r*D/A);
+    return float3(2*a*r/A, sqrt(A)/(r*lapse), max(sqrt(A)/(r*r), r/sqrt(D))/lapse);
+}
+// prograde Keplerian angular velocity, kept within 0.95 c of the ZAMO
+float orbitRate(float radius) {
+    float3 frame = equatorFrame(radius);
+    return clamp(1/(pow(radius, 1.5) + spin()), frame.x - 0.95/frame.y, frame.x + 0.95/frame.y);
+}
+// circle in a tilted plane
+Body orbit(float radius, float phase, float tilt, float node, float t) {
+    float angularRate = orbitRate(radius);
+    float angle = phase + t*angularRate;
     float3 n = float3(sin(tilt)*cos(node), cos(tilt), sin(tilt)*sin(node));
     float3 u = normalize(cross(abs(n.y) < 0.99 ? float3(0, 1, 0) : float3(1, 0, 0), n));
     float3 v = cross(n, u); float3 position = radius*(cos(angle)*u + sin(angle)*v);
     return { position, radius*angularRate*(-sin(angle)*u + cos(angle)*v), n, position };
 }
-// 2D value noise and 4 octaves of it, in [0, 1]
-float valueNoise(float2 p) {
-    float2 i = floor(p), f = p - i; f = f*f*(3 - 2*f);
-    float a = hash1(dot(i, float2(127.1, 311.7))), b = hash1(dot(i + float2(1, 0), float2(127.1, 311.7)));
-    float c = hash1(dot(i + float2(0, 1), float2(127.1, 311.7))), d = hash1(dot(i + 1, float2(127.1, 311.7)));
-    return lerp(lerp(a, b, f.x), lerp(c, d, f.x), f.y);
+Body particle(int index, float t) {
+    uint i = uint(index); float u = hashUint(4*i + 1);
+    float radius = lerp(4.5, 18., u*u);
+    float tilt = (hashUint(4*i + 3) - 0.5)*0.11*(1 + 0.08*radius);
+    return orbit(radius, 2*PI*hashUint(4*i + 2), tilt, 2*PI*hashUint(4*i + 4), t);
 }
-float fbm(float2 p) {
-    float sum = 0, amplitude = 0.5;
-    for (int octave = 0; octave < 4; octave++) { sum += amplitude*valueNoise(p); p = p*2.03 + 17.1; amplitude *= 0.5; }
-    return sum/0.9375;
+float3 rotateAround(float3 v, float3 axis, float angle) {
+    return v*cos(angle) + cross(axis, v)*sin(angle) + axis*dot(axis, v)*(1 - cos(angle));
 }
-// Disk particles: surface density falling off with radius from the ISCO out to 18 M, modulated by noise at t = 0
-// (rejection sampling of the angle, a few tries per particle). Keplerian shear then winds the clumps into spirals.
-Body particle(int index) {
-    uint i = uint(index);
-    float u = (index + hashUint(8*i + 1))/PARTICLE_COUNT;   // radius stratified by index: neighbouring threads alike
-    float radius = lerp(P.innerEdge, 18., u*u), phase = 0;
-    for (uint attempt = 0; attempt < 6; attempt++) {
-        uint h = 8*i + 3*attempt; phase = 2*PI*hashUint(h + 2);
-        if (hashUint(h + 3) < smoothstep(0.35, 0.7, fbm(radius*float2(cos(phase), sin(phase))*0.35 + 3.7))) break;
-    }
-    float tilt = (hashUint(8*i + 5) - 0.5)*0.11*(1 + 0.08*radius);
-    return orbit(radius, phase, tilt, 2*PI*hashUint(8*i + 6));
-}
-float3 rotateAround(float3 v, float3 axis, float angle) { return v*cos(angle) + cross(axis, v)*sin(angle) + axis*dot(axis, v)*(1 - cos(angle)); }
-Body objectVertex(int object, int vertex) {   // small spinning spheres on inclined orbits
-    float radius = lerp(6., 11., hash1(object*3.1 + 0.7));
+// small spinning spheres on inclined orbits; the spin gets what the speed limit leaves (at the closest point)
+Body objectVertex(int object, int vertex, float t) {
+    float radius = lerp(6., 11., hash1(object*3.1 + 0.7)), size = 0.55 + 0.35*hash1(object*13.);
     float phase = 2*PI*object/OBJECT_COUNT + 0.4*hash1(object + 5.);
-    Body body = orbit(radius, phase, (hash1(object*7.3) - 0.5)*1.1, 2*PI*hash1(object*11.1));
+    Body body = orbit(radius, phase, (hash1(object*7.3) - 0.5)*1.1, 2*PI*hash1(object*11.1), t);
     float theta = PI*(vertex/(SPHERE_SEGS + 1))/SPHERE_RINGS;
     float phi = 2*PI*(vertex%(SPHERE_SEGS + 1))/SPHERE_SEGS;
     float3 axis = normalize(float3(hash1(object*17.), hash1(object*29.), hash1(object*41.)) - 0.5 + 1e-3);
     float3 localNormal = float3(sin(theta)*cos(phi), cos(theta), sin(theta)*sin(phi));
-    body.normal = rotateAround(localNormal, axis, object*37 + P.sceneTime*0.6);
-    body.position += body.normal*(0.55 + 0.35*hash1(object*13.));
+    float3 frame = equatorFrame(radius);
+    float orbitSpeed = abs(orbitRate(radius) - frame.x)*frame.y;   // what the orbit uses of the speed limit
+    float spinRate = min(0.6, max(0.95 - orbitSpeed, 0.)/(equatorFrame(radius - size).z*size));
+    body.normal = rotateAround(localNormal, axis, object*37 + t*spinRate);
+    body.position += body.normal*size;
+    body.velocity += spinRate*cross(axis, body.normal*size);
     return body;
 }
-Body pointBody(int pointId) {
-    if (pointId < PARTICLE_COUNT) return particle(pointId);
+Body pointBody(int pointId, float t) {
+    if (pointId < PARTICLE_COUNT) return particle(pointId, t);
     int local = pointId - PARTICLE_COUNT;
-    return objectVertex(local/OBJECT_VERTS, local%OBJECT_VERTS);
+    return objectVertex(local/OBJECT_VERTS, local%OBJECT_VERTS, t);
+}
+// An emitter: one point, or a blend of up to 3 (along mesh edges and faces), all taken at the same time.
+struct Emitter { int3 ids; float3 weights; };
+Emitter pointEmitter(int pointId) { return { int3(pointId), float3(1, 0, 0) }; }
+Body emitterBody(Emitter e, float t) {
+    Body sum = { 0, 0, 0, 0 };
+    for (int n = 0; n < 3; n++) {
+        if (e.weights[n] == 0) continue;
+        Body b = pointBody(e.ids[n], t);
+        sum.position += e.weights[n]*b.position; sum.velocity += e.weights[n]*b.velocity;
+        sum.normal += e.weights[n]*b.normal; sum.centre += e.weights[n]*b.centre;
+    }
+    return sum;
 }
 // ============================================================================ 6. per-point solve
 // Up to 8 images per point, found from scratch every frame: Newton from each (band, slot) of the inverse grid,
 // plus a straight line-of-sight seed for points near the camera. Stored in the pass textures for the raster.
-bool sameImage(float4 a, float4 b) {
+bool sameImage(float4 a, float4 b, float slack = 1) {
     if (a.w == 0 || a.w != b.w) return false;
-    if (nearCentre(a) && nearCentre(b)) return length(toCentreXY(a) - toCentreXY(b)) < 0.02 && abs(a.z - b.z) < 1;
-    return abs(psiDifference(a.x, b.x)) < 0.6 && abs(a.y - b.y) < 0.6 && abs(a.z - b.z) < 1;
+    if (nearCentre(a) && nearCentre(b)) return length(toCentreXY(a) - toCentreXY(b)) < 0.02*slack && abs(a.z - b.z) < slack;
+    return abs(psiDifference(a.x, b.x)) < 0.6*slack && abs(a.y - b.y) < 0.6*slack && abs(a.z - b.z) < slack;
 }
-// g = (p.u_camera)/(p.u_emitter), exact for the ray through screen xy
-float redshift(float2 angles, float3 X, float3 velocity, float3 rayDirection) {
-    float4 constants = rayConstants(angles); float lambda = constants.x, eta = constants.y, a = spin();
-    // emitter 4-velocity from a finite difference of its BL coordinates: v = (dr, dtheta, dphi)/dt
-    float3 Xnext = X + velocity*1e-3; float r = blRadius(X), rNext = blRadius(Xnext);
+// emitter velocity in BL, v = (dr, dtheta, dphi)/dt from a finite difference, and g_ab u^a u^b/(u^t)^2 in w:
+// negative for a timelike worldline (slower than light): the exact check behind orbitRate's limit
+float4 blVelocity(float3 X, float3 velocity) {
+    float a = spin(); float3 Xnext = X + velocity*1e-3; float r = blRadius(X), rNext = blRadius(Xnext);
     float theta = polarAngle(X, r), thetaNext = polarAngle(Xnext, rNext);
-    float phi = atan2(-X.z, X.x); float dPhi = atan2(-Xnext.z, Xnext.x) - phi;
+    float dPhi = atan2(-Xnext.z, Xnext.x) - atan2(-X.z, X.x);
     dPhi -= 2*PI*floor((dPhi + PI)/(2*PI));
     float3 v = float3(rNext - r, thetaNext - theta, dPhi)/1e-3;
     float sin2 = sin(theta)*sin(theta); float Sigma = r*r + a*a*cos(theta)*cos(theta);
     float Delta = delta(r); float A = sqr(r*r + a*a) - a*a*Delta*sin2;
-    // g_ab u^a u^b / (u^t)^2
     float norm = -(Delta - a*a*sin2)/Sigma - 2*a*sin2*(r*r + a*a - Delta)/Sigma*v.z;
     norm += sin2*A/Sigma*v.z*v.z + Sigma/Delta*v.x*v.x + Sigma*v.y*v.y;
+    return float4(v, norm);
+}
+// g = (p.u_camera)/(p.u_emitter), exact for the ray through screen xy
+float redshift(float2 screenXY, float3 X, float3 velocity, float3 rayDirection) {
+    float4 constants = rayConstants(screenXY);
+    float lambda = constants.x, eta = constants.y, a = spin();
+    float4 v4 = blVelocity(X, velocity);
+    float3 v = v4.xyz; float norm = v4.w;
     if (norm >= -1e-4) return 1;
+    float r = blRadius(X), theta = polarAngle(X, r), phi = atan2(-X.z, X.x);
+    float Delta = delta(r);
     float radialPotential = sqr(r*r + a*a - a*lambda) - Delta*(eta + sqr(lambda - a));
     float polarPotential = eta + a*a*cos(theta)*cos(theta) - lambda*lambda/sqr(tan(theta));
     // signs of the ray's radial and polar motion from its direction
     float3 thetaDirection = float3(cos(theta)*cos(phi), -sin(theta), -cos(theta)*sin(phi));
-    float radialSign = sign(dot(rayDirection, X)); float polarSign = sign(dot(rayDirection, thetaDirection));
+    float radialSign = sign(dot(rayDirection, X));
+    float polarSign = sign(dot(rayDirection, thetaDirection));
     float pu = -1 - radialSign*sqrt(max(radialPotential, 0.))/Delta*v.x - polarSign*sqrt(max(polarPotential, 0.))*v.y + lambda*v.z;
     return clamp((-1 + P.cameraOmega*lambda)/P.lapse/(pu*rsqrt(-norm)), 0.02, 20.);
 }
@@ -800,43 +914,62 @@ void storeImage(int pointId, int slot, float4 chartPoint, float4 screenData) {
     pass_out[int3(imageTexel(pointId, slot), SCREEN_LAYER)] = screenData;
 }
 struct ImageList {
-    float4 chartPoint[MAX_IMAGES]; float sweptAngle[MAX_IMAGES]; float3 rayDirection[MAX_IMAGES];
-    bool contains(float4 q, int count = MAX_IMAGES) {
+    float4 chartPoint[MAX_IMAGES]; float sweptAngle[MAX_IMAGES];
+    float3 rayDirection[MAX_IMAGES]; float emitTime[MAX_IMAGES];
+    bool contains(float4 q, int count = MAX_IMAGES, float slack = 1) {
         bool found = false;
-        for (int s = 0; s < count; s++) found = found || sameImage(chartPoint[s], q);
+        for (int s = 0; s < count; s++) found = found || sameImage(chartPoint[s], q, slack);
         return found;
     }
     [mutating] void put(int s, NewtonResult result) {
         chartPoint[s] = result.chartPoint; sweptAngle[s] = result.sweptAngle;
-        rayDirection[s] = result.rayDirection;
+        rayDirection[s] = result.rayDirection; emitTime[s] = result.emitTime;
     }
     [mutating] void add(NewtonResult result) {   // into the first free slot
-        int s = 0; while (s < MAX_IMAGES && chartPoint[s].w != 0) s++;
+        int s = 0;
+        while (s < MAX_IMAGES && chartPoint[s].w != 0) s++;
         if (s < MAX_IMAGES) put(s, result);
     }
 };
 void solvePoint(int pointId) {
     if (pointId >= POINT_COUNT || !imagesFit(pointId) || !toggleOn(pointId < PARTICLE_COUNT ? 0 : 1)) return;
-    Body body = pointBody(pointId); float4 target = targetOf(body.position);
-    float r = target.w; float tolerance = 3e-4*cameraDistance(target.xyz, r);
-    ImageList list; for (int s = 0; s < MAX_IMAGES; s++) list.put(s, { 0, false, 0, 0 });
-    // every layer (band, slot) with nodes here: Newton from the blend of the inverse grid, else the nearest node
-    float3 unit = gridUnit(target.xyz); int mask = maskIndex(unit);
-    uint2 layers = uint2(layerMask[mask].load(), layerMask[mask + 1].load());
+    Emitter e = pointEmitter(pointId);
+    float4 target = targetOf(pointBody(pointId, P.sceneTime).position);   // where it is now
+    float tolerance = 3e-4*cameraDistance(target.xyz, target.w);
+    ImageList list;
+    for (int s = 0; s < MAX_IMAGES; s++) list.put(s, { 0, false, 0, 0, 0 });
+    // Retarded images, per grid layer: look up the point's position `back` M ago, read the light delay of that
+    // seed, move `back` to it and repeat (converges for emitters slower than light, like the retarded time
+    // itself). Where the layer has no seed, step further back. Then Newton from the seed for the moving target.
     for (int layer = 0; layer < BAND_COUNT*SLOT_COUNT; layer++) {
-        if (((layers[layer/32] >> (layer%32)) & 1) == 0) continue;
-        float4 seeds[2]; gridSeeds(layer/SLOT_COUNT, layer%SLOT_COUNT, unit, seeds[0], seeds[1]);
+        float back = 0;
+        float4 seeds[2] = { float4(0), float4(0) };
+        for (int pass = 0; pass < (toggleOn(8) ? DELAY_PASSES : 1); pass++) {
+            float3 X = targetOf(pointBody(pointId, P.sceneTime - back).position).xyz;
+            gridSeeds(layer/SLOT_COUNT, layer%SLOT_COUNT, X, seeds[0], seeds[1]);
+            if (!toggleOn(8)) break;
+            float4 seed = seeds[0].w != 0 ? seeds[0] : seeds[1];
+            if (seed.w == 0 && pass >= 5) break;
+            if (seed.w == 0) { back += WORLDLINE_STEP; continue; }
+            float4 corner = tableAt(int(seed.x), int(seed.y) + rowOffset(seed.w), int(seed.z));
+            float delay = lightDelay(corner.w, blRadius(corner.xyz));
+            if (abs(delay - back) < 0.5) break;
+            back = delay;
+        }
         for (int attempt = 0; attempt < 2; attempt++) {
-            if (seeds[attempt].w == 0) continue;
-            if (list.contains(seeds[attempt])) break;   // an image found already
-            NewtonResult result = newton(seeds[attempt], target.xyz, tolerance, 12, 0.866, true);
-            if (result.ok) { if (!list.contains(result.chartPoint)) list.add(result); break; }
+            if (seeds[attempt].w == 0 || list.contains(seeds[attempt], MAX_IMAGES, 3)) continue;   // found already
+            NewtonResult result = newton(seeds[attempt], e, tolerance, 16);
+            if (!result.ok || list.contains(result.chartPoint)) continue;
+            list.add(result);
+            break;
         }
     }
     // very close to the camera the grid is coarse: also seed from the straight line of sight
     float3 cameraPos = rayTable[0].xyz; float3 toTarget = target.xyz - cameraPos;
-    float3 radialDir = normalize(cameraPos); float3 phiDir = normalize(cross(float3(0, 1, 0), radialDir));
-    float3 thetaDir = cross(phiDir, radialDir); float depth = dot(toTarget, radialDir), targetDistance = length(toTarget);
+    float3 radialDir = normalize(cameraPos);
+    float3 phiDir = normalize(cross(float3(0, 1, 0), radialDir));
+    float3 thetaDir = cross(phiDir, radialDir); float depth = dot(toTarget, radialDir);
+    float targetDistance = length(toTarget);
     if (targetDistance < 0.6*length(cameraPos) && depth < -0.03*targetDistance) {
         float4 chartPoint = screenToChart(float2(dot(toTarget, phiDir)/(-depth), dot(toTarget, thetaDir)/depth));
         chartPoint.y = clamp(chartPoint.y, 0., ELL_COUNT - 1.);
@@ -846,15 +979,18 @@ void solvePoint(int pointId) {
             float d1 = length(evaluateTable(float4(chartPoint.xy, k, chartPoint.w)).position - cameraPos);
             if (d1 < targetDistance) continue;
             float kStart = k - 1 + clamp((targetDistance - d0)/max(d1 - d0, 1e-6), 0., 1.);
-            NewtonResult result = newton(float4(chartPoint.xy, kStart, chartPoint.w), target.xyz, tolerance, 24);
+            NewtonResult result = newton(float4(chartPoint.xy, kStart, chartPoint.w), e, tolerance, 24);
             if (result.ok && int(result.sweptAngle/PI) == 0 && !list.contains(result.chartPoint)) list.add(result);
             break;
         }
     }
-    float3 tableVelocity = toTableFrame(body.velocity); float3 tablePosition = toTableFrame(body.position);
+    // colour shift from the velocity at emission; images of a (wrongly defined) faster-than-light emitter dropped
     for (int s = 0; s < MAX_IMAGES; s++) {
         float4 q = list.chartPoint[s]; float2 xy = chartToScreen(q);
-        float g = q.w == 0 ? 1 : redshift(chartToAngles(q), tablePosition, tableVelocity, list.rayDirection[s]);
+        Body then = pointBody(pointId, list.emitTime[s]);
+        float3 position = toTableFrame(then.position), velocity = toTableFrame(then.velocity);
+        if (q.w != 0 && blVelocity(position, velocity).w >= -1e-4) q = 0;
+        float g = q.w == 0 ? 1 : redshift(xy, position, velocity, list.rayDirection[s]);
         storeImage(pointId, s, q, q.w == 0 ? 0 : float4(xy, g, list.sweptAngle[s]));
     }
 }
@@ -866,14 +1002,14 @@ void solve(uint3 id : SV_DispatchThreadID) {
     int pixelCount = int(SCREEN_SIZE.x*SCREEN_SIZE.y);
     for (int pixel = int(id.x); pixel < pixelCount && P.viewDirty != 0; pixel += 1024*64)
         cacheBackground(int2(pixel%int(SCREEN_SIZE.x), pixel/int(SCREEN_SIZE.x)));
-    for (int point = int(id.x); point < POINT_COUNT; point += 1024*64) solvePoint(point);
+    if (int(id.x) < POINT_COUNT) solvePoint(int(id.x));
 }
 // ============================================================================ 7. atomic raster
 // Pass 0: atomicMax of the complemented depth (k/STEP_COUNT as float bits, so 0 = empty and the nearest wins);
 // pass 1: fragments whose depth won write their colour into COLOUR_LAYER. main_image clears the depth buffer
 // after reading it, ready for the next frame. Objects: each triangle image is followed from an anchor corner by
-// continuation, split adaptively (while edges curve by more than 0.35 px or are longer than 48 px, in 1080p
-// pixels) and the leaves are scan-converted by whole workgroups.
+// continuation, split into an n x n chart-space grid (vertices Newton-refined), and the sub-triangles are scan-
+// converted by whole workgroups.
 float2 toPixel(float2 xy) { return float2(xy.x*P.projection.x + 1, 1 - xy.y*P.projection.y)*0.5*float2(SCREEN_SIZE); }
 void fragment(int2 pixel, float depth, float3 colour) {
     if (any(pixel < 0) || any(pixel >= SCREEN_SIZE)) return;
@@ -895,12 +1031,14 @@ float3 blackbody(float kelvin) {
     return saturate(float3(red, green, blue));
 }
 void rasterParticle(int i) {   // all images of particle i as round dots
-    float heat = pow(P.innerEdge/length(particle(i).position), 0.75); float radius = P.pointRadius;
+    float heat = pow(4.5/length(particle(i, P.sceneTime).position), 0.75);
+    float radius = P.pointRadius;
     for (int s = 0; s < MAX_IMAGES; s++) {
         float4 chartPoint = loadChartPoint(i, s); float4 screenData = loadScreenData(i, s);
         int order = orderOf(screenData.w);
         if (chartPoint.w == 0 || !orderOn(order)) continue;
-        float g = screenData.z; float3 colour = blackbody(3500 + 9000*heat*g)*(0.35 + 1.4*heat);
+        float g = screenData.z;
+        float3 colour = blackbody(3500 + 9000*heat*g)*(0.35 + 1.4*heat);
         colour *= dopplerTint(g)*orderGain(order)*(0.8 + 0.4*hashUint(uint(7*i)));
         float2 centre = toPixel(screenData.xy); int R = min(int(ceil(radius)), 8);
         for (int dy = -R; dy <= R; dy++) for (int dx = -R; dx <= R; dx++) {
@@ -911,14 +1049,19 @@ void rasterParticle(int i) {   // all images of particle i as round dots
 }
 // weighted blend of chart points (Cartesian near the centre, via sigma across the curve); empty ones skipped
 float4 blendChartPoints(float4 q[8], float w[8]) {
-    int first = -1; float total = 0; bool allCentre = true, sameSide = true;
+    int first = -1;
+    float total = 0;
+    bool allCentre = true, sameSide = true;
     for (int n = 0; n < 8; n++) {
         if (q[n].w == 0 || w[n] <= 0) continue;
         if (first < 0) first = n;
-        total += w[n]; allCentre = allCentre && nearCentre(q[n]); sameSide = sameSide && q[n].w == q[first].w;
+        total += w[n];
+        allCentre = allCentre && nearCentre(q[n]);
+        sameSide = sameSide && q[n].w == q[first].w;
     }
     if (first < 0) return 0;
-    float2 centre = 0; float psi = 0, row = 0, sigma = 0, k = 0;
+    float2 centre = 0;
+    float psi = 0, row = 0, sigma = 0, k = 0;
     for (int n = 0; n < 8; n++) {
         if (q[n].w == 0 || w[n] <= 0) continue;
         float v = w[n]/total;
@@ -932,12 +1075,15 @@ float4 blendChartPoints(float4 q[8], float w[8]) {
     return float4(psi, rowSide.x, k, rowSide.y);
 }
 // continue one image along a world segment, with adaptive steps
-bool follow(inout float4 chartPoint, float3 worldFrom, float3 worldTo) {
+// continue one image along a mesh edge from vertex idFrom to idTo (points on it at the same time), adaptive steps
+bool follow(inout float4 chartPoint, int idFrom, int idTo) {
     float t = 0, h = 0.5;
     for (int it = 0; it < 28 && h >= 1/128.; it++) {
-        float tNext = min(t + h, 1.); float4 target = targetOf(lerp(worldFrom, worldTo, tNext));
-        float tolerance = (tNext >= 1 ? 7e-4 : 4e-3)*cameraDistance(target.xyz, target.w);
-        NewtonResult result = newton(chartPoint, target.xyz, tolerance, 10, 0.25);
+        float tNext = min(t + h, 1.);
+        Emitter e = { int3(idFrom, idTo, idTo), float3(1 - tNext, tNext, 0) };
+        float4 now = targetOf(emitterBody(e, P.sceneTime).position);
+        float tolerance = (tNext >= 1 ? 7e-4 : 4e-3)*cameraDistance(now.xyz, now.w);
+        NewtonResult result = newton(chartPoint, e, tolerance, 10, 0.25);
         if (!result.ok || abs(result.chartPoint.z - chartPoint.z) >= 12) { h *= 0.5; continue; }   // retry shorter
         chartPoint = result.chartPoint; t = tNext;
         if (t >= 1) return true;
@@ -945,105 +1091,78 @@ bool follow(inout float4 chartPoint, float3 worldFrom, float3 worldTo) {
     }
     return false;
 }
-// Object triangles are split adaptively in world barycentric coordinates (b = weights of corners 1 and 2), one
-// level per dispatch so that every thread does the same small amount of work: queued triangles live at the end of
-// subTriangles (two queues, alternating), 6 float4 each: (bary, pixel), (chart point) per corner.
-struct SubVertex { float2 bary; float4 chart; float2 pixel; };
-static const int SUB_LEVELS = 12, SUB_QUEUE = 8192, LEAF_CAPACITY = SUBTRI_CAPACITY - 2*SUB_QUEUE;
-void triangleCorners(int item, out Body corners[3], out int3 pointIds) {   // item = (object, triangle, order)
-    int tri = item/3%OBJECT_TRIS, object = item/3/OBJECT_TRIS;
-    int quad = (tri/2/SPHERE_SEGS)*(SPHERE_SEGS + 1) + (tri/2)%SPHERE_SEGS;
-    int3 vertexIds = tri%2 == 0 ? int3(quad, quad + SPHERE_SEGS + 1, quad + 1) : int3(quad + 1, quad + SPHERE_SEGS + 1, quad + SPHERE_SEGS + 2);
-    corners = { objectVertex(object, vertexIds.x), objectVertex(object, vertexIds.y), objectVertex(object, vertexIds.z) };
-    pointIds = PARTICLE_COUNT + object*OBJECT_VERTS + vertexIds;
-}
-float3 baryPosition(Body corners[3], float2 b) { return corners[0].position + b.x*(corners[1].position - corners[0].position) + b.y*(corners[2].position - corners[0].position); }
-// queue for level `level`; the item rides along in the first corner's side (side (1 + item))
-void pushTriangle(int level, int item, SubVertex v0, SubVertex v1, SubVertex v2) {
-    uint k = counters[4 + level].add(1); if (k >= SUB_QUEUE) return;
-    int base = 6*(LEAF_CAPACITY + (level%2)*SUB_QUEUE + int(k)); SubVertex v[3] = { v0, v1, v2 };
-    for (int c = 0; c < 3; c++) {
-        subTriangles[base + 2*c] = float4(v[c].bary, v[c].pixel);
-        subTriangles[base + 2*c + 1] = float4(v[c].chart.xyz, v[c].chart.w*(c == 0 ? 1 + item : 1));
-    }
-}
-// the edge midpoint's image, by Newton from the blend of the ends; w = 0 if it fails or jumps to another image
-// (a bend beyond a half circle): the edge is then left straight, as it cannot be refined cheaply
-SubVertex subVertex(Body corners[3], SubVertex a, SubVertex b) {
-    float2 bary = 0.5*(a.bary + b.bary); float4 target = targetOf(baryPosition(corners, bary));
-    float4 pair[8] = { a.chart, b.chart, 0, 0, 0, 0, 0, 0 }; float halves[8] = { 0.5, 0.5, 0, 0, 0, 0, 0, 0 };
-    float4 seed = blendChartPoints(pair, halves);
-    NewtonResult result = newton(seed, target.xyz, 7e-4*cameraDistance(target.xyz, target.w), 8, 0.25);
-    float4 q = result.chartPoint; float2 pixel = toPixel(chartToScreen(q));
-    bool ok = result.ok && abs(q.z - seed.z) < 6 && length(pixel - 0.5*(a.pixel + b.pixel)) <= 0.5*length(a.pixel - b.pixel) + 2;
-    return { bary, ok ? q : 0, pixel };
-}
 float3 objectAlbedo(int object) { return lerp(0.85, float3(hash1(object*7.), hash1(object*11.), hash1(object*13.)), 0.55) + 0.15; }
-// One level of the split: halve the edge that is furthest from straight (or longest), into the next level's
-// queue, else it is a leaf: all edges within 0.35 px of their Newton-solved midpoints and at most 48 px long
-// (1080p pixels). Halving one edge at a time follows the one-way stretching near the critical curve.
-void refineTriangle(int level, int item, SubVertex v[3]) {
-    int object = item/3/OBJECT_TRIS, order = item%3; Body corners[3]; int3 pointIds; triangleCorners(item, corners, pointIds);
-    float2 lo = min(v[0].pixel, min(v[1].pixel, v[2].pixel)), hi = max(v[0].pixel, max(v[1].pixel, v[2].pixel));
-    float margin = max(hi.x - lo.x, hi.y - lo.y);   // edges may bulge by about this much
-    bool behind = margin > 1e4;   // a corner at or behind 90 degrees: split towards it, drop the last level
-    if (!behind && (any(hi < -margin) || any(lo > float2(SCREEN_SIZE) + margin))) return;
-    SubVertex middle; int edge = -1; float worst = 1;
-    if (level < SUB_LEVELS && counters[0].load() < LEAF_CAPACITY*3/4 && counters[5 + level].load() + 2 <= SUB_QUEUE) {
-        for (int e = 0; e < 3; e++) {
-            SubVertex a = v[e], b = v[(e + 1)%3]; SubVertex m = subVertex(corners, a, b);
-            if (m.chart.w == 0) continue;
-            // the bend: m off the line a b (not off its middle: the image may be traced out unevenly)
-            float2 d = b.pixel - a.pixel, u = m.pixel - a.pixel; float span = length(d);
-            float bend = span > 1e-3 ? abs(d.x*u.y - d.y*u.x)/span : length(u);
-            float need = max(bend/0.35, span/48)/P.pixelScale;
-            if (need > worst) { worst = need; edge = e; middle = m; }
-        }
-    }
-    if (behind && edge < 0) return;
-    if (edge >= 0) {   // halves: (e, mid, opposite) and (mid, e + 1, opposite)
-        SubVertex opposite = v[(edge + 2)%3];
-        pushTriangle(level + 1, item, v[edge], middle, opposite); pushTriangle(level + 1, item, middle, v[(edge + 1)%3], opposite);
-        return;
-    }
-    uint outIndex = counters[0].add(1); if (outIndex >= LEAF_CAPACITY) return;   // a leaf: (object, order) in the normals' w
-    float3 tableVelocity = toTableFrame(corners[0].velocity);
-    for (int c = 0; c < 3; c++) {
-        float2 b = v[c].bary; float4 chartPoint = v[c].chart;
-        float g = redshift(chartToAngles(chartPoint), toTableFrame(baryPosition(corners, b)), tableVelocity, evaluateTable(chartPoint).dK);
-        float3 normal = normalize((1 - b.x - b.y)*corners[0].normal + b.x*corners[1].normal + b.y*corners[2].normal + 1e-6);
-        subTriangles[outIndex*6 + c] = float4(v[c].pixel, chartPoint.z/STEP_COUNT, g);
-        subTriangles[outIndex*6 + 3 + c] = float4(normal, c == 0 ? object : c == 1 ? order : 0);
-    }
-}
-// one thread per (object, triangle, order): each image of the triangle, followed from an anchor corner, is queued
+// one thread per (object, triangle, order)
 [shader("compute")]
 [WorkgroupCount(OBJECT_COUNT*OBJECT_TRIS*3/64, 1, 1)] [numthreads(64, 1, 1)]
 void triGen(uint3 id : SV_DispatchThreadID) {
-    int item = int(id.x); int order = item%3;
+    int item = int(id.x);
+    int order = item%3, tri = item/3%OBJECT_TRIS, object = item/3/OBJECT_TRIS;
     if (!toggleOn(1) || !orderOn(order)) return;
-    Body corners[3]; int3 pointIds; triangleCorners(item, corners, pointIds);
-    int anchor = -1;   // the first corner with an image of this order
-    for (int c = 0; c < 3 && anchor < 0; c++) for (int s = 0; s < MAX_IMAGES && anchor < 0; s++)
+    int quad = (tri/2/SPHERE_SEGS)*(SPHERE_SEGS + 1) + (tri/2)%SPHERE_SEGS;
+    int3 vertexIds = tri%2 == 0 ? int3(quad, quad + SPHERE_SEGS + 1, quad + 1) : int3(quad + 1, quad + SPHERE_SEGS + 1, quad + SPHERE_SEGS + 2);
+    int3 pointIds = PARTICLE_COUNT + object*OBJECT_VERTS + vertexIds;
+    // anchor: the first corner with an image of this order
+    int anchor = -1;
+    for (int c = 0; c < 3 && anchor < 0; c++) for (int s = 0; s < MAX_IMAGES && anchor < 0; s++) {
         if (loadChartPoint(pointIds[c], s).w != 0 && orderOf(loadScreenData(pointIds[c], s).w) == order) anchor = c;
-    for (int s0 = 0, imageCount = 0; s0 < MAX_IMAGES && imageCount < 3 && anchor >= 0; s0++) {
+    }
+    if (anchor < 0) return;
+    int imageCount = 0;
+    for (int s0 = 0; s0 < MAX_IMAGES && imageCount < 3; s0++) {
         float4 anchorPoint = loadChartPoint(pointIds[anchor], s0);
         if (anchorPoint.w == 0 || orderOf(loadScreenData(pointIds[anchor], s0).w) != order) continue;
-        imageCount++; float4 q[3] = { anchorPoint, anchorPoint, anchorPoint }; bool ok = true;   // the same image at all corners
-        for (int c = 0; c < 3 && ok; c++) if (c != anchor) ok = follow(q[c], corners[anchor].position, corners[c].position);
-        SubVertex v[3]; for (int c = 0; c < 3; c++) v[c] = { float2(c == 1 ? 1 : 0, c == 2 ? 1 : 0), q[c], toPixel(chartToScreen(q[c])) };
-        if (ok) refineTriangle(0, item, v);
+        imageCount++;
+        // the same image at the other two corners
+        float4 q[3] = { anchorPoint, anchorPoint, anchorPoint };
+        bool ok = true;
+        for (int c = 0; c < 3 && ok; c++)
+            if (c != anchor) ok = follow(q[c], pointIds[anchor], pointIds[c]);
+        if (!ok) continue;
+        float2 x0 = toPixel(chartToScreen(q[0])), x1 = toPixel(chartToScreen(q[1])), x2 = toPixel(chartToScreen(q[2]));
+        // size in 1080p pixels: the subdivision does not depend on the resolution
+        float extent = max(length(x1 - x0), max(length(x2 - x1), length(x0 - x2)))/P.pixelScale;
+        if (extent > 600) continue;
+        int n = clamp(int(ceil(extent/16)), 1, 6);
+        if (counters[0].load() + n*n > SUBTRI_CAPACITY*3/4) n = min(n, 2);   // running out: coarser
+        uint base = counters[0].add(uint(n*n));
+        if (base + n*n > SUBTRI_CAPACITY) return;
+        // grid vertices (i, j), i + j <= n, row by row; inner ones are Newton-refined. Each shows the surface where
+        // it was when its light left (normal and velocity too)
+        float4 grid[28]; float3 normals[28];
+        int idx = 0;
+        for (int j = 0; j <= n; j++) for (int i = 0; i <= n - j; i++) {
+            float a = i/float(n), b = j/float(n);
+            Emitter e = { pointIds, float3(1 - a - b, a, b) };
+            float4 corners8[8] = { q[0], q[1], q[2], 0, 0, 0, 0, 0 };
+            float weights[8] = { 1 - a - b, a, b, 0, 0, 0, 0, 0 };
+            float4 qq = i + j == 0 ? q[0] : i == n ? q[1] : j == n ? q[2] : blendChartPoints(corners8, weights);
+            if (i + j > 0 && i < n && j < n) {
+                float4 now = targetOf(emitterBody(e, P.sceneTime).position);
+                NewtonResult result = newton(qq, e, 7e-4*cameraDistance(now.xyz, now.w), 8, 0.25);
+                if (result.ok && abs(result.chartPoint.z - qq.z) < 6) qq = result.chartPoint;
+            }
+            float2 xy = chartToScreen(qq);
+            TableSample s = evaluateTable(qq);
+            Body then = emitterBody(e, P.sceneTime - lightDelay(s.delay, blRadius(s.position)));
+            float g = redshift(xy, toTableFrame(then.position), toTableFrame(then.velocity), s.dK);
+            grid[idx] = float4(toPixel(xy), qq.z/STEP_COUNT, g);
+            normals[idx] = normalize(then.normal + 1e-6);
+            idx++;
+        }
+        // n*n sub-triangles: (object, order) ride along in the normals' w
+        int outIndex = int(base);
+        for (int j = 0; j < n; j++) for (int i = 0; i < n - j; i++) for (int up = 0; up < 2; up++) {
+            if (up == 1 && i + j >= n - 1) continue;
+            int row0 = j*(n + 1) - j*(j - 1)/2; int row1 = (j + 1)*(n + 1) - (j + 1)*j/2;
+            int3 v = up == 0 ? int3(row0 + i, row0 + i + 1, row1 + i) : int3(row0 + i + 1, row1 + i + 1, row1 + i);
+            subTriangles[outIndex*6] = grid[v.x]; subTriangles[outIndex*6 + 1] = grid[v.y];
+            subTriangles[outIndex*6 + 2] = grid[v.z];
+            subTriangles[outIndex*6 + 3] = float4(normals[v.x], object);
+            subTriangles[outIndex*6 + 4] = float4(normals[v.y], order);
+            subTriangles[outIndex*6 + 5] = float4(normals[v.z], 0); outIndex++;
+        }
     }
-}
-// levels 1 and up, one per dispatch, one queued triangle per thread (all threads doing the same small work)
-[shader("compute")]
-[DispatchCount(SUB_LEVELS)] [WorkgroupCount(SUB_QUEUE/64, 1, 1)] [numthreads(64, 1, 1)]
-void splitTriangles(uint3 id : SV_DispatchThreadID) {
-    int level = int(dispatch.id) + 1;
-    if (int(id.x) >= min(int(counters[4 + level].load()), SUB_QUEUE)) return;
-    int base = 6*(LEAF_CAPACITY + (level%2)*SUB_QUEUE + int(id.x)); SubVertex v[3];
-    for (int c = 0; c < 3; c++) { float4 a = subTriangles[base + 2*c], b = subTriangles[base + 2*c + 1]; v[c] = { a.xy, float4(b.xyz, sign(b.w)), a.zw }; }
-    refineTriangle(level, int(abs(subTriangles[base + 1].w)) - 1, v);
 }
 // Both raster passes, for everything: thread i < PARTICLE_COUNT draws particle i, then each workgroup takes
 // every 1024th sub-triangle, its 64 threads sharing the triangle's bounding box.
@@ -1051,17 +1170,19 @@ void splitTriangles(uint3 id : SV_DispatchThreadID) {
 [DispatchCount(2)] [WorkgroupCount(1024, 1, 1)] [numthreads(64, 1, 1)]
 void rasterScene(uint3 id : SV_DispatchThreadID, uint3 group : SV_GroupID, uint localIndex : SV_GroupIndex) {
     if (id.x < PARTICLE_COUNT && toggleOn(0)) rasterParticle(int(id.x));
-    uint triCount = min(counters[0].load(), uint(LEAF_CAPACITY));
+    uint triCount = min(counters[0].load(), uint(SUBTRI_CAPACITY));
     for (uint t = group.x; t < triCount; t += 1024) {
         float4 pa = subTriangles[t*6], pb = subTriangles[t*6 + 1], pc = subTriangles[t*6 + 2];
         float area = (pb.x - pa.x)*(pc.y - pa.y) - (pb.y - pa.y)*(pc.x - pa.x);
         int2 lo = int2(max(floor(min(pa.xy, min(pb.xy, pc.xy))), 0.));
-        int2 hi = int2(min(ceil(max(pa.xy, max(pb.xy, pc.xy))), float2(SCREEN_SIZE))); int2 size = hi - lo;
+        int2 hi = int2(min(ceil(max(pa.xy, max(pb.xy, pc.xy))), float2(SCREEN_SIZE)));
+        int2 size = hi - lo;
         if (abs(area) < 1e-6 || any(size <= 0) || any(size > int(192*P.pixelScale))) continue;
         float4 na = subTriangles[t*6 + 3], nb = subTriangles[t*6 + 4], nc = subTriangles[t*6 + 5];
-        int object = int(na.w), order = int(nb.w); float3 objectCentre = objectVertex(object, 0).centre;
+        int object = int(na.w), order = int(nb.w); float3 objectCentre = objectVertex(object, 0, P.sceneTime).centre;
         for (int pixelIndex = int(localIndex); pixelIndex < size.x*size.y; pixelIndex += 64) {
-            float2 c = lo + int2(pixelIndex%size.x, pixelIndex/size.x) + 0.5; float3 w = barycentric(pa.xy, pb.xy, pc.xy, c);
+            float2 c = lo + int2(pixelIndex%size.x, pixelIndex/size.x) + 0.5;
+            float3 w = barycentric(pa.xy, pb.xy, pc.xy, c);
             if (min(w.x, min(w.y, w.z)) < -1e-4) continue;
             float g = w.x*pa.w + w.y*pb.w + w.z*pc.w;
             float3 normal = normalize(w.x*na.xyz + w.y*nb.xyz + w.z*nc.xyz);
@@ -1089,7 +1210,8 @@ float gridCoverage(int2 pixel, int kind) {
     float2 angles = worldAngles(cached); float2 gradient[2];
     for (int axis = 0; axis < 2; axis++) {
         int2 e = axis == 0 ? int2(1, 0) : int2(0, 1);
-        float4 next = backgroundAt(pixel + e), prev = backgroundAt(pixel - e); float2 d = 0;
+        float4 next = backgroundAt(pixel + e), prev = backgroundAt(pixel - e);
+        float2 d = 0;
         if (decodeKind(next.w) == kind && all(pixel + e < SCREEN_SIZE)) d = worldAngles(next) - angles;
         else if (decodeKind(prev.w) == kind) d = angles - worldAngles(prev);
         gradient[axis] = float2(d.x, d.y - 2*PI*round(d.y/(2*PI)));
@@ -1104,12 +1226,14 @@ float gridCoverage(int2 pixel, int kind) {
 float3 stars(float3 d) {
     float3 ad = abs(d);
     uint face = ad.x >= max(ad.y, ad.z) ? (d.x > 0 ? 0 : 1) : ad.y >= ad.z ? (d.y > 0 ? 2 : 3) : (d.z > 0 ? 4 : 5);
-    float2 uv = face < 2 ? d.yz/ad.x : face < 4 ? d.xz/ad.y : d.xy/ad.z; float3 colour = 0;
+    float2 uv = face < 2 ? d.yz/ad.x : face < 4 ? d.xz/ad.y : d.xy/ad.z;
+    float3 colour = 0;
     for (uint layer = 0; layer < 3; layer++) {
         float scale = 40*(layer + 1); float2 u = (uv*0.5 + 0.5)*scale;
         uint h = uint(u.x) + 1013*uint(u.y) + 1048573*face + 7919*layer;
         float2 offset = float2(hashUint(h), hashUint(h + 1)) - 0.5;
-        float brightness = hashUint(h + 2); if (brightness <= 0.55) continue;
+        float brightness = hashUint(h + 2);
+        if (brightness <= 0.55) continue;
         float3 tint = lerp(float3(0.6, 0.7, 1), float3(1, 0.8, 0.6), hashUint(h + 3));
         float spot = 1 - smoothstep(0., 0.1, length(frac(u) - 0.5 - 0.7*offset)*80/scale);
         colour += tint*pow(brightness, 8.)*3*spot;
@@ -1119,12 +1243,12 @@ float3 stars(float3 d) {
 // text: 3x5 font drawn at 2x (8 x 10 cells), strings packed 4 characters per uint
 static const uint FONT[42] = { 0, 11415, 25255, 29391, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11245, 27566, 14627, 27502,   // '0'..'Y'
     31143, 31140, 14699, 23533, 29847, 4714, 23469, 18727, 0, 27501, 11114, 27556, 0, 27565, 14478, 29842, 23407, 0, 0, 23213, 23186 };
-static const uint2 LABELS[8] = { uint2(1313427280u, 538989396u), uint2(1162494543u, 542331971u), uint2(1380013139u, 538976339u),   // POINTS OBJECTS STARS
+static const uint2 LABELS[9] = { uint2(1313427280u, 538989396u), uint2(1162494543u, 542331971u), uint2(1380013139u, 538976339u),   // POINTS OBJECTS STARS
     uint2(542722899u, 1145655879u), uint2(1193297989u, 541346130u), uint2(1163020612u, 538989635u),    // SKY GRID, EH GRID, DIRECT
-    uint2(1347374924u, 538980640u), uint2(1347374924u, 538980896u) };                                   // LOOP 1, LOOP 2
+    uint2(1347374924u, 538980640u), uint2(1347374924u, 538980896u), uint2(1095517508u, 538976345u) };   // LOOP 1, LOOP 2, DELAY
 static const uint WARNING[6] = { 1111576133u, 1176520012u, 1413566284u, 1411396147u, 1431590981u, 542328146u };   // ENABLE FLOAT32 TEXTURES
-static const float3 SWATCH[8] = { float3(0.8, 0.86, 1), float3(0.85, 0.6, 0.45), float3(1), float3(0.35, 0.75, 0.72),
-    float3(1, 0.62, 0.22), float3(0.62, 0.76, 0.91), float3(0.37, 0.85, 0.77), float3(0.88, 0.48, 0.84) };
+static const float3 SWATCH[9] = { float3(0.8, 0.86, 1), float3(0.85, 0.6, 0.45), float3(1), float3(0.35, 0.75, 0.72),
+    float3(1, 0.62, 0.22), float3(0.62, 0.76, 0.91), float3(0.37, 0.85, 0.77), float3(0.88, 0.48, 0.84), float3(0.95, 0.9, 0.5) };
 uint charOf(uint packed, int x) { return (packed >> (8*((x/8)%4))) & 255; }
 // is position p inside an 8 x 10 character cell lit?
 bool glyphLit(uint character, int2 p) {
@@ -1134,12 +1258,14 @@ bool glyphLit(uint character, int2 p) {
 // button under a pixel, or -1 (the UI is drawn at an integer zoom)
 int uiButton(float2 pixel, float hidden, int uiScale) {
     int2 q = int2(pixel)/uiScale - int2(8, 26); int button = q.y/19;
-    return hidden > 0.5 || any(q < 0) || q.x >= 100 || button >= 8 || q.y%19 >= 16 ? -1 : button;
+    if (hidden > 0.5 || any(q < 0) || q.x >= 100 || button >= 9 || q.y%19 >= 16) return -1;
+    return button;
 }
 float3 uiPixel(int2 pixel, float3 colour) {
     int button = uiButton(pixel + 0.5, P.uiHidden, P.uiScale);
     if (button < 0) return colour;
-    bool on = toggleOn(button); int2 q = pixel/P.uiScale - int2(8, 26 + 19*button); int2 textPos = q - int2(14, 3);
+    bool on = toggleOn(button); int2 q = pixel/P.uiScale - int2(8, 26 + 19*button);
+    int2 textPos = q - int2(14, 3);
     float3 c = on ? float3(0.16, 0.18, 0.22) : float3(0.07, 0.08, 0.1);
     if (any(q == 0) || q.x == 99 || q.y == 15) c = float3(on ? 0.45 : 0.2);         // border
     if (all(q >= 4) && all(q < int2(10, 11))) c = SWATCH[button]*(on ? 1 : 0.25);   // colour swatch
@@ -1149,8 +1275,9 @@ float3 uiPixel(int2 pixel, float3 colour) {
 }
 // banner shown when the pass textures are only 16 bit (the per-point images need float32)
 float3 warningPixel(int2 pixel, float3 colour) {
-    int2 q = pixel/P.uiScale - int2(8, 186);
-    int2 textPos = q - int2(4, 3); if (any(q < 0) || q.x >= 200 || q.y >= 16) return colour;
+    int2 q = pixel/P.uiScale - int2(8, 205);
+    if (any(q < 0) || q.x >= 200 || q.y >= 16) return colour;
+    int2 textPos = q - int2(4, 3);
     bool lit = all(textPos >= 0) && textPos.x < 192 && textPos.y < 10 && glyphLit(charOf(WARNING[textPos.x/32], textPos.x), textPos);
     return lit ? float3(1) : float3(0.6, 0.08, 0.05);
 }
@@ -1158,7 +1285,8 @@ float3 warningPixel(int2 pixel, float3 colour) {
 [numthreads(16, 16, 1)]
 void main_image(uint3 id : SV_DispatchThreadID) {
     if (any(id.xy >= SCREEN_SIZE)) return;
-    int2 pixel = int2(id.xy); float4 background = backgroundAt(pixel); int kind = decodeKind(background.w);
+    int2 pixel = int2(id.xy); float4 background = backgroundAt(pixel);
+    int kind = decodeKind(background.w);
     // background image order (> 2 loops draw with the 2nd loop toggle, dimmed)
     int order = orderOf(background.z); bool orderVisible = orderOn(order < 0 ? 2 : order);
     float gain = order >= 0 ? orderGain(order) : 0.55; float3 colour = 0;
