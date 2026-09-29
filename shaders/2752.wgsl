@@ -283,7 +283,7 @@ fn read_image(@builtin(global_invocation_id) id: vec3u) {
     col /= vec3f(f32(numSamples));
 
     col = reinhard(col, 10.); // トーンマッピング
-    col = pow(col, vec3f(1. / 2.2)); // ガンマ補正
+    //col = pow(col, vec3f(1. / 2.2)); // ガンマ補正
 
     textureStore(screen, id.xy, vec4f(col, 1.));
 }
