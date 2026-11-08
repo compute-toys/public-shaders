@@ -12,9 +12,12 @@
 
 #define TAU 6.2831853071795864769252867665590057683943387987502116419498891846156328125724179972560696506842341360
 
+#define EPSILON 0.001
+
+//#define ENABLE_KAHAN_SUMMATION_SOLVER
+
 struct simulation {
-    mas: array<f32, N>,       // mass
-    pos: array<vec3<f32>, N>, // position
+    r: array<vec4<f32>, N>, // position and mass
     vel: array<vec3<f32>, N>, // velocity
     acc: array<vec3<f32>, N>  // acceleration
 };
@@ -85,12 +88,15 @@ fn simulation_init(@builtin(global_invocation_id) id: vec3<u32>) {
     s = pcg4d(s);
     s = pcg4d(s); // second round for better statistical quality
 
-    simulation_storage.mas[idx] = 1.000 / f32(N);
+
+    let m = 1.000 / f32(N);
 
     let pos = vec3<f32>(1.000, 0.125, 1.000) * randn3(INV_PCG32_MAX*vec4<f32>(s));
 
     //simulation_storage.pos[idx] = vec3<f32>(0.0, 0.0, 0.0);
-    simulation_storage.pos[idx] = pos;
+    //simulation_storage.pos[idx] = pos;
+
+    simulation_storage.r[idx] = vec4<f32>(pos.x, pos.y, pos.z, m);
 
     s = pcg4d(s);
 
@@ -130,7 +136,7 @@ fn visualization_draw(@builtin(global_invocation_id) id: vec3<u32>) {
 
     let image_size = textureDimensions(screen);
 
-    var pos = simulation_storage.pos[idx];
+    var pos = simulation_storage.r[idx].xyz;
 
     pos *= exp2(custom.scale);
     pos = vec3<f32>(rotate2d(pos.xy, 0.125*TAU             ), pos.z).xyz;
@@ -179,43 +185,57 @@ fn visualization_output(@builtin(global_invocation_id) id: vec3<u32>) {
     textureStore(screen, id.xy, vec4<f32>(color, 1.0));
 }
 
-#workgroup_count simulation_force N/256 1 1
+#workgroup_count simulation_force_init N/256 1 1
+#dispatch_once simulation_force_init
 @compute @workgroup_size(16, 16)
-fn simulation_force(@builtin(global_invocation_id) id: vec3<u32>) {
+fn simulation_force_init(@builtin(global_invocation_id) id: vec3<u32>) {
     let idx: u32 = (16u * id.x) + id.y;
 
     if(u32(N) <= idx) { return; }
 
     let i = idx;
 
-    let m_i = simulation_storage.mas[idx];
-    let r_i = simulation_storage.pos[idx];
+    let r_i = simulation_storage.r[idx];
 
-    var f = vec3<f32>(0.0, 0.0, 0.0);
+    var a_sum = vec3<f32>(0.0, 0.0, 0.0);
+    //var a_com = vec3<f32>(0.0, 0.0, 0.0);
 
     #ifndef N_DIV
     for(var j = 0u; j < u32(N); j++) {
     #else
     for(var j: u32 = (time.frame % u32(N_DIV)) * (u32(N)/4u); j < (u32(N)/u32(N_DIV))*( (time.frame % u32(N_DIV))+1u ); j++) {
     #endif
-        if(i == j) {
-            continue;
-        }
+        //if(i == j) {
+        //    continue;
+        //}
 
-        let m_j = simulation_storage.mas[j];
-        let r_j = simulation_storage.pos[j];
+        //let m_j = simulation_storage.mas[j];
+        let r_j = simulation_storage.r[j];
 
-        let r_ij = r_j - r_i;
+        let r_ij = r_j.xyz - r_i.xyz;
 
         let r2 = dot(r_ij, r_ij);
 
-        let inv_r2 = 1.0 / (     r2 +0.000001);
-        let inv_r1 = 1.0 / (sqrt(r2)+0.000001);
+        #ifdef EPSILON
+        let inv_r2 = 1.0 /     (r2 + EPSILON * EPSILON);
+        let inv_r1 = 1.0 / sqrt(r2 + EPSILON * EPSILON);
+        #else
+        let inv_r2 = select(0.0, 1.0 /     (r2), 0.0 < r2);
+        let inv_r1 = select(0.0, 1.0 / sqrt(r2), 0.0 < r2);
+        #endif
 
-        f += 4.0 * m_i * m_j * inv_r2 * (r_j - r_i) * inv_r1;
+        let pot_j = r_j.w * inv_r1;
+
+        let F_ij = pot_j * inv_r2 * r_ij;
+
+        a_sum += F_ij;
     }
 
-    simulation_storage.acc[idx] = f;
+    #ifdef N_DIV
+    simulation_storage.acc[idx] = f32(N_DIV) * r_i.w * a_sum;
+    #else
+    simulation_storage.acc[idx] = r_i.w * a_sum;
+    #endif
 }
 
 #workgroup_count simulation_kick0 N/256 1 1
@@ -235,7 +255,61 @@ fn simulation_drift(@builtin(global_invocation_id) id: vec3<u32>) {
 
     if(u32(N) <= idx) { return; }
 
-    simulation_storage.pos[idx] += custom.dt * simulation_storage.vel[idx];
+    let r = simulation_storage.r[idx];
+
+    simulation_storage.r[idx] = vec4<f32>(r.xyz + custom.dt * simulation_storage.vel[idx], r.w);
+}
+
+#workgroup_count simulation_force N/256 1 1
+@compute @workgroup_size(16, 16)
+fn simulation_force(@builtin(global_invocation_id) id: vec3<u32>) {
+    let idx: u32 = (16u * id.x) + id.y;
+
+    if(u32(N) <= idx) { return; }
+
+    let i = idx;
+
+    let r_i = simulation_storage.r[idx];
+
+    var a_sum = vec3<f32>(0.0, 0.0, 0.0);
+    //var a_com = vec3<f32>(0.0, 0.0, 0.0);
+
+    #ifndef N_DIV
+    for(var j = 0u; j < u32(N); j++) {
+    #else
+    for(var j: u32 = (time.frame % u32(N_DIV)) * (u32(N)/4u); j < (u32(N)/u32(N_DIV))*( (time.frame % u32(N_DIV))+1u ); j++) {
+    #endif
+        //if(i == j) {
+        //    continue;
+        //}
+
+        //let m_j = simulation_storage.mas[j];
+        let r_j = simulation_storage.r[j];
+
+        let r_ij = r_j.xyz - r_i.xyz;
+
+        let r2 = dot(r_ij, r_ij);
+
+        #ifdef EPSILON
+        let inv_r2 = 1.0 /     (r2 + EPSILON * EPSILON);
+        let inv_r1 = 1.0 / sqrt(r2 + EPSILON * EPSILON);
+        #else
+        let inv_r2 = select(0.0, 1.0 /     (r2), 0.0 < r2);
+        let inv_r1 = select(0.0, 1.0 / sqrt(r2), 0.0 < r2);
+        #endif
+
+        let pot_j = r_j.w * inv_r1;
+
+        let F_ij = pot_j * inv_r2 * r_ij;
+
+        a_sum += F_ij;
+    }
+
+    #ifdef N_DIV
+    simulation_storage.acc[idx] = f32(N_DIV) * r_i.w * a_sum;
+    #else
+    simulation_storage.acc[idx] = r_i.w * a_sum;
+    #endif
 }
 
 #workgroup_count simulation_kick1 N/256 1 1

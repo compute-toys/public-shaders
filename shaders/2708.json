@@ -19,7 +19,7 @@
       },
       {
         "name": "scale",
-        "value": 0.005,
+        "value": -2.709,
         "minRange": -5,
         "maxRange": 5
       },
@@ -39,6 +39,7 @@
       }
     ],
     "float32Enabled": false,
+    "screenHDRFormat": false,
     "language": "wgsl"
   },
   "visibility": "public",
