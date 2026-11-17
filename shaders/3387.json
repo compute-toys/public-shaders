@@ -1,0 +1,24 @@
+{
+  "id": 3387,
+  "created_at": "2026-11-16T09:12:16.244846+00:00",
+  "name": "Bad Apple",
+  "description": "Bad Apple display on GPU\nPress Space to pause display",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "https://raw.githubusercontent.com/Long-Zixuan/BadShader/main/shaders/texture/video.png?raw=true"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "sRGB",
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "LoongLy"
+  }
+}
