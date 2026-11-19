@@ -1,0 +1,24 @@
+{
+  "id": 3384,
+  "created_at": "2026-11-11T16:15:31.312603+00:00",
+  "name": "Raymarch caching",
+  "description": "",
+  "body": {
+    "uniforms": [],
+    "textures": [
+      {
+        "img": "/textures/blank.png"
+      },
+      {
+        "img": "/textures/blank.png"
+      }
+    ],
+    "float32Enabled": false,
+    "screenHDRFormat": "scRGB",
+    "language": "wgsl"
+  },
+  "visibility": "public",
+  "profile": {
+    "username": "Audrick Yeu"
+  }
+}
